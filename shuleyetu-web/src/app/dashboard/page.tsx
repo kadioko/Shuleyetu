@@ -142,35 +142,46 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-3 py-8 md:px-4 md:py-12">
-        <header className="space-y-2">
-          <div className="h-6 w-40 rounded bg-slate-800 animate-pulse" />
-          <div className="h-4 w-64 rounded bg-slate-900 animate-pulse" />
-        </header>
-        <section className="grid gap-4 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-28 rounded-xl border border-slate-800 bg-slate-900/60 animate-pulse"
-            />
-          ))}
+      <main className="flex min-h-screen flex-col">
+        <section className="border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <div className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
+            <div className="h-5 w-28 rounded-full bg-slate-800 animate-pulse mb-4" />
+            <div className="h-9 w-56 rounded-lg bg-slate-800 animate-pulse mb-2" />
+            <div className="h-4 w-40 rounded bg-slate-800/60 animate-pulse" />
+          </div>
         </section>
+        <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl border border-slate-800 bg-slate-900/40 animate-pulse" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl border border-slate-800 bg-slate-900/40 animate-pulse" />
+            ))}
+          </div>
+        </div>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-3 py-8 md:px-4 md:py-12">
-        <p className="rounded-lg border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-100">
-          {error}
-        </p>
-        <Link
-          href="/auth/login"
-          className="text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Go to vendor login
-        </Link>
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-10 text-center max-w-md">
+          <div className="rounded-full bg-red-500/10 p-4 text-red-400">
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-red-200">Dashboard error</p>
+            <p className="mt-1 text-sm text-red-300/70">{error}</p>
+          </div>
+          <Link href="/auth/login" className="inline-flex items-center gap-2 rounded-xl bg-red-500/20 px-5 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/30">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Go to vendor login
+          </Link>
+        </div>
       </main>
     );
   }
@@ -205,13 +216,35 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-3 py-8 md:px-4 md:py-12">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-          Vendor Dashboard
-        </h1>
-        <p className="text-sm text-slate-300">Welcome back, {vendorName}</p>
-      </header>
+    <main className="flex min-h-screen flex-col">
+      {/* Dashboard Header */}
+      <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 mb-3">
+                <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span></span>
+                Live Dashboard
+              </div>
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">Vendor Dashboard</h1>
+              <p className="mt-2 text-base text-slate-400">Welcome back, <span className="font-semibold text-slate-200">{vendorName}</span></p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/dashboard/inventory/new" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Add Item
+              </Link>
+              <Link href="/dashboard/orders" className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-700 bg-slate-900/50 px-5 py-2.5 text-sm font-bold text-slate-300 transition-all hover:border-slate-600 hover:text-white">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                View Orders
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-8">
 
       {/* Analytics Overview */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -400,48 +433,21 @@ export default function DashboardPage() {
       </section>
 
       {/* Quick Links */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Link
-          href={`/vendors/${vendor?.vendor_id}`}
-          className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-sm transition-colors hover:border-sky-500/50 hover:bg-slate-900/60"
-        >
-          <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-          <span className="text-slate-300">View Public Page</span>
-        </Link>
-
-        <Link
-          href="/orders/track"
-          className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-sm transition-colors hover:border-sky-500/50 hover:bg-slate-900/60"
-        >
-          <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <span className="text-slate-300">Track Order</span>
-        </Link>
-
-        <Link
-          href="/dashboard/inventory"
-          className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-sm transition-colors hover:border-sky-500/50 hover:bg-slate-900/60"
-        >
-          <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-          <span className="text-slate-300">Manage Inventory</span>
-        </Link>
-
-        <Link
-          href="/dashboard/orders"
-          className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-sm transition-colors hover:border-sky-500/50 hover:bg-slate-900/60"
-        >
-          <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <span className="text-slate-300">View All Orders</span>
-        </Link>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { href: `/vendors/${vendor?.vendor_id}`, label: 'View Public Page', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> },
+          { href: '/orders/track', label: 'Track Order', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg> },
+          { href: '/dashboard/inventory', label: 'Manage Inventory', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg> },
+          { href: '/dashboard/orders', label: 'View All Orders', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
+        ].map((link) => (
+          <Link key={link.href} href={link.href} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-sm font-medium transition-all duration-200 hover:border-sky-500/50 hover:bg-slate-900/70 hover:-translate-y-0.5">
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-colors group-hover:bg-sky-500/10 group-hover:text-sky-400">{link.icon}</span>
+            <span className="text-slate-300 group-hover:text-slate-100 transition-colors">{link.label}</span>
+            <svg className="ml-auto h-4 w-4 text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </Link>
+        ))}
       </section>
+      </div>
     </main>
   );
 }

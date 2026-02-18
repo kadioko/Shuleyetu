@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageProvider";
+import { Accordion } from "@/components/ui/Accordion";
 
 export default function HomePage() {
   const { t } = useLanguage();
@@ -10,10 +11,17 @@ export default function HomePage() {
     <main className="flex flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        {/* Animated background elements */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
-        <div className="relative mx-auto max-w-5xl px-3 py-16 md:px-4 md:py-24">
-          <div className="max-w-2xl space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-400">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-sky-800/10 via-transparent to-transparent" />
+        
+        {/* Decorative grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
+        
+        <div className="relative mx-auto max-w-6xl px-4 py-20 md:px-6 md:py-32 lg:py-40">
+          <div className="max-w-3xl space-y-8 animate-fade-in">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400 backdrop-blur-sm animate-slide-down">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500"></span>
@@ -21,78 +29,112 @@ export default function HomePage() {
               {t('heroTagline')}
             </div>
             
-            <h1 className="text-4xl font-bold tracking-tight text-slate-50 md:text-5xl lg:text-6xl">
+            {/* Main heading with gradient */}
+            <h1 className="font-display text-5xl font-extrabold tracking-tight text-slate-50 md:text-6xl lg:text-7xl animate-slide-up">
               {t('heroTitle')}
-              <span className="block text-sky-400">{t('heroTitleHighlight')}</span>
+              <span className="block mt-2 bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 bg-clip-text text-transparent animate-shimmer bg-[length:200%_auto]">
+                {t('heroTitleHighlight')}
+              </span>
             </h1>
             
-            <p className="text-lg text-slate-300 md:text-xl">
+            {/* Description */}
+            <p className="text-xl text-slate-300 md:text-2xl leading-relaxed max-w-2xl animate-slide-up" style={{ animationDelay: '0.1s' }}>
               {t('heroDescription')}
             </p>
 
-            <div className="flex flex-wrap gap-3 pt-2">
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-4 pt-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <Link
                 href="/vendors"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/25 transition-all hover:bg-sky-400 hover:shadow-sky-400/30"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-sky-500/30 transition-all duration-300 hover:scale-105 hover:shadow-sky-400/40 hover:from-sky-400 hover:to-sky-500"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 {t('browseVendors')}
+                <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
               </Link>
               <Link
                 href="/orders/new"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-900/50 px-5 py-2.5 text-sm font-semibold text-slate-100 transition-all hover:border-sky-500 hover:bg-slate-800"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900/50 px-8 py-4 text-base font-bold text-slate-100 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-sky-500 hover:bg-slate-800/80 hover:text-white"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="h-5 w-5 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 {t('createOrder')}
               </Link>
             </div>
+
+            {/* Trust indicators */}
+            <div className="flex flex-wrap items-center gap-6 pt-6 text-sm text-slate-400 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-sky-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">Trusted by 100+ vendors</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-sky-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">5000+ products available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-sky-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">24/7 support</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Floating decoration elements */}
+        <div className="absolute top-20 right-10 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl animate-float" style={{ animationDelay: '0s' }} />
+        <div className="absolute bottom-20 left-10 h-96 w-96 rounded-full bg-sky-600/10 blur-3xl animate-float" style={{ animationDelay: '2s' }} />
       </section>
 
       {/* Stats Section */}
       <section className="border-b border-slate-800 bg-slate-900/30">
-        <div className="mx-auto max-w-5xl px-3 py-8 md:px-4">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-sky-400 md:text-3xl">100+</p>
-              <p className="text-xs text-slate-400 md:text-sm">{t('vendorsCount')}</p>
+        <div className="mx-auto max-w-6xl px-4 py-12 md:px-6">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            <div className="text-center group">
+              <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">100+</p>
+              <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('vendorsCount')}</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-sky-400 md:text-3xl">5000+</p>
-              <p className="text-xs text-slate-400 md:text-sm">{t('productsCount')}</p>
+            <div className="text-center group">
+              <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">5000+</p>
+              <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('productsCount')}</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-sky-400 md:text-3xl">26</p>
-              <p className="text-xs text-slate-400 md:text-sm">{t('regionsCount')}</p>
+            <div className="text-center group">
+              <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">26</p>
+              <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('regionsCount')}</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-sky-400 md:text-3xl">24/7</p>
-              <p className="text-xs text-slate-400 md:text-sm">{t('support')}</p>
+            <div className="text-center group">
+              <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">24/7</p>
+              <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('support')}</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Who it's for */}
-      <section className="mx-auto max-w-5xl px-3 py-12 md:px-4 md:py-16">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-slate-50 md:text-3xl">{t('builtForEveryone')}</h2>
-          <p className="mt-2 text-sm text-slate-400">{t('builtForEveryoneDesc')}</p>
+      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
+        <div className="mb-12 text-center">
+          <h2 className="font-display text-3xl font-extrabold text-slate-50 md:text-4xl lg:text-5xl">{t('builtForEveryone')}</h2>
+          <p className="mt-4 text-base text-slate-400 md:text-lg max-w-2xl mx-auto">{t('builtForEveryoneDesc')}</p>
         </div>
         
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/40 p-6 transition-all hover:border-sky-500/50 hover:bg-slate-900/60">
-            <div className="mb-4 inline-flex rounded-lg bg-sky-500/10 p-3 text-sky-400">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-8 transition-all duration-300 hover:border-sky-500/50 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-sky-500/10 hover:-translate-y-1">
+            <div className="mb-6 inline-flex rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 p-4 text-sky-400 group-hover:scale-110 transition-transform duration-300">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-slate-50">{t('forParents')}</h3>
+            <h3 className="text-xl font-bold text-slate-50">{t('forParents')}</h3>
             <ul className="mt-3 space-y-2 text-sm text-slate-300">
               <li className="flex items-start gap-2">
                 <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -115,13 +157,13 @@ export default function HomePage() {
             </ul>
           </div>
 
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/40 p-6 transition-all hover:border-sky-500/50 hover:bg-slate-900/60">
-            <div className="mb-4 inline-flex rounded-lg bg-emerald-500/10 p-3 text-emerald-400">
+          <div className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-8 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1">
+            <div className="mb-6 inline-flex rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 p-4 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-slate-50">{t('forVendors')}</h3>
+            <h3 className="text-xl font-bold text-slate-50">{t('forVendors')}</h3>
             <ul className="mt-3 space-y-2 text-sm text-slate-300">
               <li className="flex items-start gap-2">
                 <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -144,13 +186,13 @@ export default function HomePage() {
             </ul>
           </div>
 
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/40 p-6 transition-all hover:border-sky-500/50 hover:bg-slate-900/60">
-            <div className="mb-4 inline-flex rounded-lg bg-amber-500/10 p-3 text-amber-400">
+          <div className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-8 transition-all duration-300 hover:border-amber-500/50 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1">
+            <div className="mb-6 inline-flex rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 p-4 text-amber-400 group-hover:scale-110 transition-transform duration-300">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-slate-50">{t('forSchools')}</h3>
+            <h3 className="text-xl font-bold text-slate-50">{t('forSchools')}</h3>
             <ul className="mt-3 space-y-2 text-sm text-slate-300">
               <li className="flex items-start gap-2">
                 <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -177,51 +219,51 @@ export default function HomePage() {
 
       {/* How it works */}
       <section className="border-y border-slate-800 bg-slate-900/30">
-        <div className="mx-auto max-w-5xl px-3 py-12 md:px-4 md:py-16">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-slate-50 md:text-3xl">{t('howItWorks')}</h2>
-            <p className="mt-2 text-sm text-slate-400">{t('howItWorksDesc')}</p>
+        <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
+          <div className="mb-16 text-center">
+            <h2 className="font-display text-3xl font-extrabold text-slate-50 md:text-4xl lg:text-5xl">{t('howItWorks')}</h2>
+            <p className="mt-4 text-base text-slate-400 md:text-lg max-w-2xl mx-auto">{t('howItWorksDesc')}</p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="relative text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sky-500 text-xl font-bold text-slate-950">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="relative text-center group">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-2xl font-bold text-white shadow-xl shadow-sky-500/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-sky-500/40">
                 1
               </div>
-              <h3 className="text-lg font-semibold text-slate-50">{t('findVendor')}</h3>
-              <p className="mt-2 text-sm text-slate-400">
+              <h3 className="text-xl font-bold text-slate-50 mb-3">{t('findVendor')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
                 {t('findVendorDesc')}
               </p>
             </div>
 
-            <div className="relative text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sky-500 text-xl font-bold text-slate-950">
+            <div className="relative text-center group">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-2xl font-bold text-white shadow-xl shadow-sky-500/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-sky-500/40">
                 2
               </div>
-              <h3 className="text-lg font-semibold text-slate-50">{t('placeOrder')}</h3>
-              <p className="mt-2 text-sm text-slate-400">
+              <h3 className="text-xl font-bold text-slate-50 mb-3">{t('placeOrder')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
                 {t('placeOrderDesc')}
               </p>
             </div>
 
-            <div className="relative text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sky-500 text-xl font-bold text-slate-950">
+            <div className="relative text-center group">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-2xl font-bold text-white shadow-xl shadow-sky-500/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-sky-500/40">
                 3
               </div>
-              <h3 className="text-lg font-semibold text-slate-50">{t('payCollect')}</h3>
-              <p className="mt-2 text-sm text-slate-400">
+              <h3 className="text-xl font-bold text-slate-50 mb-3">{t('payCollect')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
                 {t('payCollectDesc')}
               </p>
             </div>
           </div>
 
-          <div className="mt-8 text-center">
+          <div className="mt-12 text-center">
             <Link
               href="/vendors"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/25 transition-all hover:bg-sky-400"
+              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-sky-500/30 transition-all duration-300 hover:scale-105 hover:shadow-sky-400/40"
             >
               {t('getStarted')}
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>
@@ -229,28 +271,83 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="mx-auto max-w-5xl px-3 py-12 md:px-4 md:py-16">
-        <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-sky-950/50 to-slate-900/50 p-8 text-center md:p-12">
-          <h2 className="text-2xl font-bold text-slate-50 md:text-3xl">
-            {t('readyToSimplify')}
+      {/* FAQ Section */}
+      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
+        <div className="mb-16 text-center">
+          <h2 className="font-display text-3xl font-extrabold text-slate-50 md:text-4xl lg:text-5xl">
+            Frequently Asked Questions
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-slate-300 md:text-base">
-            {t('ctaDescription')}
+          <p className="mt-4 text-base text-slate-400 md:text-lg max-w-2xl mx-auto">
+            Find answers to common questions about Shuleyetu and how it works.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/vendors"
-              className="inline-flex items-center justify-center rounded-lg bg-sky-500 px-6 py-2.5 text-sm font-semibold text-slate-950 transition-all hover:bg-sky-400"
-            >
-              {t('browseVendors')}
-            </Link>
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-600 px-6 py-2.5 text-sm font-semibold text-slate-100 transition-all hover:border-sky-500"
-            >
-              {t('vendorSignUp')}
-            </Link>
+        </div>
+
+        <div className="max-w-3xl mx-auto">
+          <Accordion
+            items={[
+              {
+                id: 'faq-1',
+                question: 'How do I get started with Shuleyetu?',
+                answer: 'Getting started is simple! Browse our vendors to see available products, create an order with the items you need, and our vendors will process your order. You can track your order status in real-time through your dashboard.',
+              },
+              {
+                id: 'faq-2',
+                question: 'Is it safe to buy from vendors on Shuleyetu?',
+                answer: 'Yes! All vendors on Shuleyetu are verified and trusted. We work with established suppliers across Tanzania to ensure quality products and reliable service. Each vendor has ratings and reviews from other customers.',
+              },
+              {
+                id: 'faq-3',
+                question: 'What payment methods do you accept?',
+                answer: 'We accept multiple payment methods including mobile money (M-Pesa, Airtel Money), bank transfers, and cash on delivery for select regions. Choose the method that works best for you during checkout.',
+              },
+              {
+                id: 'faq-4',
+                question: 'How long does delivery take?',
+                answer: 'Delivery times vary by location and vendor. Most orders are delivered within 2-7 business days. You can see estimated delivery times for each vendor before placing your order.',
+              },
+              {
+                id: 'faq-5',
+                question: 'Can I cancel or modify my order?',
+                answer: 'You can cancel or modify your order within 24 hours of placing it. After that, contact our support team for assistance. We want to make sure you get exactly what you need.',
+              },
+              {
+                id: 'faq-6',
+                question: 'Do you offer bulk discounts for schools?',
+                answer: 'Yes! Schools and institutions can get special bulk pricing. Contact our sales team at schools@shuleyetu.com to discuss volume discounts and custom arrangements.',
+              },
+            ]}
+          />
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-sky-950/50 to-slate-900/50 p-12 text-center md:p-16">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
+          <div className="relative">
+            <h2 className="font-display text-3xl font-extrabold text-slate-50 md:text-4xl lg:text-5xl">
+              {t('readyToSimplify')}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300 md:text-xl leading-relaxed">
+              {t('ctaDescription')}
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/vendors"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-sky-500/30 transition-all duration-300 hover:scale-105 hover:shadow-sky-400/40"
+              >
+                {t('browseVendors')}
+                <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+              <Link
+                href="/auth/login"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900/50 px-8 py-4 text-base font-bold text-slate-100 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-sky-500 hover:bg-slate-800/80"
+              >
+                {t('vendorSignUp')}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

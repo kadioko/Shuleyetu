@@ -4,10 +4,38 @@
 
 :root {
   color-scheme: dark;
+  
+  /* Dark theme colors */
+  --background: 2 6 23;
+  --foreground: 248 250 252;
+  --primary: 14 165 233;
+  --primary-foreground: 2 6 23;
+  --secondary: 30 41 59;
+  --secondary-foreground: 248 250 252;
+  --accent: 56 189 248;
+  --muted: 30 41 59;
+  --muted-foreground: 148 163 184;
+  --border: 30 41 59;
+  --card: 15 23 42;
+  --card-foreground: 248 250 252;
 }
 
-.light {
+html.light {
   color-scheme: light;
+  
+  /* Light theme colors */
+  --background: 255 255 255;
+  --foreground: 15 23 42;
+  --primary: 14 165 233;
+  --primary-foreground: 255 255 255;
+  --secondary: 241 245 249;
+  --secondary-foreground: 15 23 42;
+  --accent: 56 189 248;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --border: 226 232 240;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
 }
 
 *,
@@ -18,12 +46,19 @@
 
 body {
   margin: 0;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   padding-top: max(0px, env(safe-area-inset-top));
   padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins), var(--font-inter), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* Mobile-first responsive text sizes */
@@ -147,13 +182,17 @@ html.light .bg-slate-950 {
 }
 
 html.light .bg-slate-950\/80 {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
 }
 
 html.light .bg-slate-900\/40,
 html.light .bg-slate-900\/60,
 html.light .bg-slate-900\/30 {
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
+}
+
+html.light .bg-slate-900\/50 {
+  background-color: rgba(248, 250, 252, 0.8);
 }
 
 html.light .border-slate-800 {
@@ -164,8 +203,13 @@ html.light .border-slate-700 {
   border-color: #cbd5e1;
 }
 
+html.light .border-slate-600 {
+  border-color: #cbd5e1;
+}
+
 html.light .text-slate-50 {
   color: #0f172a;
+  font-weight: 600;
 }
 
 html.light .text-slate-100 {
@@ -189,11 +233,11 @@ html.light .text-slate-500 {
 }
 
 html.light .bg-slate-800 {
-  background-color: #e2e8f0;
+  background-color: #f1f5f9;
 }
 
 html.light .bg-slate-800\/60 {
-  background-color: rgba(226, 232, 240, 0.6);
+  background-color: rgba(241, 245, 249, 0.6);
 }
 
 html.light .hover\:bg-slate-800:hover {
@@ -205,21 +249,67 @@ html.light .hover\:bg-slate-900:hover {
 }
 
 html.light .from-slate-950 {
-  --tw-gradient-from: #ffffff;
+  --tw-gradient-from: #f8fafc;
 }
 
 html.light .via-slate-900 {
-  --tw-gradient-via: #f8fafc;
+  --tw-gradient-via: #ffffff;
 }
 
 html.light .to-slate-950 {
-  --tw-gradient-to: #ffffff;
+  --tw-gradient-to: #f8fafc;
 }
 
 html.light .from-sky-950\/50 {
-  --tw-gradient-from: rgba(12, 74, 110, 0.1);
+  --tw-gradient-from: rgba(224, 242, 254, 0.5);
 }
 
 html.light .to-slate-900\/50 {
-  --tw-gradient-to: rgba(241, 245, 249, 0.5);
+  --tw-gradient-to: rgba(248, 250, 252, 0.5);
+}
+
+html.light .from-sky-900\/20 {
+  --tw-gradient-from: rgba(224, 242, 254, 0.3);
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .glass-effect {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  html.light .glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+    }
+    to {
+      box-shadow: 0 0 30px rgba(14, 165, 233, 0.6);
+    }
+  }
 }

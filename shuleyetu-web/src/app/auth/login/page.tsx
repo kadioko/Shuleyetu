@@ -57,41 +57,44 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <main className="relative flex min-h-screen items-center justify-center px-4 py-12 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
+      <div className="absolute top-20 right-10 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl" />
+      <div className="absolute bottom-20 left-10 h-64 w-64 rounded-full bg-sky-600/10 blur-3xl" />
+
+      <div className="relative w-full max-w-md">
         {/* Logo/Brand */}
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-slate-50">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-emerald-500 text-lg font-bold text-slate-950">
+          <Link href="/" className="inline-flex items-center gap-3 text-2xl font-bold text-slate-50 group">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 text-xl font-extrabold text-white shadow-lg shadow-sky-500/30 transition-transform group-hover:scale-110">
               S
             </div>
-            Shuleyetu
+            <span className="font-display">Shuleyetu</span>
           </Link>
-          <p className="mt-2 text-sm text-slate-400">
-            Vendor Portal
-          </p>
+          <p className="mt-3 text-sm text-slate-400">Vendor Portal</p>
         </div>
 
         {/* Auth Card */}
-        <div className="rounded-2xl border border-slate-800 bg-gradient-to-b from-slate-900/80 to-slate-900/40 p-6 shadow-xl shadow-slate-950/50">
-          <div className="mb-6 text-center">
-            <h1 className="text-xl font-semibold text-slate-100">
+        <div className="rounded-2xl border border-slate-700/50 bg-slate-900/80 p-8 shadow-2xl shadow-slate-950/80 backdrop-blur-sm">
+          <div className="mb-8 text-center">
+            <h1 className="font-display text-2xl font-bold text-slate-50">
               {isSignUp ? 'Create your account' : 'Welcome back'}
             </h1>
-            <p className="mt-1 text-sm text-slate-400">
-              {isSignUp 
-                ? 'Sign up to manage your vendor store' 
+            <p className="mt-2 text-sm text-slate-400">
+              {isSignUp
+                ? 'Sign up to manage your vendor store'
                 : 'Sign in to access your dashboard'}
             </p>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-5">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-slate-300" htmlFor="email">
                 Email address
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
@@ -102,7 +105,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="you@example.com"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 py-2.5 pl-10 pr-4 text-sm text-slate-50 placeholder-slate-500 outline-none transition-colors focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 py-3 pl-10 pr-4 text-sm text-slate-50 placeholder-slate-500 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
                   autoComplete="email"
                 />
               </div>
@@ -113,7 +116,7 @@ export default function LoginPage() {
                 Password
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
@@ -124,7 +127,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 py-2.5 pl-10 pr-4 text-sm text-slate-50 placeholder-slate-500 outline-none transition-colors focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 py-3 pl-10 pr-4 text-sm text-slate-50 placeholder-slate-500 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 />
               </div>
@@ -151,7 +154,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-sky-400/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
             >
               {loading ? (
                 <>
@@ -164,8 +167,8 @@ export default function LoginPage() {
               ) : (
                 <>
                   {isSignUp ? 'Create account' : 'Sign in'}
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </>
               )}
@@ -192,7 +195,7 @@ export default function LoginPage() {
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/30 p-4">
+        <div className="mt-6 rounded-xl border border-slate-700/50 bg-slate-900/60 p-4 backdrop-blur-sm">
           <div className="flex gap-3">
             <div className="flex-shrink-0 text-amber-400">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">

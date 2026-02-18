@@ -85,28 +85,30 @@ export default function VendorsPage() {
   const hasFilters = search.trim() !== '' || regionFilter !== '';
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-3 py-8 md:px-4 md:py-12">
+    <main className="flex min-h-screen flex-col">
       {/* Hero Header */}
-      <header className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-sky-500/10 p-2.5 text-sky-400">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              Find Vendors
-            </h1>
-            <p className="text-sm text-slate-400">
-              {vendors.length} school supply vendors across Tanzania
-            </p>
+      <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">Find Vendors</h1>
+              <p className="mt-2 text-base text-slate-400">
+                {loading ? 'Loading vendors…' : <><span className="font-semibold text-slate-200">{vendors.length}</span> school supply vendors across Tanzania</>}
+              </p>
+            </div>
+            <Link href="/orders/new" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Create Order
+            </Link>
           </div>
         </div>
-      </header>
+      </section>
+
+      <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-6">
 
       {/* Search & Filters */}
-      <section className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4 md:p-5">
+      <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
           {/* Search Input */}
           <div className="flex-1 space-y-1.5">
@@ -313,6 +315,7 @@ export default function VendorsPage() {
           </Link>
         </section>
       )}
+    </div>
     </main>
   );
 }
