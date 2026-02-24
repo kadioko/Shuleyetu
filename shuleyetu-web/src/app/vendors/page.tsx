@@ -55,28 +55,35 @@ export default function VendorsPage() {
       setError(null);
       setShowingDemo(false);
 
-      const { data, error } = await supabaseClient
-        .from('vendors')
-        .select('id, name, description, region, district, ward')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabaseClient
+          .from('vendors')
+          .select('id, name, description, region, district, ward')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading vendors', error);
+        if (error) {
+          console.error('Error loading vendors', error);
+          setVendors(DEMO_VENDORS);
+          setShowingDemo(true);
+          setError(null);
+          return;
+        }
+
+        const loadedVendors = (data as Vendor[]) ?? [];
+        if (loadedVendors.length === 0) {
+          setVendors(DEMO_VENDORS);
+          setShowingDemo(true);
+        } else {
+          setVendors(loadedVendors);
+        }
+      } catch (err) {
+        console.error('Unexpected error loading vendors', err);
         setVendors(DEMO_VENDORS);
         setShowingDemo(true);
         setError(null);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const loadedVendors = (data as Vendor[]) ?? [];
-      if (loadedVendors.length === 0) {
-        setVendors(DEMO_VENDORS);
-        setShowingDemo(true);
-      } else {
-        setVendors(loadedVendors);
-      }
-      setLoading(false);
     };
 
     void load();

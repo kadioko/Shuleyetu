@@ -84,37 +84,101 @@ export default function DashboardPage() {
       setError(null);
       setIsDemoMode(false);
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseClient.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabaseClient.auth.getUser();
 
-      if (userError) {
-        console.error('Error getting user', userError);
-        setError('Failed to load user.');
-        setLoading(false);
-        return;
-      }
+        if (userError) {
+          console.error('Error getting user', userError);
+          setError('Failed to load user.');
+          return;
+        }
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+        if (!user) {
+          router.push("/auth/login");
+          return;
+        }
 
-      const { data: mapping, error: mapError } = await supabaseClient
-        .from('vendor_users')
-        .select('vendor_id, vendors(name)')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        const { data: mapping, error: mapError } = await supabaseClient
+          .from('vendor_users')
+          .select('vendor_id, vendors(name)')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (mapError) {
-        console.error('Error loading vendor mapping', mapError);
-        setError('Failed to load vendor mapping.');
-        setLoading(false);
-        return;
-      }
+        if (mapError) {
+          console.error('Error loading vendor mapping', mapError);
+          setError('Failed to load vendor mapping.');
+          return;
+        }
 
-      if (!mapping) {
+        if (!mapping) {
+          setVendor(DEMO_VENDOR);
+          setIsDemoMode(true);
+          setInventoryCount(12);
+          setOrdersCount(DEMO_RECENT_ORDERS.length);
+          setRecentOrders(DEMO_RECENT_ORDERS);
+          setAnalytics({
+            totalSales: DEMO_RECENT_ORDERS
+              .filter((order) => order.payment_status === 'paid')
+              .reduce((sum, order) => sum + order.total_amount_tzs, 0),
+            paidOrders: DEMO_RECENT_ORDERS.filter((order) => order.payment_status === 'paid').length,
+            pendingOrders: DEMO_RECENT_ORDERS.filter(
+              (order) => order.status === 'pending' || order.status === 'awaiting_payment',
+            ).length,
+            completedOrders: DEMO_RECENT_ORDERS.filter((order) => order.status === 'completed').length,
+          });
+          return;
+        }
+
+        setVendor(mapping as unknown as VendorMapping);
+
+        const vendorId = mapping.vendor_id;
+
+        const [
+          { count: invCount },
+          { count: ordCount },
+          { data: orders },
+          { data: recentOrd },
+        ] = await Promise.all([
+          supabaseClient
+            .from('inventory')
+            .select('id', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+          supabaseClient
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+          supabaseClient
+            .from('orders')
+            .select('total_amount_tzs, status, payment_status')
+            .eq('vendor_id', vendorId),
+          supabaseClient
+            .from('orders')
+            .select('id, created_at, total_amount_tzs, status, payment_status, customer_name')
+            .eq('vendor_id', vendorId)
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ]);
+
+        setInventoryCount(invCount ?? 0);
+        setOrdersCount(ordCount ?? 0);
+        setRecentOrders((recentOrd as RecentOrder[]) ?? []);
+
+        // Calculate analytics
+        if (orders) {
+          const totalSales = orders
+            .filter((o) => o.payment_status === 'paid')
+            .reduce((sum, o) => sum + (o.total_amount_tzs || 0), 0);
+          const paidOrders = orders.filter((o) => o.payment_status === 'paid').length;
+          const pendingOrders = orders.filter((o) => o.status === 'pending' || o.status === 'awaiting_payment').length;
+          const completedOrders = orders.filter((o) => o.status === 'completed').length;
+
+          setAnalytics({ totalSales, paidOrders, pendingOrders, completedOrders });
+        }
+      } catch (err) {
+        console.error('Unexpected error loading dashboard', err);
         setVendor(DEMO_VENDOR);
         setIsDemoMode(true);
         setInventoryCount(12);
@@ -130,57 +194,10 @@ export default function DashboardPage() {
           ).length,
           completedOrders: DEMO_RECENT_ORDERS.filter((order) => order.status === 'completed').length,
         });
+        setError(null);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setVendor(mapping as unknown as VendorMapping);
-
-      const vendorId = mapping.vendor_id;
-
-      const [
-        { count: invCount },
-        { count: ordCount },
-        { data: orders },
-        { data: recentOrd },
-      ] = await Promise.all([
-        supabaseClient
-          .from('inventory')
-          .select('id', { count: 'exact', head: true })
-          .eq('vendor_id', vendorId),
-        supabaseClient
-          .from('orders')
-          .select('id', { count: 'exact', head: true })
-          .eq('vendor_id', vendorId),
-        supabaseClient
-          .from('orders')
-          .select('total_amount_tzs, status, payment_status')
-          .eq('vendor_id', vendorId),
-        supabaseClient
-          .from('orders')
-          .select('id, created_at, total_amount_tzs, status, payment_status, customer_name')
-          .eq('vendor_id', vendorId)
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ]);
-
-      setInventoryCount(invCount ?? 0);
-      setOrdersCount(ordCount ?? 0);
-      setRecentOrders((recentOrd as RecentOrder[]) ?? []);
-
-      // Calculate analytics
-      if (orders) {
-        const totalSales = orders
-          .filter((o) => o.payment_status === 'paid')
-          .reduce((sum, o) => sum + (o.total_amount_tzs || 0), 0);
-        const paidOrders = orders.filter((o) => o.payment_status === 'paid').length;
-        const pendingOrders = orders.filter((o) => o.status === 'pending' || o.status === 'awaiting_payment').length;
-        const completedOrders = orders.filter((o) => o.status === 'completed').length;
-
-        setAnalytics({ totalSales, paidOrders, pendingOrders, completedOrders });
-      }
-
-      setLoading(false);
     };
 
     void load();

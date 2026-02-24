@@ -160,47 +160,54 @@ export default function DashboardOrdersPage() {
       setError(null);
       setIsDemoMode(false);
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseClient.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabaseClient.auth.getUser();
 
-      if (userError) {
-        console.error('Error getting user', userError);
-        setError('Failed to load user.');
-        setLoading(false);
-        return;
-      }
+        if (userError) {
+          console.error('Error getting user', userError);
+          setError('Failed to load user.');
+          return;
+        }
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+        if (!user) {
+          router.push("/auth/login");
+          return;
+        }
 
-      const { data: mapping, error: mapError } = await supabaseClient
-        .from('vendor_users')
-        .select('vendor_id, vendors(name)')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        const { data: mapping, error: mapError } = await supabaseClient
+          .from('vendor_users')
+          .select('vendor_id, vendors(name)')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (mapError) {
-        console.error('Error loading vendor mapping', mapError);
-        setError('Failed to load vendor mapping.');
-        setLoading(false);
-        return;
-      }
+        if (mapError) {
+          console.error('Error loading vendor mapping', mapError);
+          setError('Failed to load vendor mapping.');
+          return;
+        }
 
-      if (!mapping) {
+        if (!mapping) {
+          setVendor(DEMO_VENDOR);
+          setOrders(DEMO_ORDERS);
+          setIsDemoMode(true);
+          return;
+        }
+
+        setVendor(mapping as unknown as VendorMapping);
+
+        await loadOrders(mapping.vendor_id, {});
+      } catch (err) {
+        console.error('Unexpected error loading orders dashboard', err);
         setVendor(DEMO_VENDOR);
         setOrders(DEMO_ORDERS);
         setIsDemoMode(true);
+        setError(null);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setVendor(mapping as unknown as VendorMapping);
-
-      await loadOrders(mapping.vendor_id, {});
     };
 
     void init();
