@@ -69,7 +69,7 @@ export function NavUser() {
     return (
       <Link
         href="/auth/login"
-        className="text-xs text-slate-400 hover:text-sky-400 md:text-sm"
+        className="inline-flex min-h-[44px] items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-900/50 hover:text-sky-400"
       >
         Login
       </Link>
@@ -84,7 +84,7 @@ export function NavUser() {
       <button
         type="button"
         onClick={handleLogout}
-        className="text-[11px] text-slate-400 hover:text-sky-400"
+        className="inline-flex min-h-[44px] items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-900/50 hover:text-sky-400"
       >
         Logout
       </button>

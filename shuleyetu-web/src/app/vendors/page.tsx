@@ -14,10 +14,38 @@ type Vendor = {
   ward: string | null;
 };
 
+const DEMO_VENDORS: Vendor[] = [
+  {
+    id: "demo-vendor-1",
+    name: "Mlimani School Supplies",
+    description: "Affordable textbooks, exercise books, and exam prep materials.",
+    region: "Dar es Salaam",
+    district: "Kinondoni",
+    ward: "Msasani",
+  },
+  {
+    id: "demo-vendor-2",
+    name: "Uhuru Uniform Center",
+    description: "Quality school uniforms, shoes, and sports wear for all levels.",
+    region: "Arusha",
+    district: "Arusha Urban",
+    ward: "Kaloleni",
+  },
+  {
+    id: "demo-vendor-3",
+    name: "Twiga Stationery Hub",
+    description: "Pens, geometry sets, backpacks, and daily school essentials.",
+    region: "Mwanza",
+    district: "Nyamagana",
+    ward: "Pamba",
+  },
+];
+
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showingDemo, setShowingDemo] = useState(false);
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
 
@@ -25,6 +53,7 @@ export default function VendorsPage() {
     const load = async () => {
       setLoading(true);
       setError(null);
+      setShowingDemo(false);
 
       const { data, error } = await supabaseClient
         .from('vendors')
@@ -33,12 +62,20 @@ export default function VendorsPage() {
 
       if (error) {
         console.error('Error loading vendors', error);
-        setError('Failed to load vendors.');
+        setVendors(DEMO_VENDORS);
+        setShowingDemo(true);
+        setError(null);
         setLoading(false);
         return;
       }
 
-      setVendors((data as Vendor[]) ?? []);
+      const loadedVendors = (data as Vendor[]) ?? [];
+      if (loadedVendors.length === 0) {
+        setVendors(DEMO_VENDORS);
+        setShowingDemo(true);
+      } else {
+        setVendors(loadedVendors);
+      }
       setLoading(false);
     };
 
@@ -106,6 +143,11 @@ export default function VendorsPage() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-6">
+      {showingDemo && (
+        <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+          Demo mode: these are sample vendors to help you test browsing and ordering flows.
+        </section>
+      )}
 
       {/* Search & Filters */}
       <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5">

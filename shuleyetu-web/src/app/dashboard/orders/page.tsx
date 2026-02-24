@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useToast } from "@/components/ui/Toast";
@@ -24,6 +24,41 @@ type OrderRow = {
   payment_status: string;
   created_at: string;
 };
+
+const DEMO_VENDOR: VendorMapping = {
+  vendor_id: "demo-vendor-1",
+  vendors: [{ name: "Mlimani School Supplies" }],
+};
+
+const DEMO_ORDERS: OrderRow[] = [
+  {
+    id: "demo-order-1",
+    customer_name: "Neema M.",
+    customer_phone: "+255712345678",
+    total_amount_tzs: 125000,
+    status: "pending",
+    payment_status: "pending",
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "demo-order-2",
+    customer_name: "John P.",
+    customer_phone: "+255743210987",
+    total_amount_tzs: 218000,
+    status: "completed",
+    payment_status: "paid",
+    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "demo-order-3",
+    customer_name: "Asha K.",
+    customer_phone: "+255765998877",
+    total_amount_tzs: 89000,
+    status: "processing",
+    payment_status: "paid",
+    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+  },
+];
 
 function orderStatusClass(status: string): string {
   const value = status.toLowerCase();
@@ -62,6 +97,7 @@ export default function DashboardOrdersPage() {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [vendor, setVendor] = useState<VendorMapping | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
 
@@ -72,10 +108,16 @@ export default function DashboardOrdersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const loadOrders = async (
+  const loadOrders = useCallback(async (
     vendorId: string,
     filters?: { status?: string; fromDate?: string; toDate?: string },
   ) => {
+    if (isDemoMode) {
+      setOrders(DEMO_ORDERS);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -110,12 +152,13 @@ export default function DashboardOrdersPage() {
 
     setOrders((data as OrderRow[]) ?? []);
     setLoading(false);
-  };
+  }, [isDemoMode]);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       setError(null);
+      setIsDemoMode(false);
 
       const {
         data: { user },
@@ -148,9 +191,9 @@ export default function DashboardOrdersPage() {
       }
 
       if (!mapping) {
-        setError(
-          'No vendor is linked to this user. An admin must add a row in vendor_users for you.',
-        );
+        setVendor(DEMO_VENDOR);
+        setOrders(DEMO_ORDERS);
+        setIsDemoMode(true);
         setLoading(false);
         return;
       }
@@ -161,7 +204,7 @@ export default function DashboardOrdersPage() {
     };
 
     void init();
-  }, [router]);
+  }, [loadOrders, router]);
 
   const handleFilterSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -176,6 +219,15 @@ export default function DashboardOrdersPage() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     if (!vendor) return;
+
+    if (isDemoMode) {
+      addToast({
+        type: 'success',
+        title: 'Demo mode',
+        message: 'Status changes are disabled while viewing demo orders.',
+      });
+      return;
+    }
 
     setUpdatingId(orderId);
     setUpdateError(null);
@@ -273,6 +325,12 @@ export default function DashboardOrdersPage() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-6">
+        {isDemoMode && (
+          <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+            Demo mode: sample orders are shown because your account is not linked to a vendor.
+          </section>
+        )}
+
         {/* Filters */}
         <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
           <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto]">

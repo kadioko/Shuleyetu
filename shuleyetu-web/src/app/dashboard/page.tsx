@@ -30,10 +30,43 @@ type Analytics = {
   completedOrders: number;
 };
 
+const DEMO_VENDOR: VendorMapping = {
+  vendor_id: "demo-vendor-1",
+  vendors: [{ name: "Mlimani School Supplies" }],
+};
+
+const DEMO_RECENT_ORDERS: RecentOrder[] = [
+  {
+    id: "demo-order-1",
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    total_amount_tzs: 125000,
+    status: "pending",
+    payment_status: "pending",
+    customer_name: "Neema M.",
+  },
+  {
+    id: "demo-order-2",
+    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+    total_amount_tzs: 218000,
+    status: "completed",
+    payment_status: "paid",
+    customer_name: "John P.",
+  },
+  {
+    id: "demo-order-3",
+    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+    total_amount_tzs: 89000,
+    status: "processing",
+    payment_status: "paid",
+    customer_name: "Asha K.",
+  },
+];
+
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [vendor, setVendor] = useState<VendorMapping | null>(null);
   const [inventoryCount, setInventoryCount] = useState<number | null>(null);
   const [ordersCount, setOrdersCount] = useState<number | null>(null);
@@ -49,6 +82,7 @@ export default function DashboardPage() {
     const load = async () => {
       setLoading(true);
       setError(null);
+      setIsDemoMode(false);
 
       const {
         data: { user },
@@ -81,9 +115,21 @@ export default function DashboardPage() {
       }
 
       if (!mapping) {
-        setError(
-          'No vendor is linked to this user. An admin must add a row in vendor_users for you.',
-        );
+        setVendor(DEMO_VENDOR);
+        setIsDemoMode(true);
+        setInventoryCount(12);
+        setOrdersCount(DEMO_RECENT_ORDERS.length);
+        setRecentOrders(DEMO_RECENT_ORDERS);
+        setAnalytics({
+          totalSales: DEMO_RECENT_ORDERS
+            .filter((order) => order.payment_status === 'paid')
+            .reduce((sum, order) => sum + order.total_amount_tzs, 0),
+          paidOrders: DEMO_RECENT_ORDERS.filter((order) => order.payment_status === 'paid').length,
+          pendingOrders: DEMO_RECENT_ORDERS.filter(
+            (order) => order.status === 'pending' || order.status === 'awaiting_payment',
+          ).length,
+          completedOrders: DEMO_RECENT_ORDERS.filter((order) => order.status === 'completed').length,
+        });
         setLoading(false);
         return;
       }
@@ -225,7 +271,7 @@ export default function DashboardPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 mb-3">
                 <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span></span>
-                Live Dashboard
+                {isDemoMode ? 'Demo Dashboard' : 'Live Dashboard'}
               </div>
               <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">Vendor Dashboard</h1>
               <p className="mt-2 text-base text-slate-400">Welcome back, <span className="font-semibold text-slate-200">{vendorName}</span></p>
@@ -245,6 +291,11 @@ export default function DashboardPage() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-8">
+      {isDemoMode && (
+        <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+          Demo mode: your account is not linked to a vendor yet, so sample dashboard data is shown.
+        </section>
+      )}
 
       {/* Analytics Overview */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
