@@ -7,7 +7,7 @@ Complete API reference for Shuleyetu backend services.
 ## Base URLs
 
 - **Development**: `http://localhost:3000/api`
-- **Production**: `https://shuleyetu.com/api`
+- **Production**: `https://shuleyetu-web.vercel.app/api`
 
 ---
 
@@ -581,7 +581,7 @@ Current version: **v1**
 
 Cross-Origin Resource Sharing is enabled for:
 - `http://localhost:3000`
-- `https://shuleyetu.com`
+- `https://shuleyetu-web.vercel.app`
 - `https://*.shuleyetu.com`
 
 ---
@@ -622,7 +622,7 @@ const { data, error } = await supabase
 ### cURL
 
 ```bash
-curl -X GET 'https://shuleyetu.com/api/admin/vendors' \
+curl -X GET 'https://shuleyetu-web.vercel.app/api/admin/vendors' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -638,7 +638,7 @@ headers = {
 }
 
 response = requests.get(
-    'https://shuleyetu.com/api/admin/vendors',
+    'https://shuleyetu-web.vercel.app/api/admin/vendors',
     headers=headers
 )
 ```

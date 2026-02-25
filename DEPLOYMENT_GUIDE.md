@@ -197,7 +197,7 @@ supabase migration down
 ### Verify Deployment
 
 ```bash
-curl https://your-domain.com/api/health
+curl https://shuleyetu-web.vercel.app/api/health
 ```
 
 Expected response:
@@ -219,7 +219,7 @@ Expected response:
 
 ### Check Status Page
 
-Visit `https://your-domain.com/status` for real-time service status.
+Visit `https://shuleyetu-web.vercel.app/status` for real-time service status.
 
 ## Monitoring
 

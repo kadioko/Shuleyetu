@@ -408,11 +408,6 @@ npm run test
 
 - **[TEST_ACCOUNTS.md](./TEST_ACCOUNTS.md)** - Test credentials and testing guide
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Production deployment procedures
-- **[MONITORING_SETUP.md](./MONITORING_SETUP.md)** - Error tracking and monitoring configuration
-- **[LOAD_TESTING_GUIDE.md](./LOAD_TESTING_GUIDE.md)** - Performance testing procedures
-- **[SECURITY_AUDIT_CHECKLIST.md](./SECURITY_AUDIT_CHECKLIST.md)** - Security verification checklist
-- **[FINAL_VALIDATION_CHECKLIST.md](./FINAL_VALIDATION_CHECKLIST.md)** - Production launch checklist
-- **[FREE_DEPLOYMENT_GUIDE.md](./FREE_DEPLOYMENT_GUIDE.md)** - Free hosting options (Vercel, Netlify, Railway, Render)
 
 ---
 

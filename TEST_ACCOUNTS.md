@@ -2,7 +2,7 @@
 
 ## Production URL
 ```
-https://shuleyetu-6bphj7apm-godfrey-marikis-projects.vercel.app
+https://shuleyetu-web.vercel.app
 ```
 
 ---
@@ -177,19 +177,19 @@ https://shuleyetu-6bphj7apm-godfrey-marikis-projects.vercel.app
 
 ### Health Check
 ```bash
-curl https://shuleyetu-6bphj7apm-godfrey-marikis-projects.vercel.app/api/health
+curl https://shuleyetu-web.vercel.app/api/health
 ```
 
 ### Status Page
 ```
-https://shuleyetu-6bphj7apm-godfrey-marikis-projects.vercel.app/status
+https://shuleyetu-web.vercel.app/status
 ```
 
 ### Rate Limiting Test
 ```bash
 # Should return 429 after exceeding rate limit
 for i in {1..100}; do
-  curl https://shuleyetu-6bphj7apm-godfrey-marikis-projects.vercel.app/api/health
+  curl https://shuleyetu-web.vercel.app/api/health
 done
 ```
 
