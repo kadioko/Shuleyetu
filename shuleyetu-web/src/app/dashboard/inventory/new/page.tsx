@@ -27,6 +27,7 @@ export default function NewInventoryItemPage() {
   const [category, setCategory] = useState('other');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
+  const [imageUrl, setImageUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -114,6 +115,7 @@ export default function NewInventoryItemPage() {
       price_tzs: priceNumber,
       stock_quantity: stockNumber,
       is_active: isActive,
+      image_url: imageUrl.trim() || null,
     });
 
     if (insertError) {
@@ -254,6 +256,16 @@ export default function NewInventoryItemPage() {
             placeholder="0"
             validation={{ required: true, min: 0 }}
             helperText="Number of items available in stock"
+          />
+
+          <FormField
+            label="Image URL (optional)"
+            name="image_url"
+            value={imageUrl}
+            onChange={setImageUrl}
+            placeholder="https://..."
+            helperText="Link to a product photo (you can paste a Cloudinary or Imgur URL)"
+            className="md:col-span-2"
           />
 
           <div className="flex items-center gap-2">

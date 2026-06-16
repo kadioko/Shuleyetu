@@ -38,7 +38,7 @@ export function EmptyState({
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/20 p-12 text-center ${className}`}>
+    <div className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/20 p-12 text-center animate-in fade-in zoom-in-95 duration-500 ${className}`}>
       {icon && (
         <div className="mb-4 rounded-full bg-slate-800 p-4 text-slate-400">
           {icon}

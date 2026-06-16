@@ -18,6 +18,7 @@ type InventoryItem = {
   name: string;
   price_tzs: number | string;
   stock_quantity: number | null;
+  image_url: string | null;
 };
 
 export default function NewOrderPage() {

@@ -21,6 +21,7 @@ type InventoryItem = {
   price_tzs: number;
   stock_quantity: number;
   is_active: boolean;
+  image_url: string | null;
 };
 
 interface PageProps {
@@ -44,6 +45,7 @@ export default function EditInventoryItemPage({ params }: PageProps) {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
   const [isActive, setIsActive] = useState(true);
+  const [imageUrl, setImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -160,6 +162,7 @@ export default function EditInventoryItemPage({ params }: PageProps) {
         price_tzs: priceNumber,
         stock_quantity: stockNumber,
         is_active: isActive,
+        image_url: imageUrl.trim() || null,
       })
       .eq('id', params.itemId);
 
@@ -309,6 +312,19 @@ export default function EditInventoryItemPage({ params }: PageProps) {
               onChange={(event) => setStock(event.target.value)}
               className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-50 outline-none focus:border-sky-500"
             />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-300">
+              Image URL (optional)
+            </label>
+            <input
+              value={imageUrl}
+              onChange={(event) => setImageUrl(event.target.value)}
+              placeholder="https://..."
+              className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-50 outline-none focus:border-sky-500"
+            />
+            <p className="text-[10px] text-slate-400">Link to a product photo</p>
           </div>
 
           <div className="flex items-center gap-2">

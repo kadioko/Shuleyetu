@@ -19,6 +19,7 @@ type InventoryItem = {
   category: string;
   price_tzs: number;
   stock_quantity: number;
+  image_url: string | null;
 };
 
 export default function DashboardInventoryPage() {
@@ -238,6 +239,16 @@ export default function DashboardInventoryPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
               <article key={item.id} className="surface-panel group flex flex-col rounded-3xl p-5 transition-all duration-300 hover:border-sky-500/30 hover:shadow-[0_24px_60px_rgba(14,165,233,0.08)] hover:-translate-y-0.5">
+                {item.image_url ? (
+                  <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : null}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/10 bg-sky-500/10 text-sky-300">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>

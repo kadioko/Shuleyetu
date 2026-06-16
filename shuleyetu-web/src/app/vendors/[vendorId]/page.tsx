@@ -18,6 +18,7 @@ type InventoryItem = {
   category: string;
   price_tzs: number;
   stock_quantity: number;
+  image_url: string | null;
 };
 
 interface PageProps {
@@ -80,7 +81,7 @@ export default async function VendorDetailPage({ params }: PageProps) {
         .maybeSingle(),
       supabaseClient
         .from("inventory")
-        .select("id, name, category, price_tzs, stock_quantity")
+        .select("id, name, category, price_tzs, stock_quantity, image_url")
         .eq("vendor_id", vendorId)
         .order("name", { ascending: true }),
     ]);
@@ -232,6 +233,16 @@ export default async function VendorDetailPage({ params }: PageProps) {
                   key={item.id}
                   className="group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-all duration-300 hover:border-sky-500/40 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-sky-500/5 hover:-translate-y-0.5"
                 >
+                  {item.image_url ? (
+                    <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : null}
                   <div className="flex items-start justify-between gap-3">
                     <div className={`rounded-lg p-2 ${getCategoryColor(item.category)}`}>
                       {getCategoryIcon(item.category)}
