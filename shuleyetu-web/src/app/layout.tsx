@@ -38,6 +38,22 @@ export const metadata: Metadata = {
     "Shuleyetu connects Tanzanian families with trusted local vendors for textbooks, uniforms, and stationery. Compare prices, place orders, and pay with mobile money.",
   keywords: ["school supplies Tanzania", "textbooks Tanzania", "school uniforms", "stationery Tanzania", "Shuleyetu", "school marketplace"],
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon-72x72.svg", sizes: "72x72", type: "image/svg+xml" },
+      { url: "/icons/icon-96x96.svg", sizes: "96x96", type: "image/svg+xml" },
+      { url: "/icons/icon-128x128.svg", sizes: "128x128", type: "image/svg+xml" },
+      { url: "/icons/icon-144x144.svg", sizes: "144x144", type: "image/svg+xml" },
+      { url: "/icons/icon-152x152.svg", sizes: "152x152", type: "image/svg+xml" },
+      { url: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+      { url: "/icons/icon-384x384.svg", sizes: "384x384", type: "image/svg+xml" },
+      { url: "/icons/icon-512x512.svg", sizes: "512x512", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+    ],
+    shortcut: [{ url: "/icons/icon-192x192.svg" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
