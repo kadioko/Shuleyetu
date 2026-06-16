@@ -20,7 +20,7 @@ export function MobileNav() {
     <div className="md:hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 text-slate-300 transition-all hover:border-sky-400/30 hover:bg-white/10 hover:text-white"
         aria-label="Toggle menu"
         aria-expanded={isOpen}
       >
@@ -41,30 +41,41 @@ export function MobileNav() {
             className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
-          <nav className="fixed top-14 left-0 right-0 z-50 border-b border-slate-800 bg-slate-950 p-4 shadow-xl">
-            <ul className="space-y-1">
+          <nav className="fixed inset-x-3 top-20 z-50 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 p-4 shadow-[0_24px_80px_rgba(2,6,23,0.5)] backdrop-blur-2xl">
+            <div className="mb-4 rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/15 via-sky-500/5 to-transparent p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-300/80">
+                Navigate Shuleyetu
+              </p>
+              <p className="mt-2 text-sm text-slate-300">
+                Jump between discovery, orders, and your vendor workspace.
+              </p>
+            </div>
+            <ul className="space-y-2">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      'block rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      'flex items-center rounded-2xl px-4 py-3 text-sm font-medium transition-all',
                       pathname === link.href
-                        ? 'bg-sky-500/10 text-sky-400'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-slate-100'
+                        ? 'bg-sky-500/10 text-sky-300 shadow-[inset_0_1px_0_rgba(125,211,252,0.2)]'
+                        : 'text-slate-300 hover:bg-white/5 hover:text-slate-100'
                     )}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
+                    <svg className="ml-auto h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="mt-4 border-t border-slate-800 pt-4">
+            <div className="mt-4 border-t border-white/10 pt-4">
               <Link
                 href="/auth/login"
                 onClick={() => setIsOpen(false)}
-                className="block rounded-lg bg-sky-500 px-3 py-2 text-center text-sm font-medium text-slate-950 hover:bg-sky-400"
+                className="block rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 transition-all hover:from-sky-400 hover:to-sky-500"
               >
                 Sign in
               </Link>

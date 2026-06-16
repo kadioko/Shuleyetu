@@ -11,6 +11,7 @@ export default function HomePage() {
     <main className="flex flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-sky-800/10 via-transparent to-transparent" />
@@ -18,8 +19,9 @@ export default function HomePage() {
         {/* Decorative grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
         
-        <div className="relative mx-auto max-w-6xl px-4 py-20 md:px-6 md:py-32 lg:py-40">
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-20 md:px-6 md:py-32 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:py-36">
           <div className="max-w-3xl space-y-8 animate-fade-in">
+
             {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400 backdrop-blur-sm animate-slide-down">
               <span className="relative flex h-2 w-2">
@@ -49,7 +51,7 @@ export default function HomePage() {
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-sky-500/30 transition-all duration-300 hover:scale-105 hover:shadow-sky-400/40 hover:from-sky-400 hover:to-sky-500"
               >
                 <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
                 {t('browseVendors')}
                 <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -89,6 +91,39 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          <div className="surface-panel hidden rounded-[28px] p-6 lg:block">
+            <div className="rounded-3xl border border-sky-500/15 bg-gradient-to-br from-sky-500/10 via-transparent to-emerald-500/10 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-300/80">
+                    Why teams choose Shuleyetu
+                  </p>
+                  <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-50">
+                    Faster back-to-school coordination
+                  </h2>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                  Live marketplace
+                </span>
+              </div>
+
+              <div className="mt-6 grid gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm font-semibold text-slate-100">Compare vendors quickly</p>
+                  <p className="mt-1 text-sm text-slate-400">Browse pricing, regions, and product categories in one flow.</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm font-semibold text-slate-100">Track every order clearly</p>
+                  <p className="mt-1 text-sm text-slate-400">Parents and schools get a simpler journey from ordering to collection.</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm font-semibold text-slate-100">Help vendors sell smarter</p>
+                  <p className="mt-1 text-sm text-slate-400">Give local suppliers a digital storefront that feels professional and modern.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Floating decoration elements */}
@@ -99,20 +134,20 @@ export default function HomePage() {
       {/* Stats Section */}
       <section className="border-b border-slate-800 bg-slate-900/30">
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-6">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div className="text-center group">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="surface-panel text-center group rounded-3xl p-6">
               <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">100+</p>
               <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('vendorsCount')}</p>
             </div>
-            <div className="text-center group">
+            <div className="surface-panel text-center group rounded-3xl p-6">
               <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">5000+</p>
               <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('productsCount')}</p>
             </div>
-            <div className="text-center group">
+            <div className="surface-panel text-center group rounded-3xl p-6">
               <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">26</p>
               <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('regionsCount')}</p>
             </div>
-            <div className="text-center group">
+            <div className="surface-panel text-center group rounded-3xl p-6">
               <p className="text-3xl font-extrabold text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text md:text-4xl transition-transform group-hover:scale-110">24/7</p>
               <p className="text-sm text-slate-400 md:text-base font-medium mt-2">{t('support')}</p>
             </div>
@@ -128,7 +163,8 @@ export default function HomePage() {
         </div>
         
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-8 transition-all duration-300 hover:border-sky-500/50 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-sky-500/10 hover:-translate-y-1">
+          <div className="surface-panel group rounded-3xl p-8 transition-all duration-300 hover:border-sky-500/30 hover:shadow-xl hover:shadow-sky-500/10 hover:-translate-y-1">
+
             <div className="mb-6 inline-flex rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 p-4 text-sky-400 group-hover:scale-110 transition-transform duration-300">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -157,7 +193,8 @@ export default function HomePage() {
             </ul>
           </div>
 
-          <div className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-8 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1">
+          <div className="surface-panel group rounded-3xl p-8 transition-all duration-300 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1">
+
             <div className="mb-6 inline-flex rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 p-4 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -186,7 +223,8 @@ export default function HomePage() {
             </ul>
           </div>
 
-          <div className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-8 transition-all duration-300 hover:border-amber-500/50 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1">
+          <div className="surface-panel group rounded-3xl p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1">
+
             <div className="mb-6 inline-flex rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 p-4 text-amber-400 group-hover:scale-110 transition-transform duration-300">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -225,8 +263,9 @@ export default function HomePage() {
             <p className="mt-4 text-base text-slate-400 md:text-lg max-w-2xl mx-auto">{t('howItWorksDesc')}</p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="relative text-center group">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="surface-panel relative rounded-3xl p-8 text-center group">
+
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-2xl font-bold text-white shadow-xl shadow-sky-500/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-sky-500/40">
                 1
               </div>
@@ -236,7 +275,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="relative text-center group">
+            <div className="surface-panel relative rounded-3xl p-8 text-center group">
+
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-2xl font-bold text-white shadow-xl shadow-sky-500/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-sky-500/40">
                 2
               </div>
@@ -246,7 +286,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="relative text-center group">
+            <div className="surface-panel relative rounded-3xl p-8 text-center group">
+
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-2xl font-bold text-white shadow-xl shadow-sky-500/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-sky-500/40">
                 3
               </div>
@@ -322,7 +363,8 @@ export default function HomePage() {
 
       {/* CTA Section */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
-        <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-sky-950/50 to-slate-900/50 p-12 text-center md:p-16">
+        <div className="surface-panel relative overflow-hidden rounded-[32px] bg-gradient-to-br from-sky-950/50 to-slate-900/50 p-12 text-center md:p-16">
+
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
           <div className="relative">
             <h2 className="font-display text-3xl font-extrabold text-slate-50 md:text-4xl lg:text-5xl">

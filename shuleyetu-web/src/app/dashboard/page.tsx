@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
-import { StatCard, BarChart, LineChart, PieChart } from "@/components/ui/Chart";
+import { StatCard, LineChart, PieChart } from "@/components/ui/Chart";
 import { EmptyOrders } from "@/components/ui/EmptyState";
 
 type VendorMapping = {
@@ -278,9 +278,10 @@ export default function DashboardPage() {
     }
   };
 
+  const pendingActionCount = analytics.pendingOrders;
+
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Dashboard Header */}
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
@@ -292,6 +293,20 @@ export default function DashboardPage() {
               </div>
               <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">Vendor Dashboard</h1>
               <p className="mt-2 text-base text-slate-400">Welcome back, <span className="font-semibold text-slate-200">{vendorName}</span></p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Store health</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-100">{ordersCount ?? 0} orders tracked</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Revenue snapshot</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-100">{formatCurrency(analytics.totalSales)}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Needs attention</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-100">{pendingActionCount} open follow-ups</p>
+                </div>
+              </div>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/dashboard/inventory/new" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105">
@@ -314,7 +329,6 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Analytics Overview */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Sales"
@@ -361,11 +375,10 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* Quick Stats */}
       <section className="grid gap-4 md:grid-cols-3">
         <Link
           href="/dashboard/inventory"
-          className="group rounded-xl border border-slate-800 bg-slate-900/40 p-5 transition-all hover:border-sky-500/50 hover:bg-slate-900/60"
+          className="surface-panel group rounded-3xl p-5 transition-all hover:border-sky-500/30"
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Inventory</p>
@@ -381,7 +394,7 @@ export default function DashboardPage() {
 
         <Link
           href="/dashboard/orders"
-          className="group rounded-xl border border-slate-800 bg-slate-900/40 p-5 transition-all hover:border-sky-500/50 hover:bg-slate-900/60"
+          className="surface-panel group rounded-3xl p-5 transition-all hover:border-sky-500/30"
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Total Orders</p>
@@ -397,7 +410,7 @@ export default function DashboardPage() {
 
         <Link
           href="/dashboard/inventory/new"
-          className="group rounded-xl border border-dashed border-slate-700 bg-slate-900/20 p-5 transition-all hover:border-sky-500/50 hover:bg-slate-900/40"
+          className="surface-panel group rounded-3xl border-dashed p-5 transition-all hover:border-sky-500/30"
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Quick Action</p>
@@ -410,11 +423,15 @@ export default function DashboardPage() {
         </Link>
       </section>
 
-      {/* Charts Section */}
       <section className="grid gap-6 lg:grid-cols-2">
-        {/* Sales Chart */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-          <h3 className="text-lg font-semibold text-slate-50 mb-4">Sales Overview</h3>
+        <div className="surface-panel rounded-3xl p-5">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-50">Sales Overview</h3>
+              <p className="mt-1 text-sm text-slate-400">A simple monthly trend snapshot for your store performance.</p>
+            </div>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">Last 6 months</span>
+          </div>
           <div className="flex justify-center">
             <LineChart 
               data={[
@@ -431,9 +448,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Order Status Distribution */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-          <h3 className="text-lg font-semibold text-slate-50 mb-4">Order Status</h3>
+        <div className="surface-panel rounded-3xl p-5">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-50">Order Status</h3>
+              <p className="mt-1 text-sm text-slate-400">How current order activity is distributed across key fulfillment states.</p>
+            </div>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">Live mix</span>
+          </div>
           <div className="flex justify-center">
             <PieChart 
               data={[
@@ -448,8 +470,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Recent Orders */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+      <section className="surface-panel rounded-3xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-50">Recent Orders</h2>
           <Link
@@ -468,7 +489,7 @@ export default function DashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 text-left text-xs text-slate-400">
+                <tr className="border-b border-white/10 text-left text-xs text-slate-400">
                   <th className="pb-2 font-medium">Customer</th>
                   <th className="pb-2 font-medium">Amount</th>
                   <th className="pb-2 font-medium">Status</th>
@@ -476,18 +497,18 @@ export default function DashboardPage() {
                   <th className="pb-2 font-medium">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-white/10">
                 {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-800/30">
-                    <td className="py-3 text-slate-200">{order.customer_name || 'Anonymous'}</td>
+                  <tr key={order.id} className="hover:bg-white/5">
+                    <td className="py-4 text-slate-200">{order.customer_name || 'Anonymous'}</td>
                     <td className="py-3 font-medium text-slate-100">{formatCurrency(order.total_amount_tzs)}</td>
                     <td className="py-3">
-                      <span className={`text-xs font-medium capitalize ${getStatusColor(order.status)}`}>
+                      <span className={`inline-flex rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium capitalize ${getStatusColor(order.status)}`}>
                         {order.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="py-3">
-                      <span className={`text-xs font-medium capitalize ${getStatusColor(order.payment_status)}`}>
+                      <span className={`inline-flex rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium capitalize ${getStatusColor(order.payment_status)}`}>
                         {order.payment_status}
                       </span>
                     </td>
@@ -500,7 +521,6 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Quick Links */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { href: `/vendors/${vendor?.vendor_id}`, label: 'View Public Page', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> },
@@ -508,8 +528,8 @@ export default function DashboardPage() {
           { href: '/dashboard/inventory', label: 'Manage Inventory', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg> },
           { href: '/dashboard/orders', label: 'View All Orders', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
         ].map((link) => (
-          <Link key={link.href} href={link.href} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-sm font-medium transition-all duration-200 hover:border-sky-500/50 hover:bg-slate-900/70 hover:-translate-y-0.5">
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-colors group-hover:bg-sky-500/10 group-hover:text-sky-400">{link.icon}</span>
+          <Link key={link.href} href={link.href} className="surface-panel group flex items-center gap-3 rounded-3xl p-4 text-sm font-medium transition-all duration-200 hover:border-sky-500/30 hover:-translate-y-0.5">
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-400 transition-colors group-hover:bg-sky-500/10 group-hover:text-sky-400">{link.icon}</span>
             <span className="text-slate-300 group-hover:text-slate-100 transition-colors">{link.label}</span>
             <svg className="ml-auto h-4 w-4 text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </Link>

@@ -255,14 +255,16 @@ export function StatCard({
   const isNegative = change && change < 0;
   
   return (
-    <div className={`rounded-xl border border-slate-800 bg-slate-900/40 p-6 ${className}`}>
+    <div className={`surface-panel rounded-3xl p-6 transition-transform duration-200 hover:-translate-y-0.5 ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-slate-400">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-100">{value}</p>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-slate-100">{value}</p>
           {change !== undefined && (
-            <div className={`mt-2 flex items-center gap-1 text-xs ${
+            <div className={`mt-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${
               isPositive ? 'text-emerald-400' : isNegative ? 'text-red-400' : 'text-slate-400'
+            } ${
+              isPositive ? 'bg-emerald-500/10' : isNegative ? 'bg-red-500/10' : 'bg-slate-500/10'
             }`}>
               {isPositive && (
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -279,7 +281,7 @@ export function StatCard({
           )}
         </div>
         {icon && (
-          <div className="rounded-lg bg-sky-500/10 p-3 text-sky-400">
+          <div className="rounded-2xl border border-sky-400/10 bg-sky-500/10 p-3 text-sky-300 shadow-[inset_0_1px_0_rgba(125,211,252,0.15)]">
             {icon}
           </div>
         )}

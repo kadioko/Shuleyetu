@@ -75,50 +75,56 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
-      <body className="min-h-screen bg-slate-950 text-slate-50">
+      <body className="min-h-screen bg-slate-950 text-slate-50 antialiased selection:bg-sky-500/20 selection:text-sky-100">
         <LanguageProvider>
           <ToastProvider>
-            <div className="flex min-h-screen flex-col">
-              <header className="sticky top-0 z-50 border-b border-slate-800 bg-gradient-to-b from-slate-950 to-slate-950/95 text-sm backdrop-blur-xl safe-area-top shadow-lg shadow-slate-950/50">
-                <nav className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 md:gap-6 md:px-6 md:py-5">
-                  <Link href="/" className="group flex items-center gap-2 flex-shrink-0 min-h-[44px]">
-                    <div className="text-xl font-bold tracking-tight text-transparent bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text group-hover:from-sky-300 group-hover:to-sky-500 transition-all">
-                      Shuleyetu
+            <div className="relative flex min-h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.14),_transparent_28%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(2,6,23,0.98)_100%)]">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_45%)]" />
+              <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/75 text-sm backdrop-blur-2xl safe-area-top shadow-[0_10px_40px_rgba(2,6,23,0.35)]">
+                <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 md:gap-6 md:px-6 md:py-5">
+                  <Link href="/" className="group flex min-h-[44px] flex-shrink-0 items-center gap-3 rounded-2xl border border-transparent px-1 transition-all hover:border-white/10">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-500/20 via-sky-500/10 to-transparent text-sm font-black text-sky-300 shadow-lg shadow-sky-500/10">
+                      S
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xl font-bold tracking-tight text-transparent bg-gradient-to-r from-sky-300 via-sky-400 to-sky-600 bg-clip-text transition-all group-hover:from-sky-200 group-hover:to-sky-400">
+                        Shuleyetu
+                      </span>
+                      <span className="hidden text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500 sm:block">
+                        School supply network
+                      </span>
                     </div>
                   </Link>
 
-                  {/* Desktop navigation */}
-                  <div className="hidden md:flex items-center gap-1 text-sm">
+                  <div className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:flex">
                     <Link
                       href="/"
-                      className="text-slate-300 hover:text-sky-400 transition-colors min-h-[44px] flex items-center px-3 py-2 rounded-lg hover:bg-slate-900/50 font-medium"
+                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Home
                     </Link>
                     <Link
                       href="/vendors"
-                      className="text-slate-300 hover:text-sky-400 transition-colors min-h-[44px] flex items-center px-3 py-2 rounded-lg hover:bg-slate-900/50 font-medium"
+                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Vendors
                     </Link>
                     <Link
                       href="/orders"
-                      className="text-slate-300 hover:text-sky-400 transition-colors min-h-[44px] flex items-center px-3 py-2 rounded-lg hover:bg-slate-900/50 font-medium"
+                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Orders
                     </Link>
                     <Link
                       href="/dashboard"
-                      className="text-slate-300 hover:text-sky-400 transition-colors min-h-[44px] flex items-center px-3 py-2 rounded-lg hover:bg-slate-900/50 font-medium"
+                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Dashboard
                     </Link>
                   </div>
 
-                  {/* Right side controls */}
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="hidden md:flex items-center gap-2">
-                      <div className="h-5 w-px bg-slate-800" />
+                    <div className="hidden md:flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                       <LanguageSwitcher />
                       <ThemeToggle />
                     </div>
@@ -127,9 +133,9 @@ export default function RootLayout({
                   </div>
                 </nav>
               </header>
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <ScrollToTop />
+              <main className="relative flex-1">{children}</main>
+              <Footer />
+              <ScrollToTop />
             </div>
           </ToastProvider>
         </LanguageProvider>
