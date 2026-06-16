@@ -207,14 +207,14 @@ export default async function VendorDetailPage({ params }: PageProps) {
 
           {inventory.length === 0 ? (
             <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/20 p-12 text-center">
-              <div className="rounded-full bg-slate-800 p-4 text-slate-500">
+              <div className="rounded-full bg-slate-800 p-4 text-slate-400">
                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
               <div>
                 <p className="font-medium text-slate-300">No products available</p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-400">
                   This vendor hasn&apos;t added any products yet.
                 </p>
               </div>
@@ -253,7 +253,7 @@ export default async function VendorDetailPage({ params }: PageProps) {
                     <h3 className="font-semibold text-slate-100 group-hover:text-sky-400 transition-colors">
                       {item.name}
                     </h3>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                    <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
                       {item.category}
                     </p>
                   </div>
@@ -265,7 +265,7 @@ export default async function VendorDetailPage({ params }: PageProps) {
                         <span className="ml-1 text-xs font-normal text-slate-400">TZS</span>
                       </p>
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-400">
                       {item.stock_quantity} {item.stock_quantity === 1 ? 'unit' : 'units'} available
                     </p>
                   </div>

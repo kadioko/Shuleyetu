@@ -95,7 +95,7 @@ export default function TrackOrderPage() {
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-slate-300">Shareable order link</label>
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
@@ -123,7 +123,7 @@ export default function TrackOrderPage() {
                 <div className="w-full border-t border-slate-700/60"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-slate-900/80 px-3 text-slate-500 font-medium">OR ENTER MANUALLY</span>
+                <span className="bg-slate-900/80 px-3 text-slate-400 font-medium">OR ENTER MANUALLY</span>
               </div>
             </div>
 
@@ -132,7 +132,7 @@ export default function TrackOrderPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-slate-300">Order ID</label>
                 <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -148,7 +148,7 @@ export default function TrackOrderPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-slate-300">Access Token</label>
                 <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
@@ -166,7 +166,7 @@ export default function TrackOrderPage() {
             {/* Status Messages */}
             {!error && !isReady && (
               <div className="flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-slate-800/40 p-3.5">
-                <svg className="h-4 w-4 flex-shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="h-4 w-4 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-xs text-slate-400">Paste your share link or enter the Order ID and Token to continue</p>
@@ -201,7 +201,7 @@ export default function TrackOrderPage() {
                 type="button"
                 onClick={goToPay}
                 disabled={!isReady}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-4 py-3.5 text-sm font-bold text-emerald-400 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/50 disabled:text-slate-500 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-4 py-3.5 text-sm font-bold text-emerald-400 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/50 disabled:text-slate-400 disabled:opacity-50"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -232,7 +232,7 @@ export default function TrackOrderPage() {
         </div>
 
         <div className="mt-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-sky-400 transition-colors">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-sky-400 transition-colors">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Back to home
           </Link>

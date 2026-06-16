@@ -392,12 +392,12 @@ export default function DashboardOrdersPage() {
             </div>
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-700 bg-slate-900/20 p-16 text-center">
-              <div className="rounded-full bg-slate-800 p-5 text-slate-500">
+              <div className="rounded-full bg-slate-800 p-5 text-slate-400">
                 <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
               </div>
               <div>
                 <p className="text-lg font-bold text-slate-200">No orders yet</p>
-                <p className="mt-1 text-sm text-slate-500">Orders will appear here once customers place them.</p>
+                <p className="mt-1 text-sm text-slate-400">Orders will appear here once customers place them.</p>
               </div>
             </div>
           ) : (
@@ -408,7 +408,7 @@ export default function DashboardOrdersPage() {
                   <article key={order.id} className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/60">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-widest text-slate-500">{created}</p>
+                        <p className="text-xs uppercase tracking-widest text-slate-400">{created}</p>
                         <p className="font-semibold text-slate-100">{order.customer_name || 'Anonymous'}</p>
                         <p className="text-sm text-slate-400">{order.customer_phone || 'No phone'}</p>
                       </div>
@@ -420,7 +420,7 @@ export default function DashboardOrdersPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col gap-1">
-                            <label className="text-xs text-slate-500">Update status</label>
+                            <label className="text-xs text-slate-400">Update status</label>
                             <select
                               value={order.status}
                               onChange={(e) => handleStatusChange(order.id, e.target.value)}

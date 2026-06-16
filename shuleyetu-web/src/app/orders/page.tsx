@@ -26,15 +26,15 @@ export default async function OrdersPage() {
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Fast flow</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Fast flow</p>
               <p className="mt-2 text-lg font-semibold text-slate-100">Order in minutes</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Trusted payments</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Trusted payments</p>
               <p className="mt-2 text-lg font-semibold text-slate-100">Mobile-money ready</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Visibility</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Visibility</p>
               <p className="mt-2 text-lg font-semibold text-slate-100">Track every step</p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default async function OrdersPage() {
 
       <section className="surface-panel rounded-3xl p-5">
         <div className="flex gap-4">
-          <div className="flex-shrink-0 text-slate-500">
+          <div className="flex-shrink-0 text-slate-400">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

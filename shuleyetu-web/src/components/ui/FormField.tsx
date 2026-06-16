@@ -266,7 +266,7 @@ export function FormField({
       
       {/* Helper text */}
       {helperText && !validationMessage && (
-        <p className="text-xs text-slate-500">{helperText}</p>
+        <p className="text-xs text-slate-400">{helperText}</p>
       )}
     </div>
   );

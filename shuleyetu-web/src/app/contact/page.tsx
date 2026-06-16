@@ -96,7 +96,7 @@ export default function ContactPage() {
                   {method.icon}
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{method.label}</p>
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{method.label}</p>
                   <p className="mt-1 font-semibold text-slate-100">{method.value}</p>
                 </div>
               </a>

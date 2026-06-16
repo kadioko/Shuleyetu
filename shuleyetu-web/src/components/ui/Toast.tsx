@@ -38,9 +38,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { ...toast, id };
-    
+
     setToasts(prev => [...prev, newToast]);
-    
+
     // Auto remove after duration (default 5 seconds)
     const duration = toast.duration ?? 5000;
     setTimeout(() => {
@@ -60,7 +60,12 @@ function ToastContainer() {
   const { toasts, removeToast } = useToast();
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2">
+    <div
+      className="fixed bottom-4 right-4 z-50 space-y-2"
+      role="region"
+      aria-live="polite"
+      aria-label="Notifications"
+    >
       {toasts.map(toast => (
         <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
       ))}
@@ -114,9 +119,10 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   return (
     <div
       className={`max-w-sm rounded-lg border p-4 shadow-lg backdrop-blur-sm transition-all animate-in slide-in-from-right duration-300 ${getStyles(toast.type)}`}
+      role="alert"
     >
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0" aria-hidden="true">
           {getIcon(toast.type)}
         </div>
         <div className="flex-1 min-w-0">
@@ -128,8 +134,9 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         <button
           onClick={onClose}
           className="flex-shrink-0 rounded-md p-1 hover:bg-white/10 transition-colors"
+          aria-label="Dismiss notification"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>

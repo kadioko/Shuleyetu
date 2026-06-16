@@ -163,7 +163,7 @@ export default function StatusPage() {
 
             {/* Last Updated */}
             <div className="mt-6 border-t border-slate-800 pt-6 text-center">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400">
                 Last updated: {lastChecked?.toLocaleTimeString()}
               </p>
               <p className="mt-1 text-xs text-slate-600">
@@ -184,7 +184,7 @@ export default function StatusPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-xs text-slate-500">
+        <div className="mt-12 text-center text-xs text-slate-400">
           <p>For support, contact: support@shuleyetu.com</p>
         </div>
       </div>

@@ -130,7 +130,7 @@ export default function BlogPage() {
                     {featured.title}
                   </h2>
                   <p className="text-slate-400 leading-relaxed text-base md:text-lg">{featured.excerpt}</p>
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
+                  <div className="flex items-center gap-4 text-sm text-slate-400">
                     <span>{featured.date}</span>
                     <span>·</span>
                     <span>{featured.readTime}</span>
@@ -148,7 +148,7 @@ export default function BlogPage() {
 
         {/* All Posts Grid */}
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">All Articles</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">All Articles</p>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {rest.map((post) => (
               <Link
@@ -163,7 +163,7 @@ export default function BlogPage() {
                   {post.title}
                 </h2>
                 <p className="text-sm text-slate-400 leading-relaxed line-clamp-2 mb-4">{post.excerpt}</p>
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800 pt-4 mt-auto">
+                <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-800 pt-4 mt-auto">
                   <span>{post.date}</span>
                   <span className="flex items-center gap-1 text-sky-400 font-medium group-hover:gap-2 transition-all">
                     Read

@@ -374,7 +374,7 @@ function renderContent(content: string) {
     } else if (trimmed.startsWith('---')) {
       elements.push(<hr key={key++} className="my-8 border-slate-800" />);
     } else if (trimmed.startsWith('*Note:')) {
-      elements.push(<p key={key++} className="mt-2 text-sm italic text-slate-500">{trimmed.slice(1, -1)}</p>);
+      elements.push(<p key={key++} className="mt-2 text-sm italic text-slate-400">{trimmed.slice(1, -1)}</p>);
     } else if (trimmed.startsWith('| ')) {
       // Skip table rows — render as a note
       elements.push(<p key={key++} className="text-sm text-slate-400 font-mono">{trimmed}</p>);
@@ -419,7 +419,7 @@ export default function BlogPostPage({ params }: PageProps) {
             {post.title}
           </h1>
           <p className="mt-4 text-lg text-slate-400 leading-relaxed max-w-2xl">{post.excerpt}</p>
-          <div className="mt-6 flex items-center gap-4 text-sm text-slate-500">
+          <div className="mt-6 flex items-center gap-4 text-sm text-slate-400">
             <span>{post.date}</span>
             <span>·</span>
             <span>{post.readTime}</span>
@@ -450,7 +450,7 @@ export default function BlogPostPage({ params }: PageProps) {
         {/* More Articles */}
         {otherPosts.length > 0 && (
           <div className="mt-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">More Articles</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">More Articles</p>
             <div className="grid gap-4 md:grid-cols-3">
               {otherPosts.map((p) => (
                 <Link key={p.slug} href={`/blog/${p.slug}`} className="group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-all hover:border-sky-500/40 hover:bg-slate-900/60 hover:-translate-y-0.5">
@@ -458,7 +458,7 @@ export default function BlogPostPage({ params }: PageProps) {
                     {p.category}
                   </span>
                   <h4 className="font-semibold text-slate-100 group-hover:text-sky-400 transition-colors leading-snug text-sm flex-1 mb-2">{p.title}</h4>
-                  <p className="text-xs text-slate-500">{p.date} · {p.readTime}</p>
+                  <p className="text-xs text-slate-400">{p.date} · {p.readTime}</p>
                 </Link>
               ))}
             </div>

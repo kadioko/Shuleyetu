@@ -29,7 +29,7 @@ export default function Error({
         </p>
 
         {error.digest && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-400">
             Error ID: {error.digest}
           </p>
         )}

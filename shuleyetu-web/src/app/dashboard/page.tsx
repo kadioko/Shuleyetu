@@ -295,15 +295,15 @@ export default function DashboardPage() {
               <p className="mt-2 text-base text-slate-400">Welcome back, <span className="font-semibold text-slate-200">{vendorName}</span></p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Store health</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Store health</p>
                   <p className="mt-2 text-lg font-semibold text-slate-100">{ordersCount ?? 0} orders tracked</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Revenue snapshot</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Revenue snapshot</p>
                   <p className="mt-2 text-lg font-semibold text-slate-100">{formatCurrency(analytics.totalSales)}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Needs attention</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Needs attention</p>
                   <p className="mt-2 text-lg font-semibold text-slate-100">{pendingActionCount} open follow-ups</p>
                 </div>
               </div>
@@ -382,7 +382,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Inventory</p>
-            <svg className="h-4 w-4 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Total Orders</p>
-            <svg className="h-4 w-4 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -414,7 +414,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Quick Action</p>
-            <svg className="h-4 w-4 text-slate-500 transition-transform group-hover:rotate-90 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg className="h-4 w-4 text-slate-400 transition-transform group-hover:rotate-90 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           </div>

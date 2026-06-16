@@ -222,12 +222,12 @@ export default function DashboardInventoryPage() {
 
         {items.length === 0 ? (
           <div className="surface-panel flex flex-col items-center gap-4 rounded-3xl border-dashed p-16 text-center">
-            <div className="rounded-full bg-slate-800 p-5 text-slate-500">
+            <div className="rounded-full bg-slate-800 p-5 text-slate-400">
               <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
             </div>
             <div>
               <p className="text-lg font-bold text-slate-200">No inventory yet</p>
-              <p className="mt-1 text-sm text-slate-500">Add your first product to start receiving orders.</p>
+              <p className="mt-1 text-sm text-slate-400">Add your first product to start receiving orders.</p>
             </div>
             <Link href="/dashboard/inventory/new" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -254,12 +254,12 @@ export default function DashboardInventoryPage() {
                 </div>
                 <div className="mt-4 flex-1">
                   <h3 className="font-semibold text-slate-100 group-hover:text-sky-400 transition-colors">{item.name}</h3>
-                  <p className="mt-1 text-xs uppercase tracking-widest text-slate-500">{item.category}</p>
+                  <p className="mt-1 text-xs uppercase tracking-widest text-slate-400">{item.category}</p>
                 </div>
                 <div className="mt-4 flex items-end justify-between border-t border-white/10 pt-4">
                   <div>
                     <p className="text-xl font-bold text-sky-400">{item.price_tzs.toLocaleString('en-TZ')}<span className="ml-1 text-xs font-normal text-slate-400">TZS</span></p>
-                    <p className="text-xs text-slate-500 mt-0.5">{item.stock_quantity} units available</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{item.stock_quantity} units available</p>
                   </div>
                   <Link href={`/dashboard/inventory/${item.id}/edit`} className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 transition-all hover:border-sky-500/50 hover:text-sky-400">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>

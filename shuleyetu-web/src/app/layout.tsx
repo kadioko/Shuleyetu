@@ -90,7 +90,7 @@ export default function RootLayout({
                       <span className="text-xl font-bold tracking-tight text-transparent bg-gradient-to-r from-sky-300 via-sky-400 to-sky-600 bg-clip-text transition-all group-hover:from-sky-200 group-hover:to-sky-400">
                         Shuleyetu
                       </span>
-                      <span className="hidden text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500 sm:block">
+                      <span className="hidden text-[11px] font-medium uppercase tracking-[0.24em] text-slate-400 sm:block">
                         School supply network
                       </span>
                     </div>

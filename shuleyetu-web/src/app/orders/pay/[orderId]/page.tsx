@@ -290,7 +290,7 @@ export default function ClickpesaPayPage({ params }: PageProps) {
           <p className="text-xs text-slate-300">
             {order.customer_phone || 'No phone saved'}
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400">
             ClickPesa expects the phone number in international format without the
             plus sign, for example 255712345678.
           </p>

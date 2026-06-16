@@ -150,15 +150,15 @@ export default function VendorsPage() {
           {!loading && (
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Available vendors</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Available vendors</p>
                 <p className="mt-2 text-xl font-semibold text-slate-100">{vendors.length}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Regions covered</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Regions covered</p>
                 <p className="mt-2 text-xl font-semibold text-slate-100">{regions.length || 1}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Current results</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Current results</p>
                 <p className="mt-2 text-xl font-semibold text-slate-100">{filteredVendors.length}</p>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function VendorsPage() {
               Search vendors
             </label>
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -193,7 +193,7 @@ export default function VendorsPage() {
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -235,7 +235,7 @@ export default function VendorsPage() {
         </div>
 
         <div className="flex items-center justify-between border-t border-white/10 pt-3">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             {loading ? (
               'Loading vendors...'
             ) : (
@@ -283,14 +283,14 @@ export default function VendorsPage() {
         </div>
       ) : filteredVendors.length === 0 ? (
         <div className="surface-panel flex flex-col items-center gap-4 rounded-3xl border-dashed p-12 text-center">
-          <div className="rounded-full bg-slate-800 p-4 text-slate-500">
+          <div className="rounded-full bg-slate-800 p-4 text-slate-400">
             <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
           <div>
             <p className="font-medium text-slate-300">No vendors found</p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-400">
               Try adjusting your search or filter criteria
             </p>
           </div>
@@ -317,7 +317,7 @@ export default function VendorsPage() {
                   <h2 className="truncate text-base font-semibold text-slate-50 group-hover:text-sky-400 transition-colors">
                     {vendor.name}
                   </h2>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />

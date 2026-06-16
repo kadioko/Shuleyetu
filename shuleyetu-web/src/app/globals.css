@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  
+
   /* Dark theme colors */
   --background: 2 6 23;
   --foreground: 248 250 252;
@@ -22,7 +22,7 @@
 
 html.light {
   color-scheme: light;
-  
+
   /* Light theme colors */
   --background: 255 255 255;
   --foreground: 15 23 42;
@@ -154,6 +154,35 @@ button {
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Focus-visible rings for keyboard accessibility */
+:focus-visible {
+  outline: 2px solid rgb(14 165 233);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgb(14 165 233);
+  outline-offset: 2px;
+}
+
+/* Remove default browser outline, rely on our custom focus-visible */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* High-contrast mode support */
+@media (prefers-contrast: more) {
+  :focus-visible {
+    outline: 3px solid rgb(56 189 248);
+    outline-offset: 3px;
+  }
 }
 
 /* Mobile-friendly image handling */
@@ -300,30 +329,30 @@ html.light .from-sky-900\/20 {
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .glass-effect {
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
-  
+
   html.light .glass-effect {
     background: rgba(255, 255, 255, 0.7);
   }
-  
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
-  
+
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-20px); }
   }
-  
+
   .animate-glow {
     animation: glow 2s ease-in-out infinite alternate;
   }
-  
+
   @keyframes glow {
     from {
       box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);

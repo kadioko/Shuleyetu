@@ -26,7 +26,7 @@ export function ProgressSteps({ steps, className = '' }: ProgressStepsProps) {
                   ? 'border-sky-500 bg-sky-500 text-slate-950'
                   : step.status === 'active'
                   ? 'border-sky-500 bg-slate-900 text-sky-400'
-                  : 'border-slate-600 bg-slate-900 text-slate-500'
+                  : 'border-slate-600 bg-slate-900 text-slate-400'
                 }
               `}
             >
@@ -46,7 +46,7 @@ export function ProgressSteps({ steps, className = '' }: ProgressStepsProps) {
                   ? 'text-slate-200' 
                   : step.status === 'active'
                   ? 'text-sky-400'
-                  : 'text-slate-500'
+                  : 'text-slate-400'
               }`}>
                 {step.title}
               </p>

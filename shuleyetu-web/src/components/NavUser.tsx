@@ -59,7 +59,7 @@ export function NavUser() {
 
   if (loading) {
     return (
-      <span className="hidden text-[11px] text-slate-500 sm:inline-flex">
+      <span className="hidden text-[11px] text-slate-400 sm:inline-flex">
         …
       </span>
     );
