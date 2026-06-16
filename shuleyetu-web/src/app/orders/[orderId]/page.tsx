@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import { OrderTimeline } from "@/components/ui/OrderTimeline";
+import { OrderMessages } from "@/components/ui/OrderMessages";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 
 type OrderDetail = {
@@ -246,6 +247,14 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
             </div>
           )}
         </div>
+      </section>
+
+      <section className="max-w-3xl">
+        <OrderMessages
+          orderId={orderId}
+          senderName={orderData.customer_name || "Customer"}
+          senderRole="customer"
+        />
       </section>
     </main>
   );
