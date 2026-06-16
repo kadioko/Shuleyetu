@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import { OrderTimeline } from "@/components/ui/OrderTimeline";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 
 type OrderDetail = {
@@ -136,6 +137,11 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           </Link>
         )}
       </header>
+
+      <section className="surface-panel rounded-3xl p-6">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Order Timeline</h2>
+        <OrderTimeline currentStatus={orderData.status} paymentStatus={orderData.payment_status} />
+      </section>
 
       <section className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
