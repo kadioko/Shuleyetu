@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { StarRating } from "@/components/ui/StarRating";
+import { ReviewCard } from "@/components/ui/ReviewCard";
 import { AddToCartButton } from "@/components/ui/AddToCartButton";
 import { supabaseClient } from "@/lib/supabaseClient";
 
@@ -73,19 +75,29 @@ const getCategoryColor = (category: string) => {
 export default async function VendorDetailPage({ params }: PageProps) {
   const vendorId = params.vendorId;
 
-  const [{ data: vendor, error: vendorError }, { data: items, error: itemsError }] =
-    await Promise.all([
-      supabaseClient
-        .from("vendors")
-        .select("id, name, description, region, district, ward")
-        .eq("id", vendorId)
-        .maybeSingle(),
-      supabaseClient
-        .from("inventory")
-        .select("id, name, category, price_tzs, stock_quantity, image_url")
-        .eq("vendor_id", vendorId)
-        .order("name", { ascending: true }),
-    ]);
+  const [
+    { data: vendor, error: vendorError },
+    { data: items, error: itemsError },
+    { data: reviews, error: reviewsError },
+  ] = await Promise.all([
+    supabaseClient
+      .from("vendors")
+      .select("id, name, description, region, district, ward")
+      .eq("id", vendorId)
+      .maybeSingle(),
+    supabaseClient
+      .from("inventory")
+      .select("id, name, category, price_tzs, stock_quantity, image_url")
+      .eq("vendor_id", vendorId)
+      .order("name", { ascending: true }),
+    supabaseClient
+      .from("vendor_reviews")
+      .select("id, rating, title, comment, reviewer_name, created_at")
+      .eq("vendor_id", vendorId)
+      .eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
 
   if (vendorError) {
     console.error("Error loading vendor", vendorError);
@@ -93,6 +105,10 @@ export default async function VendorDetailPage({ params }: PageProps) {
 
   if (itemsError) {
     console.error("Error loading inventory", itemsError);
+  }
+
+  if (reviewsError) {
+    console.error("Error loading reviews", reviewsError);
   }
 
   if (!vendor) {
@@ -123,6 +139,11 @@ export default async function VendorDetailPage({ params }: PageProps) {
   }
 
   const inventory: InventoryItem[] = items ?? [];
+  const reviewList = reviews ?? [];
+  const avgRating = reviewList.length > 0
+    ? reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length
+    : 0;
+  const reviewCount = reviewList.length;
   const itemCount = inventory.length;
   const categories = [...new Set(inventory.map(item => item.category))];
 
@@ -162,6 +183,13 @@ export default async function VendorDetailPage({ params }: PageProps) {
                     <svg className="h-4 w-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
                     <span>{categories.length} {categories.length === 1 ? 'category' : 'categories'}</span>
                   </div>
+                  {reviewCount > 0 && (
+                    <div className="flex items-center gap-1.5 text-sm text-slate-400">
+                      <StarRating rating={Math.round(avgRating)} size="sm" />
+                      <span className="text-amber-400 font-medium">{avgRating.toFixed(1)}</span>
+                      <span>({reviewCount} review{reviewCount === 1 ? '' : 's'})</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -291,6 +319,38 @@ export default async function VendorDetailPage({ params }: PageProps) {
                     />
                   </div>
                 </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Reviews Section */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Reviews</h2>
+            {reviewCount > 0 && (
+              <div className="flex items-center gap-2">
+                <StarRating rating={Math.round(avgRating)} size="sm" />
+                <span className="text-sm text-slate-400">{avgRating.toFixed(1)} · {reviewCount} review{reviewCount === 1 ? '' : 's'}</span>
+              </div>
+            )}
+          </div>
+          {reviewCount === 0 ? (
+            <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/20 p-12 text-center">
+              <div className="rounded-full bg-slate-800 p-4 text-slate-400">
+                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-slate-300">No reviews yet</p>
+                <p className="mt-1 text-sm text-slate-400">Be the first to review this vendor after placing an order.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {reviewList.map((review) => (
+                <ReviewCard key={review.id} review={review} />
               ))}
             </div>
           )}
