@@ -90,7 +90,7 @@ export default function NewOrderPage() {
 
       const { data, error } = await supabaseClient
         .from('inventory')
-        .select('id, name, price_tzs, stock_quantity')
+        .select('id, name, price_tzs, stock_quantity, image_url')
         .eq('vendor_id', selectedVendorId)
         .order('name', { ascending: true });
 

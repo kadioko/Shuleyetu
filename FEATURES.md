@@ -43,6 +43,16 @@ View all products available from a specific vendor.
 - Product list with category badges
 - Stock availability indicators
 - Skeleton loaders while loading
+- Product image thumbnails (Cloudinary)
+
+#### Vendor Reviews
+- Star ratings (1–5) submitted by customers
+- Written reviews with reviewer name and date
+- Average rating calculated and displayed on vendor page
+
+#### Product Images
+- Cloudinary integration for image hosting
+- Thumbnail previews on product cards
 
 ---
 
@@ -115,6 +125,16 @@ Track order status without logging in.
 - Status badges
 - Empty state for no orders
 
+#### Order Status Timeline
+- Visual stepper showing order progress at a glance
+- 6 stages: placed → awaiting_payment → paid → processing → shipped → completed
+- Color-coded steps with a pulsing indicator on the current stage
+
+#### Order Messaging
+- In-order chat between parent/customer and vendor
+- Role-based message styling (vendor: sky, customer: emerald)
+- Auto-scroll to latest message with timestamps
+
 ---
 
 ### 5. Pay for Order
@@ -135,6 +155,68 @@ Make payment via ClickPesa mobile money.
 - Requires order ID and access token
 - Token-based authentication
 - Secure webhook verification
+
+---
+
+### 6. Shopping Cart
+
+**Path**: Cart drawer accessible from header
+
+Persistent shopping cart for browsing and adding items across vendors before placing an order.
+
+#### Features
+- Add items to cart from any vendor product page
+- Adjust item quantities with +/- controls
+- Remove individual items from cart
+- Items grouped per vendor for easy review
+- Persistent storage via localStorage (guest) and Supabase (authenticated users)
+
+#### UI Components Used
+- Cart drawer slide-out panel (accessible from header icon)
+- Cart badge showing total item count
+- Product thumbnails in cart line items
+- Per-vendor grouping headers
+- Quantity stepper controls
+
+---
+
+### 7. Print Invoice
+
+**Path**: `/orders/[orderId]/invoice`
+
+Generate and print a professional invoice for any completed order.
+
+#### Features
+- Professional invoice layout with branding
+- Vendor contact information
+- Itemized product list with quantities and unit prices
+- Order totals and payment summary
+- Print-optimized stylesheet (hides navigation/UI chrome)
+
+#### UI Components Used
+- Invoice layout component
+- Print-optimized CSS (`@media print`)
+- Browser native print dialog trigger
+
+---
+
+### 8. School Checklist Generator
+
+**Path**: `/checklist`
+
+Interactive checklist tool to help parents prepare school supply lists for their children.
+
+#### Features
+- Pre-populated checklists for Primary, Secondary, and High School levels
+- Progress tracking (checked vs. total items per category)
+- Add custom items to any category
+- Persistent state across page visits
+
+#### UI Components Used
+- Grade level tabs (Primary / Secondary / High School)
+- Category sections with collapsible groups
+- Progress bar showing completion percentage
+- Animated transitions between tabs and item states
 
 ---
 
@@ -201,7 +283,27 @@ Overview of vendor business metrics and recent activity.
 
 ---
 
-### 3. Manage Inventory
+### 3. Revenue Analytics
+
+**Path**: `/dashboard/analytics`
+
+Deep-dive analytics for vendor sales performance over configurable time periods.
+
+#### Features
+- Sales trend charts with period-over-period comparison
+- Payment method distribution breakdown
+- Order status breakdown (pending / paid / completed / cancelled)
+- Period filters: 7 days, 30 days, 90 days, all time
+
+#### UI Components Used
+- Line charts for sales trends
+- Pie charts for payment distribution
+- Bar charts for order status breakdown
+- Stat cards with period-over-period trend indicators
+
+---
+
+### 4. Manage Inventory
 
 **Path**: `/dashboard/inventory`
 
@@ -221,10 +323,16 @@ View and manage vendor's product inventory.
 - Edit links
 - EmptyState when no items
 - Skeleton loaders
+- Product image thumbnails on each item card
+
+#### Product Images
+- Cloudinary integration for image storage and delivery
+- Image upload field in Add/Edit Inventory Item forms
+- Thumbnail previews in inventory list
 
 ---
 
-### 4. Add Inventory Item
+### 5. Add Inventory Item
 
 **Path**: `/dashboard/inventory/new`
 
@@ -253,7 +361,7 @@ Create a new inventory item.
 
 ---
 
-### 5. Edit Inventory Item
+### 6. Edit Inventory Item
 
 **Path**: `/dashboard/inventory/[itemId]/edit`
 
@@ -274,7 +382,7 @@ Edit an existing inventory item.
 
 ---
 
-### 6. View Orders
+### 7. View Orders
 
 **Path**: `/dashboard/orders`
 
@@ -503,11 +611,11 @@ Hamburger menu for mobile devices.
 Progressive Web App capabilities.
 
 #### Features
-- Installable on home screen
-- App manifest
-- App icons
-- Meta tags
-- Offline support (future)
+- Installable on home screen (Android & iOS)
+- App manifest with name, icons, and shortcuts
+- Service worker for offline support and asset caching
+- Background refresh to keep data current
+- App icons and splash screens
 
 ---
 
@@ -615,16 +723,12 @@ Reliable data storage.
 - [ ] Inventory low-stock alerts
 - [ ] School-specific catalogs
 - [ ] Vendor profile images
-- [ ] Product image galleries
 - [ ] Advanced search with filters
 - [ ] Wishlist functionality
 - [ ] Order history
-- [ ] Vendor ratings and reviews
 - [ ] Multi-language support (Swahili)
 - [ ] Dark/light mode toggle
-- [ ] Offline support
 - [ ] Mobile app (React Native/Flutter)
-- [ ] Advanced analytics
 - [ ] Bulk order management
 - [ ] Vendor onboarding flow
 - [ ] Email notifications
@@ -655,21 +759,21 @@ Reliable data storage.
 
 ## Accessibility Features
 
-### 1. WCAG 2.1 Compliance
+### 1. WCAG 2.1 AA Compliance
 
-- Semantic HTML
-- ARIA labels
-- Keyboard navigation
-- Color contrast
-- Focus indicators
-- Screen reader support
+- Semantic HTML throughout
+- ARIA labels on all icon-only buttons
+- Sufficient color contrast on all interactive elements
+- Focus-visible rings on every focusable element
+- Screen reader announcements for dynamic content
 
 ### 2. Keyboard Navigation
 
 - Tab through form fields
 - Enter to submit
-- Escape to close modals
+- Escape to close modals and drawers
 - Arrow keys for navigation
+- Focus trapping inside open modals and drawers
 
 ---
 
