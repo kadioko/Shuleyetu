@@ -362,3 +362,12 @@ html.light .from-sky-900\/20 {
     }
   }
 }
+
+  .animate-shrink-width {
+    animation: shrink-width linear forwards;
+  }
+
+  @keyframes shrink-width {
+    from { width: 100%; }
+    to { width: 0%; }
+  }

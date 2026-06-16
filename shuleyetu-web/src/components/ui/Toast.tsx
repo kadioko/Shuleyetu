@@ -74,6 +74,8 @@ function ToastContainer() {
 }
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
+  const duration = toast.duration ?? 5000;
+
   const getIcon = (type: ToastType) => {
     switch (type) {
       case 'success':
@@ -116,6 +118,19 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     }
   };
 
+  const getBarColor = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return 'bg-emerald-400';
+      case 'error':
+        return 'bg-red-400';
+      case 'warning':
+        return 'bg-amber-400';
+      case 'info':
+        return 'bg-sky-400';
+    }
+  };
+
   return (
     <div
       className={`max-w-sm rounded-lg border p-4 shadow-lg backdrop-blur-sm transition-all animate-in slide-in-from-right duration-300 ${getStyles(toast.type)}`}
@@ -140,6 +155,13 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+      </div>
+      {/* Progress bar */}
+      <div className="mt-3 h-0.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div
+          className={`h-full ${getBarColor(toast.type)} animate-shrink-width`}
+          style={{ animationDuration: `${duration}ms` }}
+        />
       </div>
     </div>
   );
