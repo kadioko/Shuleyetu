@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { Footer } from "@/components/Footer";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { CartProvider } from "@/lib/cartContext";
 import { CartDrawer } from "@/components/ui/CartDrawer";
 import { CartButton } from "@/components/ui/CartButton";
@@ -146,6 +147,7 @@ export default function RootLayout({
           </ToastProvider>
         </LanguageProvider>
         </CartProvider>
+      <ServiceWorkerRegistration />
       </body>
     </html>
   );
