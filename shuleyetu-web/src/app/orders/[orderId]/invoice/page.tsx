@@ -171,7 +171,7 @@ export default async function InvoicePage({ params, searchParams }: InvoicePageP
         {/* Footer */}
         <div className="mt-8 border-t border-slate-800 pt-6 text-center print:border-gray-300">
           <p className="text-xs text-slate-500 print:text-gray-500">
-            Thank you for using Shuleyetu — Tanzania's School Supply Marketplace
+            Thank you for using Shuleyetu — Tanzania&apos;s School Supply Marketplace
           </p>
           <p className="text-xs text-slate-600 mt-1 print:text-gray-400">
             shuleyetu-web.vercel.app
