@@ -129,7 +129,8 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           Order summary
         </h1>
         <p className="text-sm text-slate-300">{created}</p>
-        {canPay && (
+        <div className="flex flex-wrap items-center gap-3">
+          {canPay && (
           <Link
             href={`/orders/pay/${orderId}?token=${encodeURIComponent(publicToken)}`}
             className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
@@ -137,6 +138,14 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
             Pay with ClickPesa
           </Link>
         )}
+          <Link
+            href={`/orders/${orderId}/invoice?token=${encodeURIComponent(publicToken)}`}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-sky-400 transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            View Invoice
+          </Link>
+        </div>
       </header>
 
       <section className="surface-panel rounded-3xl p-6">
