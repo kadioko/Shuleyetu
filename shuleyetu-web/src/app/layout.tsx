@@ -10,6 +10,9 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { Footer } from "@/components/Footer";
+import { CartProvider } from "@/lib/cartContext";
+import { CartDrawer } from "@/components/ui/CartDrawer";
+import { CartButton } from "@/components/ui/CartButton";
 import "./globals.css";
 
 const inter = Inter({
@@ -76,6 +79,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
       <body className="min-h-screen bg-slate-950 text-slate-50 antialiased selection:bg-sky-500/20 selection:text-sky-100">
+        <CartProvider>
         <LanguageProvider>
           <ToastProvider>
             <div className="relative flex min-h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.14),_transparent_28%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(2,6,23,0.98)_100%)]">
@@ -128,6 +132,7 @@ export default function RootLayout({
                       <LanguageSwitcher />
                       <ThemeToggle />
                     </div>
+                    <CartButton />
                     <NavUser />
                     <MobileNav />
                   </div>
@@ -135,10 +140,12 @@ export default function RootLayout({
               </header>
               <main className="relative flex-1">{children}</main>
               <Footer />
+              <CartDrawer />
               <ScrollToTop />
             </div>
           </ToastProvider>
         </LanguageProvider>
+        </CartProvider>
       </body>
     </html>
   );

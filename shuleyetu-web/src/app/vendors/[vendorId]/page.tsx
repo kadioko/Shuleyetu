@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AddToCartButton } from "@/components/ui/AddToCartButton";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 export const dynamic = 'force-dynamic';
@@ -275,10 +276,19 @@ export default async function VendorDetailPage({ params }: PageProps) {
                         {item.price_tzs.toLocaleString("en-TZ")}
                         <span className="ml-1 text-xs font-normal text-slate-400">TZS</span>
                       </p>
+                      <p className="text-xs text-slate-400">
+                        {item.stock_quantity} {item.stock_quantity === 1 ? 'unit' : 'units'} available
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-400">
-                      {item.stock_quantity} {item.stock_quantity === 1 ? 'unit' : 'units'} available
-                    </p>
+                    <AddToCartButton
+                      itemId={item.id}
+                      vendorId={vendor.id}
+                      vendorName={vendor.name}
+                      name={item.name}
+                      price_tzs={item.price_tzs}
+                      image_url={item.image_url}
+                      stock_quantity={item.stock_quantity}
+                    />
                   </div>
                 </article>
               ))}
