@@ -75,10 +75,10 @@ const getCategoryColor = (category: string) => {
 export default async function VendorDetailPage({ params }: PageProps) {
   const vendorId = params.vendorId;
 
+  // Fetch vendor and inventory
   const [
     { data: vendor, error: vendorError },
     { data: items, error: itemsError },
-    { data: reviews, error: reviewsError },
   ] = await Promise.all([
     supabaseClient
       .from("vendors")
@@ -90,14 +90,24 @@ export default async function VendorDetailPage({ params }: PageProps) {
       .select("id, name, category, price_tzs, stock_quantity, image_url")
       .eq("vendor_id", vendorId)
       .order("name", { ascending: true }),
-    supabaseClient
+  ]);
+
+  // Fetch reviews separately to handle case where table doesn't exist yet
+  let reviews: any[] = [];
+  let reviewsError: any = null;
+  try {
+    const { data: reviewData, error: reviewErr } = await supabaseClient
       .from("vendor_reviews")
       .select("id, rating, title, comment, reviewer_name, created_at")
       .eq("vendor_id", vendorId)
       .eq("is_approved", true)
       .order("created_at", { ascending: false })
-      .limit(10),
-  ]);
+      .limit(10);
+    if (reviewData) reviews = reviewData;
+    if (reviewErr) reviewsError = reviewErr;
+  } catch (e) {
+    reviewsError = e;
+  }
 
   if (vendorError) {
     console.error("Error loading vendor", vendorError);
