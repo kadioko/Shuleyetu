@@ -84,7 +84,8 @@ export default function VendorOnboardingPage() {
             district: formData.district,
             ward: formData.ward,
             street_address: formData.streetAddress,
-            phone: formData.phoneNumber,
+            phone_number: formData.phoneNumber,
+            email: formData.email || null,
           },
         ])
         .select()

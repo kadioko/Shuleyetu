@@ -19,17 +19,43 @@ export interface OrderEvent {
   };
 }
 
+/** Shape of an order row passed to notification handlers */
+export interface NotificationOrderData {
+  customer_phone?: string;
+  customer_name?: string;
+  vendor_id?: string;
+  total_amount_tzs?: number;
+  items?: Array<{ name?: string }>;
+}
+
+/** Shape of an inventory item passed to low-stock handlers */
+export interface NotificationItemData {
+  id?: string;
+  name?: string;
+  stock_quantity?: number;
+}
+
+/** Shape of a notification log row */
+export interface NotificationLogRow {
+  id?: string;
+  event_type?: string;
+  resource_id?: string;
+  status?: string;
+  details?: unknown;
+  created_at?: string;
+}
+
 class NotificationIntegrationService {
   /**
    * Handle order creation event
    */
-  async handleOrderCreated(orderId: string, orderData: any): Promise<void> {
+  async handleOrderCreated(orderId: string, orderData: NotificationOrderData): Promise<void> {
     try {
       // Send customer notification
       const customerNotification: OrderNotification = {
         orderId,
-        customerPhone: orderData.customer_phone,
-        customerName: orderData.customer_name,
+        customerPhone: orderData.customer_phone ?? '',
+        customerName: orderData.customer_name ?? '',
         status: 'created',
         orderTotal: orderData.total_amount_tzs,
       };
@@ -69,14 +95,14 @@ class NotificationIntegrationService {
   async handleOrderStatusUpdate(
     orderId: string,
     newStatus: 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled',
-    orderData: any
+    orderData: NotificationOrderData
   ): Promise<void> {
     try {
       // Send customer notification
       const customerNotification: OrderNotification = {
         orderId,
-        customerPhone: orderData.customer_phone,
-        customerName: orderData.customer_name,
+        customerPhone: orderData.customer_phone ?? '',
+        customerName: orderData.customer_name ?? '',
         status: newStatus,
       };
 
@@ -96,13 +122,13 @@ class NotificationIntegrationService {
   /**
    * Handle payment received event
    */
-  async handlePaymentReceived(orderId: string, orderData: any): Promise<void> {
+  async handlePaymentReceived(orderId: string, orderData: NotificationOrderData): Promise<void> {
     try {
       // Send customer notification
       const customerNotification: OrderNotification = {
         orderId,
-        customerPhone: orderData.customer_phone,
-        customerName: orderData.customer_name,
+        customerPhone: orderData.customer_phone ?? '',
+        customerName: orderData.customer_name ?? '',
         status: 'delivered',
         orderTotal: orderData.total_amount_tzs,
       };
@@ -138,7 +164,7 @@ class NotificationIntegrationService {
   /**
    * Handle low stock alert
    */
-  async handleLowStockAlert(vendorId: string, itemData: any): Promise<void> {
+  async handleLowStockAlert(vendorId: string, itemData: NotificationItemData): Promise<void> {
     try {
       // Get vendor phone
       const vendor = await this.getVendorPhone(vendorId);
@@ -158,10 +184,10 @@ class NotificationIntegrationService {
       await notificationService.notifyVendor(notification);
 
       // Log event
-      await this.logNotificationEvent('low_stock_alert', itemData.id, 'success');
+      await this.logNotificationEvent('low_stock_alert', itemData.id ?? '', 'success');
     } catch (error) {
       console.error('Error handling low stock alert:', error);
-      await this.logNotificationEvent('low_stock_alert', itemData.id, 'error', error);
+      await this.logNotificationEvent('low_stock_alert', itemData.id ?? '', 'error', error);
       throw error;
     }
   }
@@ -203,7 +229,8 @@ class NotificationIntegrationService {
   /**
    * Get vendor phone number
    */
-  private async getVendorPhone(vendorId: string): Promise<{ phone: string; name: string } | null> {
+  private async getVendorPhone(vendorId?: string): Promise<{ phone: string; name: string } | null> {
+    if (!vendorId) return null;
     try {
       const { data, error } = await supabaseClient
         .from('vendors')
@@ -226,7 +253,7 @@ class NotificationIntegrationService {
     eventType: string,
     resourceId: string,
     status: 'success' | 'error',
-    details?: any
+    details?: unknown
   ): Promise<void> {
     try {
       await supabaseClient.from('notification_logs').insert([
@@ -249,7 +276,7 @@ class NotificationIntegrationService {
   async getNotificationLogs(
     limit: number = 100,
     offset: number = 0
-  ): Promise<any[]> {
+  ): Promise<NotificationLogRow[]> {
     try {
       const { data, error } = await supabaseClient
         .from('notification_logs')

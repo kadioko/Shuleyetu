@@ -9,7 +9,8 @@ interface EmptyStateProps {
   icon?: React.ReactNode;
   action?: {
     label: string;
-    href: string;
+    href?: string;
+    onClick?: () => void;
     variant?: 'primary' | 'secondary';
   };
   secondaryAction?: {
@@ -50,12 +51,21 @@ export function EmptyState({
       
       <div className="flex flex-col gap-3 sm:flex-row">
         {action && (
-          <Link href={action.href} className={getActionClasses(action.variant)}>
-            {action.label}
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          action.onClick ? (
+            <button onClick={action.onClick} className={getActionClasses(action.variant)}>
+              {action.label}
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          ) : (
+            <Link href={action.href ?? '/'} className={getActionClasses(action.variant)}>
+              {action.label}
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )
         )}
         
         {secondaryAction && (
@@ -108,8 +118,8 @@ export function EmptyInventory() {
         variant: 'primary'
       }}
       secondaryAction={{
-        label: 'View Documentation',
-        href: '/docs'
+        label: 'Need help?',
+        href: '/contact'
       }}
     />
   );
@@ -138,7 +148,11 @@ export function EmptyVendors() {
   );
 }
 
-export function EmptySearch() {
+interface EmptySearchProps {
+  onClear?: () => void;
+}
+
+export function EmptySearch({ onClear }: EmptySearchProps = {}) {
   return (
     <EmptyState
       title="No results found"
@@ -148,11 +162,11 @@ export function EmptySearch() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       }
-      action={{
+      action={onClear ? {
         label: 'Clear Filters',
-        href: '#',
-        variant: 'secondary'
-      }}
+        onClick: onClear,
+        variant: 'secondary',
+      } : undefined}
     />
   );
 }

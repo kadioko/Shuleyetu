@@ -3,6 +3,18 @@
  * Predicts future inventory needs based on historical sales data
  */
 
+export interface ForecastingItem {
+  id?: string;
+  name?: string;
+  stock_quantity?: number;
+  price_tzs?: number;
+}
+
+export interface ForecastingSale {
+  item_id?: string;
+  quantity?: number;
+}
+
 export interface ForecastData {
   itemId: string;
   itemName: string;
@@ -110,8 +122,8 @@ class ForecastingService {
    * Generate inventory forecast for all items
    */
   generateForecast(
-    items: any[],
-    salesData: any[],
+    items: ForecastingItem[],
+    salesData: ForecastingSale[],
     leadTimeDays: number = 7,
     safetyStock: number = 10
   ): InventoryForecast {
@@ -130,9 +142,9 @@ class ForecastingService {
       }
 
       const forecast = this.forecastItem(
-        item.id,
-        item.name,
-        item.stock_quantity,
+        item.id ?? '',
+        item.name ?? '',
+        item.stock_quantity ?? 0,
         itemSales,
         leadTimeDays,
         safetyStock

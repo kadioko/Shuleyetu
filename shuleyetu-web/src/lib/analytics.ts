@@ -2,6 +2,31 @@
  * Advanced Analytics and Reporting Service
  */
 
+// Minimal shape of an order row as consumed by analytics
+export interface AnalyticsOrder {
+  id?: string;
+  total_amount_tzs?: number;
+  status?: string;
+  payment_status?: string;
+  created_at?: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  items?: Array<{
+    name?: string;
+    category?: string;
+    quantity?: number;
+    total_price_tzs?: number;
+  }>;
+}
+
+// Minimal shape of an inventory item as consumed by analytics
+export interface AnalyticsItem {
+  id?: string;
+  name?: string;
+  stock_quantity?: number;
+  price_tzs?: number;
+}
+
 export interface SalesMetrics {
   totalSales: number;
   averageOrderValue: number;
@@ -47,7 +72,7 @@ class AnalyticsService {
   /**
    * Calculate sales metrics
    */
-  calculateSalesMetrics(orders: any[]): SalesMetrics {
+  calculateSalesMetrics(orders: AnalyticsOrder[]): SalesMetrics {
     const totalOrders = orders.length;
     const totalSales = orders.reduce((sum, order) => sum + (order.total_amount_tzs || 0), 0);
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
@@ -55,9 +80,9 @@ class AnalyticsService {
     // Calculate top products
     const productMap = new Map<string, { name: string; quantity: number; revenue: number }>();
     orders.forEach(order => {
-      order.items?.forEach((item: any) => {
-        const key = item.name;
-        const existing = productMap.get(key) || { name: item.name, quantity: 0, revenue: 0 };
+      order.items?.forEach((item) => {
+        const key = item.name ?? '';
+        const existing = productMap.get(key) || { name: item.name ?? '', quantity: 0, revenue: 0 };
         existing.quantity += item.quantity || 0;
         existing.revenue += item.total_price_tzs || 0;
         productMap.set(key, existing);
@@ -71,9 +96,9 @@ class AnalyticsService {
     // Calculate top categories
     const categoryMap = new Map<string, { name: string; quantity: number; revenue: number }>();
     orders.forEach(order => {
-      order.items?.forEach((item: any) => {
-        const key = item.category;
-        const existing = categoryMap.get(key) || { name: item.category, quantity: 0, revenue: 0 };
+      order.items?.forEach((item) => {
+        const key = item.category ?? '';
+        const existing = categoryMap.get(key) || { name: item.category ?? '', quantity: 0, revenue: 0 };
         existing.quantity += item.quantity || 0;
         existing.revenue += item.total_price_tzs || 0;
         categoryMap.set(key, existing);
@@ -87,6 +112,7 @@ class AnalyticsService {
     // Calculate sales trend (daily)
     const trendMap = new Map<string, { sales: number; orders: number }>();
     orders.forEach(order => {
+      if (!order.created_at) return;
       const date = new Date(order.created_at).toISOString().split('T')[0];
       const existing = trendMap.get(date) || { sales: 0, orders: 0 };
       existing.sales += order.total_amount_tzs || 0;
@@ -112,29 +138,29 @@ class AnalyticsService {
   /**
    * Calculate inventory metrics
    */
-  calculateInventoryMetrics(items: any[]): InventoryMetrics {
+  calculateInventoryMetrics(items: AnalyticsItem[]): InventoryMetrics {
     const totalItems = items.length;
-    const lowStockItems = items.filter(item => item.stock_quantity > 0 && item.stock_quantity <= 10).length;
-    const outOfStockItems = items.filter(item => item.stock_quantity === 0).length;
+    const lowStockItems = items.filter(item => (item.stock_quantity ?? 0) > 0 && (item.stock_quantity ?? 0) <= 10).length;
+    const outOfStockItems = items.filter(item => (item.stock_quantity ?? 0) === 0).length;
     const totalStock = items.reduce((sum, item) => sum + (item.stock_quantity || 0), 0);
     const averageStockLevel = totalItems > 0 ? totalStock / totalItems : 0;
 
     // Fast and slow moving items (would need sales velocity data)
     const fastMovingItems = items
-      .filter(item => item.stock_quantity < averageStockLevel)
+      .filter(item => (item.stock_quantity ?? 0) < averageStockLevel)
       .slice(0, 5)
       .map(item => ({
-        name: item.name,
-        quantity: item.stock_quantity,
+        name: item.name ?? '',
+        quantity: item.stock_quantity ?? 0,
         turnoverRate: 0, // Would calculate from sales history
       }));
 
     const slowMovingItems = items
-      .filter(item => item.stock_quantity > averageStockLevel)
+      .filter(item => (item.stock_quantity ?? 0) > averageStockLevel)
       .slice(0, 5)
       .map(item => ({
-        name: item.name,
-        quantity: item.stock_quantity,
+        name: item.name ?? '',
+        quantity: item.stock_quantity ?? 0,
         turnoverRate: 0,
       }));
 
@@ -151,11 +177,11 @@ class AnalyticsService {
   /**
    * Calculate customer metrics
    */
-  calculateCustomerMetrics(orders: any[]): CustomerMetrics {
+  calculateCustomerMetrics(orders: AnalyticsOrder[]): CustomerMetrics {
     const customerMap = new Map<string, { orders: number; totalSpent: number }>();
 
     orders.forEach(order => {
-      const customerId = order.customer_phone || order.customer_name;
+      const customerId = order.customer_phone || order.customer_name || 'Unknown';
       const existing = customerMap.get(customerId) || { orders: 0, totalSpent: 0 };
       existing.orders += 1;
       existing.totalSpent += order.total_amount_tzs || 0;
@@ -186,8 +212,9 @@ class AnalyticsService {
   /**
    * Generate comprehensive analytics report
    */
-  generateReport(orders: any[], items: any[], startDate: Date, endDate: Date): AnalyticsReport {
+  generateReport(orders: AnalyticsOrder[], items: AnalyticsItem[], startDate: Date, endDate: Date): AnalyticsReport {
     const filteredOrders = orders.filter(order => {
+      if (!order.created_at) return false;
       const orderDate = new Date(order.created_at);
       return orderDate >= startDate && orderDate <= endDate;
     });
@@ -205,6 +232,7 @@ class AnalyticsService {
     const periodLength = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const previousStartDate = new Date(startDate.getTime() - periodLength * 24 * 60 * 60 * 1000);
     const previousOrders = orders.filter(order => {
+      if (!order.created_at) return false;
       const orderDate = new Date(order.created_at);
       return orderDate >= previousStartDate && orderDate < startDate;
     });

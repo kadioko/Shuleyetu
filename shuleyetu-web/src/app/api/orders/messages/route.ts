@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, senderName, senderRole, content } = body;
+    const { orderId, token, senderName, senderRole, content } = body;
 
-    if (!orderId || !senderName || !senderRole || !content?.trim()) {
+    if (!orderId || !token || !senderName || !senderRole || !content?.trim()) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -27,6 +27,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Message too long (max 2000 characters)' },
         { status: 400 }
+      );
+    }
+
+    // Verify the caller has the correct access token for this order
+    const { data: order, error: orderError } = await supabaseServerClient
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .eq('public_access_token', token)
+      .maybeSingle();
+
+    if (orderError || !order) {
+      return NextResponse.json(
+        { error: 'Order not found or invalid token' },
+        { status: 403 }
       );
     }
 

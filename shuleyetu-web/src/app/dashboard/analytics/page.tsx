@@ -5,6 +5,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { BarChart, LineChart, PieChart, StatCard } from '@/components/ui/Chart';
+import { analyticsService } from '@/lib/analytics';
+import { forecastingService } from '@/lib/forecasting';
 
 interface OrderRow {
   id: string;
@@ -12,6 +14,15 @@ interface OrderRow {
   status: string;
   payment_status: string;
   created_at: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+}
+
+interface InventoryRow {
+  id: string;
+  name: string;
+  stock_quantity: number;
+  price_tzs: number;
 }
 
 type Period = '7d' | '30d' | '90d' | 'all';
@@ -21,6 +32,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [inventory, setInventory] = useState<InventoryRow[]>([]);
   const [period, setPeriod] = useState<Period>('30d');
   const [vendorId, setVendorId] = useState<string | null>(null);
 
@@ -53,14 +65,25 @@ export default function AnalyticsPage() {
 
         setVendorId(mapping.vendor_id);
 
-        const { data, error: ordersError } = await supabaseClient
-          .from('orders')
-          .select('id, total_amount_tzs, status, payment_status, created_at')
-          .eq('vendor_id', mapping.vendor_id)
-          .order('created_at', { ascending: false });
+        const [
+          { data: ordersData, error: ordersError },
+          { data: invData, error: invError },
+        ] = await Promise.all([
+          supabaseClient
+            .from('orders')
+            .select('id, total_amount_tzs, status, payment_status, created_at, customer_name, customer_phone')
+            .eq('vendor_id', mapping.vendor_id)
+            .order('created_at', { ascending: false }),
+          supabaseClient
+            .from('inventory')
+            .select('id, name, stock_quantity, price_tzs')
+            .eq('vendor_id', mapping.vendor_id),
+        ]);
 
         if (ordersError) throw ordersError;
-        setOrders(data ?? []);
+        if (invError) throw invError;
+        setOrders(ordersData ?? []);
+        setInventory(invData ?? []);
       } catch (err) {
         console.error('Error loading analytics', err);
         setError('Failed to load analytics data.');
@@ -125,6 +148,30 @@ export default function AnalyticsPage() {
       { label: 'Failed', value: failed },
     ].filter((d) => d.value > 0);
   }, [filteredOrders]);
+
+  // --- Advanced analytics from lib ---
+  const customerMetrics = useMemo(
+    () => analyticsService.calculateCustomerMetrics(filteredOrders),
+    [filteredOrders],
+  );
+
+  const inventoryMetrics = useMemo(
+    () => analyticsService.calculateInventoryMetrics(inventory),
+    [inventory],
+  );
+
+  const report = useMemo(() => {
+    if (filteredOrders.length === 0) return null;
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 3650;
+    const endDate = new Date();
+    const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+    return analyticsService.generateReport(orders, inventory, startDate, endDate);
+  }, [orders, inventory, filteredOrders.length, period]);
+
+  const inventoryForecast = useMemo(
+    () => (inventory.length > 0 ? forecastingService.generateForecast(inventory, []) : null),
+    [inventory],
+  );
 
   if (loading) {
     return (
@@ -238,9 +285,106 @@ export default function AnalyticsPage() {
                 <span className="text-sm text-slate-300">Period total</span>
                 <span className="text-sm font-bold text-emerald-400">{filteredOrders.length} orders</span>
               </div>
+              {report && (
+                <>
+                  <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
+                    <span className="text-sm text-slate-300">Period growth</span>
+                    <span className={`text-sm font-bold ${report.summary.growthRate >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {report.summary.growthRate >= 0 ? '+' : ''}{report.summary.growthRate.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
+                    <span className="text-sm text-slate-300">Next 30-day forecast</span>
+                    <span className="text-sm font-bold text-sky-400">
+                      {Math.round(report.summary.forecast.nextMonth).toLocaleString('en-TZ')} TZS
+                    </span>
+                  </div>
+                  {report.summary.bestDay.date && (
+                    <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
+                      <span className="text-sm text-slate-300">Best day</span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        {report.summary.bestDay.date} &mdash; {report.summary.bestDay.sales.toLocaleString('en-TZ')} TZS
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </section>
         </div>
+      )}
+
+      {/* Customer Metrics */}
+      {customerMetrics.totalCustomers > 0 && (
+        <section>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Customer Insights</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard title="Unique Customers" value={customerMetrics.totalCustomers} icon={<svg className="h-5 w-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} />
+            <StatCard title="Repeat Customers" value={customerMetrics.repeatCustomers} icon={<svg className="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>} />
+            <StatCard title="Repeat Rate" value={`${customerMetrics.repeatRate.toFixed(1)}%`} icon={<svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
+            <StatCard title="Avg Customer Value" value={`${Math.round(customerMetrics.averageCustomerValue).toLocaleString('en-TZ')} TZS`} icon={<svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
+          </div>
+          {customerMetrics.topCustomers.length > 0 && (
+            <div className="mt-4 surface-panel rounded-3xl p-6">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Top Customers</h3>
+              <div className="space-y-2">
+                {customerMetrics.topCustomers.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
+                    <span className="text-sm text-slate-200">{c.name || 'Unknown'}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-slate-400">{c.orders} order{c.orders === 1 ? '' : 's'}</span>
+                      <span className="text-sm font-bold text-emerald-400">{c.totalSpent.toLocaleString('en-TZ')} TZS</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Inventory Health + Forecast */}
+      {inventory.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Inventory Health</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard title="Total Items" value={inventoryMetrics.totalItems} icon={<svg className="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
+            <StatCard title="Low Stock" value={inventoryMetrics.lowStockItems} icon={<svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>} />
+            <StatCard title="Out of Stock" value={inventoryMetrics.outOfStockItems} icon={<svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>} />
+            <StatCard title="Avg Stock Level" value={inventoryMetrics.averageStockLevel.toFixed(0)} icon={<svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
+          </div>
+          {inventoryForecast && inventoryForecast.summary.itemsAtRisk > 0 && (
+            <div className="mt-4 surface-panel rounded-3xl p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Reorder Forecast</h3>
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
+                  {inventoryForecast.summary.itemsAtRisk} item{inventoryForecast.summary.itemsAtRisk === 1 ? '' : 's'} at risk
+                </span>
+              </div>
+              <div className="space-y-2">
+                {inventoryForecast.items
+                  .filter((f) => f.daysUntilStockout < 30)
+                  .slice(0, 5)
+                  .map((f) => (
+                    <div key={f.itemId} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
+                      <div>
+                        <span className="text-sm text-slate-200">{f.itemName}</span>
+                        <span className={`ml-2 text-xs font-medium ${f.trend === 'increasing' ? 'text-emerald-400' : f.trend === 'decreasing' ? 'text-red-400' : 'text-slate-400'}`}>
+                          {f.trend}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-slate-400">{f.currentStock} in stock</span>
+                        <span className={`text-sm font-bold ${f.daysUntilStockout < 7 ? 'text-red-400' : 'text-amber-400'}`}>
+                          {f.daysUntilStockout === 999 ? '∞' : `${Math.floor(f.daysUntilStockout)}d`} left
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </section>
       )}
     </main>
   );

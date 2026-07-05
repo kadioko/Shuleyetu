@@ -2,21 +2,38 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/vendors', label: 'Vendors' },
   { href: '/orders', label: 'Orders' },
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/schools/portal', label: 'Schools' },
 ];
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      setIsLoggedIn(Boolean(session));
+    };
+    void checkSession();
+
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session));
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -115,13 +132,26 @@ export function MobileNav() {
               ))}
             </ul>
             <div className="mt-4 border-t border-white/10 pt-4">
-              <Link
-                href="/auth/login"
-                onClick={() => setIsOpen(false)}
-                className="block rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 transition-all hover:from-sky-400 hover:to-sky-500"
-              >
-                Sign in
-              </Link>
+              {isLoggedIn ? (
+                <button
+                  onClick={async () => {
+                    setIsOpen(false);
+                    await supabaseClient.auth.signOut();
+                    router.push('/');
+                  }}
+                  className="block w-full rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-center text-sm font-semibold text-slate-300 transition-all hover:border-red-500/40 hover:text-red-400"
+                >
+                  Sign out
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsOpen(false)}
+                  className="block rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 transition-all hover:from-sky-400 hover:to-sky-500"
+                >
+                  Sign in
+                </Link>
+              )}
             </div>
           </nav>
         </>

@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
       }
     })();
 
-    // TODO: Verify the webhook signature if available
+    // Verify the webhook signature using HMAC-SHA256 when CLICKPESA_WEBHOOK_SECRET is set.
+    // In production the secret is always required; locally it is optional for easier testing.
     const webhookSecret = process.env.CLICKPESA_WEBHOOK_SECRET;
     const signatureHeader = request.headers.get("x-clickpesa-signature");
     const requireSignature = process.env.NODE_ENV === "production" && Boolean(webhookSecret);

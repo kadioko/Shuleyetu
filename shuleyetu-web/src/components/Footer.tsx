@@ -110,6 +110,11 @@ export function Footer() {
                     Dashboard
                   </Link>
                 </li>
+                <li>
+                  <Link href="/schools/portal" className="text-slate-400 hover:text-sky-400 transition-colors">
+                    School Portal
+                  </Link>
+                </li>
               </ul>
             </div>
 

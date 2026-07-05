@@ -261,6 +261,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
       <section className="max-w-3xl">
         <OrderMessages
           orderId={orderId}
+          token={publicToken}
           senderName={orderData.customer_name || "Customer"}
           senderRole="customer"
         />

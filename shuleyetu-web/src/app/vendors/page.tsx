@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { VendorCardSkeleton } from '@/components/ui/SkeletonLoader';
 
@@ -41,13 +42,17 @@ const DEMO_VENDORS: Vendor[] = [
   },
 ];
 
-export default function VendorsPage() {
+function VendorsInner() {
+  const searchParams = useSearchParams();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showingDemo, setShowingDemo] = useState(false);
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState(
+    () => searchParams?.get('category') ?? '',
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -124,9 +129,10 @@ export default function VendorsPage() {
   const clearFilters = () => {
     setSearch('');
     setRegionFilter('');
+    setCategoryFilter('');
   };
 
-  const hasFilters = search.trim() !== '' || regionFilter !== '';
+  const hasFilters = search.trim() !== '' || regionFilter !== '' || categoryFilter !== '';
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -170,6 +176,27 @@ export default function VendorsPage() {
       {showingDemo && (
         <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
           Demo mode: these are sample vendors to help you test browsing and ordering flows.
+        </section>
+      )}
+
+      {categoryFilter && (
+        <section className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-sky-200">
+                Showing vendors for: <span className="capitalize">{categoryFilter}</span>
+              </p>
+              <p className="mt-0.5 text-xs text-sky-300/70">
+                Browse the vendors below and open each one to see their {categoryFilter} products.
+              </p>
+            </div>
+            <button
+              onClick={() => setCategoryFilter('')}
+              className="flex-shrink-0 rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
         </section>
       )}
 
@@ -375,5 +402,13 @@ export default function VendorsPage() {
       )}
     </div>
     </main>
+  );
+}
+
+export default function VendorsPage() {
+  return (
+    <Suspense>
+      <VendorsInner />
+    </Suspense>
   );
 }

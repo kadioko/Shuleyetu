@@ -2,7 +2,7 @@ import Link from "next/link";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewCard } from "@/components/ui/ReviewCard";
 import { AddToCartButton } from "@/components/ui/AddToCartButton";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseServerClient as supabaseClient } from "@/lib/supabaseServer";
 
 export const dynamic = 'force-dynamic';
 

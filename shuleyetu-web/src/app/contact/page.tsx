@@ -4,18 +4,45 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/Toast';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setSubmitted(true);
-    setLoading(false);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json().catch(() => ({})) as { error?: string };
+
+      if (!response.ok) {
+        const msg = data?.error ?? 'Something went wrong. Please try again.';
+        setError(msg);
+        addToast({ type: 'error', title: 'Message not sent', message: msg });
+        return;
+      }
+
+      setSubmitted(true);
+      addToast({ type: 'success', title: 'Message sent!', message: "We'll get back to you within 24 hours." });
+    } catch {
+      const msg = 'Network error. Please check your connection and try again.';
+      setError(msg);
+      addToast({ type: 'error', title: 'Message not sent', message: msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const contactMethods = [
@@ -131,6 +158,11 @@ export default function ContactPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <p className="rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                    {error}
+                  </p>
+                )}
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-slate-300">Full Name</label>

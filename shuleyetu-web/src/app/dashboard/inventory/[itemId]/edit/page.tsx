@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
-import { useToast } from "@/components/ToastProvider";
+import { useToast } from "@/components/ui/Toast";
 
 type VendorMapping = {
   vendor_id: string;
@@ -32,7 +32,7 @@ interface PageProps {
 
 export default function EditInventoryItemPage({ params }: PageProps) {
   const router = useRouter();
-  const { showToast } = useToast();
+  const { addToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export default function EditInventoryItemPage({ params }: PageProps) {
 
       const { data, error: invError } = await supabaseClient
         .from('inventory')
-        .select('id, name, description, category, price_tzs, stock_quantity, is_active')
+        .select('id, name, description, category, price_tzs, stock_quantity, is_active, image_url')
         .eq('id', params.itemId)
         .maybeSingle();
 
@@ -112,37 +112,35 @@ export default function EditInventoryItemPage({ params }: PageProps) {
         return;
       }
 
-      const castItem = data as unknown as InventoryItem;
-      setItem(castItem);
-      setName(castItem.name);
-      setDescription(castItem.description ?? '');
-      setCategory(castItem.category);
-      setPrice(String(castItem.price_tzs));
-      setStock(String(castItem.stock_quantity));
-      setIsActive(castItem.is_active);
-
+      const loadedItem = data as InventoryItem;
+      setItem(loadedItem);
+      setName(loadedItem.name);
+      setDescription(loadedItem.description ?? '');
+      setCategory(loadedItem.category);
+      setPrice(String(loadedItem.price_tzs));
+      setStock(String(loadedItem.stock_quantity));
+      setIsActive(loadedItem.is_active);
+      setImageUrl(loadedItem.image_url ?? '');
       setLoading(false);
     };
 
     void load();
   }, [router, params.itemId]);
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!item) return;
-
     setError(null);
-
-    const priceNumber = Number(price);
-    const stockNumber = Number(stock);
 
     if (!name.trim()) {
       setError('Name is required.');
       return;
     }
 
-    if (Number.isNaN(priceNumber) || priceNumber <= 0) {
-      setError('Enter a valid price in TZS.');
+    const priceNumber = Number(price);
+    const stockNumber = Number(stock);
+
+    if (Number.isNaN(priceNumber) || priceNumber < 0) {
+      setError('Enter a valid price (0 or more).');
       return;
     }
 
@@ -169,19 +167,19 @@ export default function EditInventoryItemPage({ params }: PageProps) {
     if (updateError) {
       console.error('Error updating inventory item', updateError);
       setError('Failed to update item.');
-      showToast({
-        variant: 'error',
+      addToast({
+        type: 'error',
         title: 'Item not updated',
-        description: 'Something went wrong while saving your changes.',
+        message: 'Something went wrong while saving your changes.',
       });
       setSubmitting(false);
       return;
     }
 
-    showToast({
-      variant: 'success',
+    addToast({
+      type: 'success',
       title: 'Item updated',
-      description: 'Your inventory item changes have been saved.',
+      message: 'Your inventory item changes have been saved.',
     });
 
     router.push('/dashboard/inventory');
@@ -327,7 +325,7 @@ export default function EditInventoryItemPage({ params }: PageProps) {
             <p className="text-[10px] text-slate-400">Link to a product photo</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:col-span-2">
             <input
               id="is_active"
               type="checkbox"
@@ -343,7 +341,7 @@ export default function EditInventoryItemPage({ params }: PageProps) {
             </label>
           </div>
 
-          <div className="md:col-span-2">
+          <div className="flex gap-3 md:col-span-2">
             <button
               type="submit"
               disabled={submitting}
@@ -355,12 +353,18 @@ export default function EditInventoryItemPage({ params }: PageProps) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Saving…
+                  <span className="ml-2">Saving...</span>
                 </>
               ) : (
                 'Save changes'
               )}
             </button>
+            <Link
+              href="/dashboard/inventory"
+              className="inline-flex items-center rounded-md border border-slate-700 bg-slate-900/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+            >
+              Cancel
+            </Link>
           </div>
         </form>
       </section>

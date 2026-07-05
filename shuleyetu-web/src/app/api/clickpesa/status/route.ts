@@ -82,7 +82,12 @@ export async function POST(request: NextRequest) {
       },
     );
 
-    const data = (await response.json().catch(() => ({}))) as any;
+    let data: unknown = {};
+    try {
+      data = await response.json();
+    } catch {
+      // Body is not JSON — leave data as empty object; the !response.ok branch below surfaces the error
+    }
 
     if (!response.ok) {
       log("error", "ClickPesa status error", {
@@ -92,9 +97,11 @@ export async function POST(request: NextRequest) {
         body: data,
       });
 
+      const d = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
       const providerMessage =
-        (data && typeof data === "object" && (data.message || data.error || data.detail)) ||
-        undefined;
+        (typeof d["message"] === "string" ? d["message"] :
+         typeof d["error"] === "string" ? d["error"] :
+         typeof d["detail"] === "string" ? d["detail"] : undefined);
 
       const userMessage =
         providerMessage ||
@@ -112,14 +119,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payments = Array.isArray(data) ? data : [];
+    const payments = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
     const latest = payments[0];
 
     if (!latest) {
       return jsonError("No payment records found for this order in ClickPesa.", 404);
     }
 
-    const clickpesaStatus = String(latest.status ?? "");
+    const clickpesaStatus = String(latest["status"] ?? "");
     const mappedPaymentStatus = mapClickpesaToPaymentStatus(clickpesaStatus);
 
     const { error: updateError } = await supabaseServerClient
@@ -127,8 +134,8 @@ export async function POST(request: NextRequest) {
       .update({
         payment_status: mappedPaymentStatus,
         status: mappedPaymentStatus === "paid" ? "paid" : "awaiting_payment",
-        payment_reference: latest.orderReference ?? orderReference,
-        clickpesa_transaction_id: latest.id ?? null,
+        payment_reference: latest["orderReference"] ?? orderReference,
+        clickpesa_transaction_id: latest["id"] ?? null,
         clickpesa_raw_payload: data,
       })
       .eq("id", order.id);

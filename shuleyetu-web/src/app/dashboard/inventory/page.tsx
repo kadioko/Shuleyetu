@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { EmptyInventory } from "@/components/ui/EmptyState";
+
+const LOW_STOCK_THRESHOLD = 5;
 
 type VendorMapping = {
   vendor_id: string;
@@ -28,6 +30,17 @@ export default function DashboardInventoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [vendor, setVendor] = useState<VendorMapping | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+
+  const filteredItems = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return items.filter((item) => {
+      if (categoryFilter && item.category !== categoryFilter) return false;
+      if (!term) return true;
+      return item.name.toLowerCase().includes(term);
+    });
+  }, [items, search, categoryFilter]);
 
   useEffect(() => {
     const load = async () => {
@@ -78,7 +91,7 @@ export default function DashboardInventoryPage() {
 
       const { data: inventory, error: invError } = await supabaseClient
         .from('inventory')
-        .select('id, name, category, price_tzs, stock_quantity')
+        .select('id, name, category, price_tzs, stock_quantity, image_url')
         .eq('vendor_id', vendorId)
         .order('name', { ascending: true });
 
@@ -152,6 +165,9 @@ export default function DashboardInventoryPage() {
   const outOfStock = items.filter((i) => i.stock_quantity === 0).length;
   const categories = [...new Set(items.map((i) => i.category))];
   const totalStockUnits = items.reduce((sum, item) => sum + item.stock_quantity, 0);
+  const lowStockItems = items.filter(
+    (i) => i.stock_quantity > 0 && i.stock_quantity <= LOW_STOCK_THRESHOLD,
+  );
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -196,6 +212,27 @@ export default function DashboardInventoryPage() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6">
+        {lowStockItems.length > 0 && (
+          <section className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-200">Low stock alert — {lowStockItems.length} item{lowStockItems.length > 1 ? 's' : ''} running low</p>
+                <ul className="mt-1.5 space-y-0.5">
+                  {lowStockItems.map((item) => (
+                    <li key={item.id} className="flex items-center justify-between text-xs text-amber-300/80">
+                      <span>{item.name}</span>
+                      <span className="font-medium">{item.stock_quantity} unit{item.stock_quantity !== 1 ? 's' : ''} left</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
         {items.length > 0 && (
           <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="surface-panel rounded-3xl p-5">
@@ -221,6 +258,63 @@ export default function DashboardInventoryPage() {
           </section>
         )}
 
+        {items.length > 0 && (
+          <section className="surface-panel mb-6 rounded-3xl p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1 space-y-1.5">
+                <label className="block text-xs font-medium text-slate-400">Search items</label>
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by name…"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 py-2.5 pl-10 pr-4 text-sm text-slate-50 placeholder-slate-500 outline-none transition-colors focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="w-full space-y-1.5 sm:w-44">
+                <label className="block text-xs font-medium text-slate-400">Category</label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-50 outline-none focus:border-sky-500"
+                >
+                  <option value="">All categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              {(search || categoryFilter) && (
+                <button
+                  onClick={() => { setSearch(''); setCategoryFilter(''); }}
+                  className="rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            {(search || categoryFilter) && (
+              <p className="mt-3 text-xs text-slate-400">
+                Showing <span className="font-semibold text-slate-200">{filteredItems.length}</span> of {items.length} items
+              </p>
+            )}
+          </section>
+        )}
+
         {items.length === 0 ? (
           <div className="surface-panel flex flex-col items-center gap-4 rounded-3xl border-dashed p-16 text-center">
             <div className="rounded-full bg-slate-800 p-5 text-slate-400">
@@ -235,9 +329,27 @@ export default function DashboardInventoryPage() {
               Add First Item
             </Link>
           </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="surface-panel flex flex-col items-center gap-4 rounded-3xl border-dashed p-12 text-center">
+            <div className="rounded-full bg-slate-800 p-4 text-slate-400">
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-base font-semibold text-slate-200">No items match your search</p>
+              <p className="mt-1 text-sm text-slate-400">Try a different name or clear the filters.</p>
+            </div>
+            <button
+              onClick={() => { setSearch(''); setCategoryFilter(''); }}
+              className="rounded-xl bg-slate-800 px-5 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <article key={item.id} className="surface-panel group flex flex-col rounded-3xl p-5 transition-all duration-300 hover:border-sky-500/30 hover:shadow-[0_24px_60px_rgba(14,165,233,0.08)] hover:-translate-y-0.5">
                 {item.image_url ? (
                   <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
@@ -253,13 +365,17 @@ export default function DashboardInventoryPage() {
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/10 bg-sky-500/10 text-sky-300">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                   </div>
-                  {item.stock_quantity > 0 ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>In Stock
-                    </span>
-                  ) : (
+                  {item.stock_quantity === 0 ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>Out of Stock
+                    </span>
+                  ) : item.stock_quantity <= LOW_STOCK_THRESHOLD ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>Low Stock
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>In Stock
                     </span>
                   )}
                 </div>

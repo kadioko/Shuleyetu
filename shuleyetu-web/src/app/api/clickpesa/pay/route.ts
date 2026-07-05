@@ -109,7 +109,12 @@ export async function POST(request: NextRequest) {
       },
     );
 
-    const data = (await response.json().catch(() => ({}))) as any;
+    let data: Record<string, unknown> = {};
+    try {
+      data = (await response.json()) as Record<string, unknown>;
+    } catch {
+      // Body is not JSON — leave data as empty object; the !response.ok branch below surfaces the error
+    }
 
     if (!response.ok) {
       log("error", "ClickPesa initiate error", {
@@ -120,8 +125,9 @@ export async function POST(request: NextRequest) {
       });
 
       const providerMessage =
-        (data && typeof data === "object" && (data.message || data.error || data.detail)) ||
-        undefined;
+        (typeof data.message === "string" ? data.message :
+         typeof data.error === "string" ? data.error :
+         typeof data.detail === "string" ? data.detail : undefined);
 
       const userMessage =
         providerMessage ||
@@ -139,14 +145,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const clickpesaStatus = String(data.status ?? "");
+    const clickpesaStatus = String(data["status"] ?? "");
     const mappedPaymentStatus = mapClickpesaToPaymentStatus(clickpesaStatus);
 
     const { error: updateError } = await supabaseServerClient
       .from("orders")
       .update({
         payment_reference: orderReference,
-        clickpesa_transaction_id: data.id ?? null,
+        clickpesa_transaction_id: data["id"] ?? null,
         clickpesa_raw_payload: data,
         payment_status: mappedPaymentStatus,
         status: mappedPaymentStatus === "paid" ? "paid" : "awaiting_payment",

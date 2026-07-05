@@ -25,40 +25,7 @@ type OrderRow = {
   created_at: string;
 };
 
-const DEMO_VENDOR: VendorMapping = {
-  vendor_id: "demo-vendor-1",
-  vendors: [{ name: "Mlimani School Supplies" }],
-};
 
-const DEMO_ORDERS: OrderRow[] = [
-  {
-    id: "demo-order-1",
-    customer_name: "Neema M.",
-    customer_phone: "+255712345678",
-    total_amount_tzs: 125000,
-    status: "pending",
-    payment_status: "pending",
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "demo-order-2",
-    customer_name: "John P.",
-    customer_phone: "+255743210987",
-    total_amount_tzs: 218000,
-    status: "completed",
-    payment_status: "paid",
-    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "demo-order-3",
-    customer_name: "Asha K.",
-    customer_phone: "+255765998877",
-    total_amount_tzs: 89000,
-    status: "processing",
-    payment_status: "paid",
-    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-  },
-];
 
 function orderStatusClass(status: string): string {
   const value = status.toLowerCase();
@@ -112,12 +79,6 @@ export default function DashboardOrdersPage() {
     vendorId: string,
     filters?: { status?: string; fromDate?: string; toDate?: string },
   ) => {
-    if (isDemoMode) {
-      setOrders(DEMO_ORDERS);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -152,7 +113,7 @@ export default function DashboardOrdersPage() {
 
     setOrders((data as OrderRow[]) ?? []);
     setLoading(false);
-  }, [isDemoMode]);
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -190,8 +151,6 @@ export default function DashboardOrdersPage() {
         }
 
         if (!mapping) {
-          setVendor(DEMO_VENDOR);
-          setOrders(DEMO_ORDERS);
           setIsDemoMode(true);
           return;
         }
@@ -201,10 +160,7 @@ export default function DashboardOrdersPage() {
         await loadOrders(mapping.vendor_id, {});
       } catch (err) {
         console.error('Unexpected error loading orders dashboard', err);
-        setVendor(DEMO_VENDOR);
-        setOrders(DEMO_ORDERS);
-        setIsDemoMode(true);
-        setError(null);
+        setError('Failed to load orders. Please refresh the page.');
       } finally {
         setLoading(false);
       }
@@ -226,15 +182,6 @@ export default function DashboardOrdersPage() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     if (!vendor) return;
-
-    if (isDemoMode) {
-      addToast({
-        type: 'success',
-        title: 'Demo mode',
-        message: 'Status changes are disabled while viewing demo orders.',
-      });
-      return;
-    }
 
     setUpdatingId(orderId);
     setUpdateError(null);
@@ -309,6 +256,43 @@ export default function DashboardOrdersPage() {
     );
   }
 
+  if (isDemoMode) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-lg space-y-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-sky-500/10 text-sky-400">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-50">No vendor account yet</h1>
+            <p className="mt-2 text-slate-400">
+              Your account is not linked to a vendor store. Complete onboarding to start managing orders.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/vendor/onboarding"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Set up your vendor store
+            </Link>
+            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/50 px-6 py-3 text-sm font-semibold text-slate-300 transition-all hover:border-slate-600 hover:text-white">
+              Back to dashboard
+            </Link>
+          </div>
+          <p className="text-xs text-slate-500">
+            If you believe this is an error, contact an admin to link your account to a vendor.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   const vendorName = vendor?.vendors?.[0]?.name ?? 'Your vendor';
 
   return (
@@ -332,12 +316,6 @@ export default function DashboardOrdersPage() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-6">
-        {isDemoMode && (
-          <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-            Demo mode: sample orders are shown because your account is not linked to a vendor.
-          </section>
-        )}
-
         {/* Filters */}
         <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
           <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto]">

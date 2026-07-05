@@ -30,37 +30,7 @@ type Analytics = {
   completedOrders: number;
 };
 
-const DEMO_VENDOR: VendorMapping = {
-  vendor_id: "demo-vendor-1",
-  vendors: [{ name: "Mlimani School Supplies" }],
-};
 
-const DEMO_RECENT_ORDERS: RecentOrder[] = [
-  {
-    id: "demo-order-1",
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    total_amount_tzs: 125000,
-    status: "pending",
-    payment_status: "pending",
-    customer_name: "Neema M.",
-  },
-  {
-    id: "demo-order-2",
-    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-    total_amount_tzs: 218000,
-    status: "completed",
-    payment_status: "paid",
-    customer_name: "John P.",
-  },
-  {
-    id: "demo-order-3",
-    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-    total_amount_tzs: 89000,
-    status: "processing",
-    payment_status: "paid",
-    customer_name: "Asha K.",
-  },
-];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -114,21 +84,8 @@ export default function DashboardPage() {
         }
 
         if (!mapping) {
-          setVendor(DEMO_VENDOR);
           setIsDemoMode(true);
-          setInventoryCount(12);
-          setOrdersCount(DEMO_RECENT_ORDERS.length);
-          setRecentOrders(DEMO_RECENT_ORDERS);
-          setAnalytics({
-            totalSales: DEMO_RECENT_ORDERS
-              .filter((order) => order.payment_status === 'paid')
-              .reduce((sum, order) => sum + order.total_amount_tzs, 0),
-            paidOrders: DEMO_RECENT_ORDERS.filter((order) => order.payment_status === 'paid').length,
-            pendingOrders: DEMO_RECENT_ORDERS.filter(
-              (order) => order.status === 'pending' || order.status === 'awaiting_payment',
-            ).length,
-            completedOrders: DEMO_RECENT_ORDERS.filter((order) => order.status === 'completed').length,
-          });
+          setLoading(false);
           return;
         }
 
@@ -179,22 +136,7 @@ export default function DashboardPage() {
         }
       } catch (err) {
         console.error('Unexpected error loading dashboard', err);
-        setVendor(DEMO_VENDOR);
-        setIsDemoMode(true);
-        setInventoryCount(12);
-        setOrdersCount(DEMO_RECENT_ORDERS.length);
-        setRecentOrders(DEMO_RECENT_ORDERS);
-        setAnalytics({
-          totalSales: DEMO_RECENT_ORDERS
-            .filter((order) => order.payment_status === 'paid')
-            .reduce((sum, order) => sum + order.total_amount_tzs, 0),
-          paidOrders: DEMO_RECENT_ORDERS.filter((order) => order.payment_status === 'paid').length,
-          pendingOrders: DEMO_RECENT_ORDERS.filter(
-            (order) => order.status === 'pending' || order.status === 'awaiting_payment',
-          ).length,
-          completedOrders: DEMO_RECENT_ORDERS.filter((order) => order.status === 'completed').length,
-        });
-        setError(null);
+        setError('Failed to load dashboard data. Please refresh the page.');
       } finally {
         setLoading(false);
       }
@@ -249,6 +191,46 @@ export default function DashboardPage() {
     );
   }
 
+  if (isDemoMode) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-lg space-y-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-sky-500/10 text-sky-400">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-50">No vendor account yet</h1>
+            <p className="mt-2 text-slate-400">
+              Your account is not linked to a vendor store. Complete onboarding to start managing inventory, viewing orders, and tracking revenue.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/vendor/onboarding"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Set up your vendor store
+            </Link>
+            <Link
+              href="/vendors"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/50 px-6 py-3 text-sm font-semibold text-slate-300 transition-all hover:border-slate-600 hover:text-white"
+            >
+              Browse as customer
+            </Link>
+          </div>
+          <p className="text-xs text-slate-500">
+            If you believe this is an error, contact an admin to link your account to a vendor.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   const vendorName = vendor?.vendors?.[0]?.name ?? 'Your vendor';
 
   const formatCurrency = (amount: number) => {
@@ -289,7 +271,7 @@ export default function DashboardPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 mb-3">
                 <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span></span>
-                {isDemoMode ? 'Demo Dashboard' : 'Live Dashboard'}
+                Live Dashboard
               </div>
               <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">Vendor Dashboard</h1>
               <p className="mt-2 text-base text-slate-400">Welcome back, <span className="font-semibold text-slate-200">{vendorName}</span></p>

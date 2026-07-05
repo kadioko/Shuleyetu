@@ -110,6 +110,34 @@ export default function ChecklistPage() {
     setNewItem('');
   };
 
+  const handleExport = () => {
+    const lines: string[] = [
+      `Shuleyetu Back-to-School Checklist — ${level ? LEVEL_LABELS[level] : ''}`,
+      `Generated: ${new Date().toLocaleDateString('en-TZ')}`,
+      '',
+    ];
+    Object.entries(grouped).forEach(([cat, catItems]) => {
+      lines.push(`--- ${cat.toUpperCase()} ---`);
+      catItems.forEach((item) => {
+        const tick = checked.has(item.id) ? '[x]' : '[ ]';
+        lines.push(`${tick} ${item.label} (qty: ${item.quantity})`);
+      });
+      lines.push('');
+    });
+    if (customItems.length > 0) {
+      lines.push('--- CUSTOM ITEMS ---');
+      customItems.forEach((item) => lines.push(`[ ] ${item}`));
+      lines.push('');
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shuleyetu-checklist-${level ?? 'school'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const removeCustomItem = (index: number) => {
     setCustomItems((prev) => prev.filter((_, i) => i !== index));
   };
@@ -259,6 +287,15 @@ export default function ChecklistPage() {
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
               Print Checklist
+            </button>
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-sky-500/40 bg-sky-500/10 px-6 py-3 text-sm font-bold text-sky-300 transition-all hover:border-sky-500/60 hover:bg-sky-500/15 hover:scale-105"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export .txt
             </button>
             <Link
               href="/vendors"

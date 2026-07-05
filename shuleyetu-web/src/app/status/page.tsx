@@ -16,10 +16,13 @@ interface HealthStatus {
   error?: string;
 }
 
+const REFRESH_INTERVAL = 30;
+
 export default function StatusPage() {
   const [status, setStatus] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
 
   const checkHealth = async () => {
     try {
@@ -41,13 +44,25 @@ export default function StatusPage() {
       setLastChecked(new Date());
     } finally {
       setLoading(false);
+      setCountdown(REFRESH_INTERVAL);
     }
   };
 
   useEffect(() => {
     checkHealth();
-    const interval = setInterval(checkHealth, 30000);
-    return () => clearInterval(interval);
+    const refreshInterval = setInterval(() => {
+      checkHealth();
+    }, REFRESH_INTERVAL * 1000);
+
+    const tickInterval = setInterval(() => {
+      setCountdown((c) => (c <= 1 ? REFRESH_INTERVAL : c - 1));
+    }, 1000);
+
+    return () => {
+      clearInterval(refreshInterval);
+      clearInterval(tickInterval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isHealthy = status?.status === 'healthy';
@@ -161,14 +176,22 @@ export default function StatusPage() {
               </div>
             )}
 
-            {/* Last Updated */}
+            {/* Last Updated + Countdown */}
             <div className="mt-6 border-t border-slate-800 pt-6 text-center">
               <p className="text-xs text-slate-400">
                 Last updated: {lastChecked?.toLocaleTimeString()}
               </p>
-              <p className="mt-1 text-xs text-slate-600">
-                Status checks every 30 seconds
-              </p>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <div className="relative h-5 w-28 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-sky-500/40 transition-all duration-1000 ease-linear"
+                    style={{ width: `${((REFRESH_INTERVAL - countdown) / REFRESH_INTERVAL) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs tabular-nums text-slate-500">
+                  Next check in {countdown}s
+                </p>
+              </div>
             </div>
           </div>
         ) : null}

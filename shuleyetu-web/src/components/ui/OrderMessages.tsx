@@ -14,11 +14,12 @@ interface Message {
 
 interface OrderMessagesProps {
   orderId: string;
+  token: string;
   senderName: string;
   senderRole: 'customer' | 'vendor';
 }
 
-export function OrderMessages({ orderId, senderName, senderRole }: OrderMessagesProps) {
+export function OrderMessages({ orderId, token, senderName, senderRole }: OrderMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,7 @@ export function OrderMessages({ orderId, senderName, senderRole }: OrderMessages
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId,
+          token,
           senderName,
           senderRole,
           content,
