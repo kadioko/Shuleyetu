@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { requireSchoolUser } from "@/lib/schoolAuth";
+import { canManageAttendance, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
 import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
 
@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
+    if (!canManageAttendance(auth.role)) return forbiddenSchoolAction("Only admins and teachers can mark attendance");
 
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId");
@@ -124,6 +125,15 @@ export async function POST(request: NextRequest) {
       });
       return jsonError("Failed to save attendance", 500);
     }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "marked",
+      entityType: "attendance",
+      entityId: data.id,
+      metadata: { student_id: data.student_id, status: data.status, date: data.attendance_date },
+    });
 
     return jsonOk({ attendance: data });
   } catch (error) {

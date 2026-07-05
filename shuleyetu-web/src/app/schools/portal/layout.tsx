@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { SchoolProvider } from "./SchoolContext";
 
 export const metadata: Metadata = {
@@ -14,8 +15,10 @@ export default function SchoolPortalLayout({
   children: ReactNode;
 }) {
   return (
-    <SchoolProvider>
-      <div className="min-h-screen">{children}</div>
-    </SchoolProvider>
+    <Suspense fallback={null}>
+      <SchoolProvider>
+        <div className="min-h-screen">{children}</div>
+      </SchoolProvider>
+    </Suspense>
   );
 }

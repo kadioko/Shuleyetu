@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { requireSchoolUser } from "@/lib/schoolAuth";
+import { canManageStaff, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
 import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
 
@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
+    if (!canManageStaff(auth.role)) return forbiddenSchoolAction("Only admins and staff can add staff records");
 
     const { data, error } = await supabaseServerClient
       .from("school_staff")
@@ -84,6 +85,15 @@ export async function POST(request: NextRequest) {
       });
       return jsonError("Failed to create staff", 500);
     }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "created",
+      entityType: "staff",
+      entityId: data.id,
+      metadata: { name: `${data.first_name} ${data.last_name}`, role: data.role },
+    });
 
     return jsonOk({ staff: data });
   } catch (error) {

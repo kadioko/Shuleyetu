@@ -73,6 +73,35 @@ export default function VendorOnboardingPage() {
         return;
       }
 
+      const { data: similarNameVendor, error: similarNameError } = await supabaseClient
+        .from('vendors')
+        .select('id, name, district, phone_number')
+        .ilike('name', formData.name)
+        .ilike('district', formData.district)
+        .limit(1)
+        .maybeSingle();
+
+      if (similarNameError) throw similarNameError;
+
+      const { data: similarPhoneVendor, error: similarPhoneError } = await supabaseClient
+        .from('vendors')
+        .select('id, name, district, phone_number')
+        .eq('phone_number', formData.phoneNumber)
+        .limit(1)
+        .maybeSingle();
+
+      if (similarPhoneError) throw similarPhoneError;
+
+      if (similarNameVendor || similarPhoneVendor) {
+        addToast({
+          type: 'error',
+          title: 'Vendor may already exist',
+          message: 'A similar vendor profile already exists. Contact support if this is a different business.',
+        });
+        setLoading(false);
+        return;
+      }
+
       // Create vendor
       const { data: vendor, error: vendorError } = await supabaseClient
         .from('vendors')
@@ -86,6 +115,8 @@ export default function VendorOnboardingPage() {
             street_address: formData.streetAddress,
             phone_number: formData.phoneNumber,
             email: formData.email || null,
+            approval_status: 'pending',
+            is_active: false,
           },
         ])
         .select()
@@ -107,8 +138,8 @@ export default function VendorOnboardingPage() {
 
       addToast({
         type: 'success',
-        title: 'Welcome to Shuleyetu!',
-        message: 'Your vendor account has been created successfully',
+        title: 'Vendor profile submitted',
+        message: 'Your profile is under review. You can access the dashboard after approval.',
       });
 
       router.push('/dashboard');

@@ -7,6 +7,14 @@ import { supabaseClient } from "@/lib/supabaseClient";
 type Vendor = {
   id: string;
   name: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  region?: string | null;
+  district?: string | null;
+  ward?: string | null;
+  approval_status?: "pending" | "approved" | "rejected" | null;
+  is_active?: boolean;
+  created_at?: string;
 };
 
 type VendorUserLink = {
@@ -22,6 +30,24 @@ type AdminRow = {
   email: string | null;
 };
 
+type AdminSchoolRow = {
+  id: string;
+  name: string;
+  region: string | null;
+  district: string | null;
+  email: string | null;
+  phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  user_count: number;
+};
+
+type DiagnosticCheck = {
+  name: string;
+  ok: boolean;
+  detail: string;
+};
+
 export default function AdminPage() {
   const [email, setEmail] = useState("");
   const [vendorId, setVendorId] = useState("");
@@ -31,6 +57,8 @@ export default function AdminPage() {
 
   const [vendorUsers, setVendorUsers] = useState<VendorUserLink[]>([]);
   const [admins, setAdmins] = useState<AdminRow[]>([]);
+  const [schools, setSchools] = useState<AdminSchoolRow[]>([]);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticCheck[]>([]);
   const [currentAdminUserId, setCurrentAdminUserId] = useState<string | null>(null);
   const [loadingManagement, setLoadingManagement] = useState(false);
   const [unlinkingKey, setUnlinkingKey] = useState<string | null>(null);
@@ -38,6 +66,7 @@ export default function AdminPage() {
 
   const [grantEmail, setGrantEmail] = useState("");
   const [grantLoading, setGrantLoading] = useState(false);
+  const [approvingVendorId, setApprovingVendorId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +162,7 @@ export default function AdminPage() {
         return;
       }
 
-      const [vendorUsersRes, adminsRes] = await Promise.all([
+      const [vendorUsersRes, adminsRes, schoolsRes, diagnosticsRes] = await Promise.all([
         fetch("/api/admin/vendor-users", {
           method: "GET",
           headers: {
@@ -141,6 +170,18 @@ export default function AdminPage() {
           },
         }),
         fetch("/api/admin/admins", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }),
+        fetch("/api/admin/schools", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }),
+        fetch("/api/admin/diagnostics", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -161,6 +202,20 @@ export default function AdminPage() {
         setCurrentAdminUserId((adminsData?.currentUserId as string) ?? null);
       } else {
         setError(adminsData?.error || "Failed to load admins.");
+      }
+
+      const schoolsData = await schoolsRes.json().catch(() => null);
+      if (schoolsRes.ok) {
+        setSchools((schoolsData?.schools as AdminSchoolRow[]) ?? []);
+      } else {
+        setError(schoolsData?.error || "Failed to load schools.");
+      }
+
+      const diagnosticsData = await diagnosticsRes.json().catch(() => null);
+      if (diagnosticsRes.ok) {
+        setDiagnostics((diagnosticsData?.checks as DiagnosticCheck[]) ?? []);
+      } else {
+        setError(diagnosticsData?.error || "Failed to load diagnostics.");
       }
     } catch (e) {
       console.error("Failed to refresh management data", e);
@@ -380,6 +435,56 @@ export default function AdminPage() {
     }
   };
 
+  const onVendorApproval = async (
+    selectedVendorId: string,
+    status: "pending" | "approved" | "rejected",
+  ) => {
+    setError(null);
+    setSuccess(null);
+
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+
+    const accessToken = session?.access_token ?? "";
+    if (!accessToken) {
+      setError("You must be logged in as an admin.");
+      return;
+    }
+
+    setApprovingVendorId(selectedVendorId);
+    try {
+      const res = await fetch("/api/admin/vendor-approval", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ vendorId: selectedVendorId, status }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error || "Failed to update vendor approval.");
+        return;
+      }
+      setSuccess(`Vendor ${status}.`);
+      setVendors((current) =>
+        current.map((vendor) =>
+          vendor.id === selectedVendorId
+            ? { ...vendor, approval_status: status, is_active: status === "approved" }
+            : vendor,
+        ),
+      );
+    } catch (error) {
+      console.error("Vendor approval error", error);
+      setError("Unexpected error.");
+    } finally {
+      setApprovingVendorId(null);
+    }
+  };
+
+  const pendingVendors = vendors.filter((vendor) => vendor.approval_status === "pending");
+
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-12">
       <header className="space-y-2">
@@ -419,6 +524,136 @@ export default function AdminPage() {
               {success}
             </p>
           )}
+
+          <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-100">Vendor approvals</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Review pending vendor profiles before they can publish inventory.
+                </p>
+              </div>
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                {pendingVendors.length} pending
+              </span>
+            </div>
+
+            {pendingVendors.length === 0 ? (
+              <p className="text-xs text-slate-400">No pending vendors right now.</p>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {pendingVendors.map((vendor) => (
+                  <div key={vendor.id} className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-slate-100">{vendor.name ?? "Unnamed vendor"}</h3>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {[vendor.region, vendor.district, vendor.ward].filter(Boolean).join(", ") || "No location provided"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {vendor.email ?? "No email"} · {vendor.phone_number ?? "No phone"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+                        Pending
+                      </span>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void onVendorApproval(vendor.id, "approved")}
+                        disabled={approvingVendorId === vendor.id}
+                        className="rounded-xl bg-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-500/30 disabled:opacity-60"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void onVendorApproval(vendor.id, "rejected")}
+                        disabled={approvingVendorId === vendor.id}
+                        className="rounded-xl bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-100 transition-colors hover:bg-red-500/30 disabled:opacity-60"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-100">Schools</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Support overview for school workspaces and linked users.
+                </p>
+              </div>
+              <span className="text-[11px] text-slate-400">{schools.length} total</span>
+            </div>
+            {schools.length === 0 ? (
+              <p className="text-xs text-slate-400">No schools found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-left text-xs">
+                  <thead className="text-slate-400">
+                    <tr>
+                      <th className="px-2">School</th>
+                      <th className="px-2">Location</th>
+                      <th className="px-2">Contact</th>
+                      <th className="px-2">Users</th>
+                      <th className="px-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schools.slice(0, 8).map((school) => (
+                      <tr key={school.id} className="bg-slate-950">
+                        <td className="px-2 py-2 text-slate-100">
+                          <div className="font-medium">{school.name}</div>
+                          <div className="text-[11px] text-slate-500">{school.id}</div>
+                        </td>
+                        <td className="px-2 py-2 text-slate-300">
+                          {[school.region, school.district].filter(Boolean).join(", ") || "No location"}
+                        </td>
+                        <td className="px-2 py-2 text-slate-300">
+                          <div>{school.email ?? "No email"}</div>
+                          <div className="text-[11px] text-slate-500">{school.phone ?? "No phone"}</div>
+                        </td>
+                        <td className="px-2 py-2 text-slate-300">{school.user_count}</td>
+                        <td className="px-2 py-2">
+                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${school.is_active ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"}`}>
+                            {school.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+            <h2 className="text-sm font-semibold text-slate-100">Health diagnostics</h2>
+            {diagnostics.length === 0 ? (
+              <p className="text-xs text-slate-400">Diagnostics unavailable.</p>
+            ) : (
+              <div className="grid gap-2 md:grid-cols-2">
+                {diagnostics.map((check) => (
+                  <div key={check.name} className="rounded-2xl border border-white/10 bg-slate-950/70 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-slate-100">{check.name}</p>
+                      <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${check.ok ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"}`}>
+                        {check.ok ? "OK" : "Issue"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">{check.detail}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
           <form
             onSubmit={onSubmit}

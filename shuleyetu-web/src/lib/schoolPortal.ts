@@ -55,6 +55,24 @@ export type SchoolStaff = {
   created_at: string;
 };
 
+export type SchoolUser = {
+  id: string;
+  user_id: string;
+  email: string | null;
+  role: "admin" | "teacher" | "staff";
+  created_at: string;
+};
+
+export type SchoolAuditLog = {
+  id: string;
+  actor_user_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 export type SchoolFee = {
   id: string;
   student_id: string;
@@ -122,6 +140,9 @@ async function fetchWithAuth<T>(
       ...options.headers,
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(typeof window !== "undefined" && window.localStorage.getItem("shuleyetu.schoolId")
+        ? { "X-School-Id": window.localStorage.getItem("shuleyetu.schoolId") as string }
+        : {}),
     },
   });
 
@@ -236,6 +257,34 @@ export async function createStaff(body: Omit<SchoolStaff, "id" | "created_at" | 
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function getSchoolUsers() {
+  return fetchWithAuth<{ users: SchoolUser[] }>("/api/schools/users");
+}
+
+export async function inviteSchoolUser(body: { email: string; role: SchoolUser["role"] }) {
+  return fetchWithAuth<{ user?: SchoolUser; invite?: { id: string; email: string; role: string; token: string; status: string } }>("/api/schools/users", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateSchoolUserRole(body: { userId: string; role: SchoolUser["role"] }) {
+  return fetchWithAuth<{ ok: true }>("/api/schools/users", {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function removeSchoolUser(userId: string) {
+  return fetchWithAuth<{ ok: true }>(`/api/schools/users?userId=${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getSchoolAuditLogs() {
+  return fetchWithAuth<{ logs: SchoolAuditLog[] }>("/api/schools/audit");
 }
 
 export async function getFees(params?: { status?: string; studentId?: string }) {

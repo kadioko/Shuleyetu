@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { requireSchoolUser } from "@/lib/schoolAuth";
+import { canManageStudents, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
 import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
 
@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
+    if (!canManageStudents(auth.role)) return forbiddenSchoolAction("Only admins and teachers can add students");
 
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId");
@@ -111,6 +112,15 @@ export async function POST(request: NextRequest) {
       });
       return jsonError("Failed to create student", 500);
     }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "created",
+      entityType: "student",
+      entityId: data.id,
+      metadata: { admission_number: data.admission_number, name: `${data.first_name} ${data.last_name}` },
+    });
 
     return jsonOk({ student: data });
   } catch (error) {

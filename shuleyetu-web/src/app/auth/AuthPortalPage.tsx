@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
+import { chooseWorkspacePath, getWorkspaceSummary } from '@/lib/workspaces';
 
 type PortalType = 'vendor' | 'school';
 
@@ -238,9 +239,19 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
           setError(error.message);
           return;
         }
-        setMessage(`Logged in successfully. Redirecting to ${config.label.toLowerCase()}...`);
+        const { data: summary, error: workspaceError } = await getWorkspaceSummary();
+        if (workspaceError || !summary) {
+          setMessage(`Logged in successfully. Redirecting to ${config.label.toLowerCase()}...`);
+          setTimeout(() => {
+            window.location.href = nextPath;
+          }, 700);
+          return;
+        }
+
+        const destination = chooseWorkspacePath(summary, nextPath);
+        setMessage('Logged in successfully. Redirecting to your workspace...');
         setTimeout(() => {
-          window.location.href = nextPath;
+          window.location.href = destination;
         }, 700);
       }
     } catch (err) {

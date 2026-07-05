@@ -41,6 +41,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: similarSchool, error: similarError } = await supabaseServerClient
+      .from("schools")
+      .select("id, name, region, district")
+      .ilike("name", name)
+      .limit(1)
+      .maybeSingle();
+
+    if (similarError) {
+      logError("Error checking duplicate school", similarError, { name });
+      return jsonError("Failed to check school name", 500);
+    }
+
+    if (similarSchool) {
+      return jsonError(
+        `A school named "${similarSchool.name}" already exists. Ask that school admin to invite/link your account, or contact Shuleyetu support if this is a different school.`,
+        409,
+      );
+    }
+
     // Create the school
     const { data: school, error: schoolError } = await supabaseServerClient
       .from("schools")

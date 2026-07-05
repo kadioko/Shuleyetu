@@ -9,9 +9,10 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { createSchool, getSchool, type School } from "@/lib/schoolPortal";
+import { getWorkspaceSummary } from "@/lib/workspaces";
 
 export type SchoolContextValue = {
   school: School | null;
@@ -37,17 +38,24 @@ export function useSchool() {
 
 export function SchoolProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [school, setSchool] = useState<School | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [vendorOnly, setVendorOnly] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setVendorOnly(false);
 
     try {
+      const selectedSchoolId = searchParams.get("schoolId");
+      if (selectedSchoolId) {
+        window.localStorage.setItem("shuleyetu.schoolId", selectedSchoolId);
+      }
       const {
         data: { user },
       } = await supabaseClient.auth.getUser();
@@ -59,9 +67,16 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = await getSchool();
       if (error) {
-        setError(error);
-        setSchool(null);
-        setRole(null);
+        const { data: summary } = await getWorkspaceSummary();
+        if (summary?.hasVendor && !summary.hasSchool) {
+          setVendorOnly(true);
+          setSchool(null);
+          setRole(null);
+        } else {
+          setError(error);
+          setSchool(null);
+          setRole(null);
+        }
       } else if (data?.school) {
         setSchool(data.school);
         setRole(data.role ?? null);
@@ -81,7 +96,7 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, searchParams]);
 
   useEffect(() => {
     void load();
@@ -118,12 +133,50 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
             Try again
           </button>
         </div>
+      ) : vendorOnly ? (
+        <WrongSchoolPortal />
       ) : !school ? (
         <SchoolSetup onCreated={load} />
       ) : (
         children
       )}
     </SchoolContext.Provider>
+  );
+}
+
+function WrongSchoolPortal() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+      <div className="w-full max-w-lg space-y-6 text-center">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-sky-500/10 text-sky-300">
+          <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h10" />
+          </svg>
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-50">
+            This account is linked to a vendor store, not a school
+          </h1>
+          <p className="mt-2 text-slate-400">
+            School tools are only available to accounts linked in school users. Continue to the vendor dashboard or ask a school admin to invite this email.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105"
+          >
+            Open vendor dashboard
+          </Link>
+          <Link
+            href="/auth/school-login?next=/schools/portal"
+            className="inline-flex items-center justify-center rounded-2xl border border-slate-700 bg-slate-900/50 px-6 py-3 text-sm font-semibold text-slate-300 transition-all hover:border-slate-600 hover:text-white"
+          >
+            Use another account
+          </Link>
+        </div>
+      </div>
+    </main>
   );
 }
 

@@ -18,6 +18,11 @@ import {
   createStudent,
   getStaff,
   createStaff,
+  getSchoolUsers,
+  getSchoolAuditLogs,
+  inviteSchoolUser,
+  updateSchoolUserRole,
+  removeSchoolUser,
   getAttendance,
   saveAttendance,
   getFees,
@@ -27,6 +32,8 @@ import {
   type SchoolClass,
   type SchoolStudent,
   type SchoolStaff,
+  type SchoolUser,
+  type SchoolAuditLog,
   type SchoolFee,
   type SchoolAnnouncement,
   type SchoolOverview,
@@ -53,9 +60,17 @@ function visibleTabs(role: string | null) {
       ["dashboard", "classes", "students", "attendance", "reports"].includes(t.id),
     );
   }
+  if (role === "staff" || role === "support") {
+    return allTabs.filter((t) =>
+      ["dashboard", "staff", "fees", "announcements", "reports"].includes(t.id),
+    );
+  }
+  if (role === "finance") {
+    return allTabs.filter((t) => ["dashboard", "fees", "reports"].includes(t.id));
+  }
   // staff / support / default
   return allTabs.filter((t) =>
-    ["dashboard", "classes", "students", "staff", "attendance", "fees", "announcements", "reports"].includes(t.id),
+    ["dashboard", "classes", "students", "attendance", "reports"].includes(t.id),
   );
 }
 
@@ -300,9 +315,93 @@ function DashboardTab() {
   if (!overview) return <EmptyMessage message="No overview data available" />;
 
   const isEmpty = overview.classes === 0 && overview.students === 0;
+  const onboardingSteps = [
+    {
+      label: "Create school",
+      done: true,
+    },
+    {
+      label: "Add classes",
+      done: overview.classes > 0,
+      tab: "classes" as Tab,
+    },
+    {
+      label: "Add students",
+      done: overview.students > 0,
+      tab: "students" as Tab,
+    },
+    {
+      label: "Add staff",
+      done: overview.staff > 0,
+      tab: "staff" as Tab,
+    },
+    {
+      label: "Start attendance/fees",
+      done: overview.attendanceToday > 0 || overview.feesDue > 0,
+      tab: "attendance" as Tab,
+    },
+  ];
 
   return (
     <div className="space-y-6">
+      <div className="rounded-3xl border border-white/10 bg-slate-900/40 p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-50">School setup progress</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-400">
+              Build your portal in a few practical steps, then use quick actions for daily work.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {onboardingSteps.map((step) => {
+              const className = `rounded-2xl border px-3 py-2 text-xs font-semibold transition-all ${
+                step.done
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15"
+              }`;
+              return step.tab ? (
+              <Link
+                key={step.label}
+                href={`/schools/portal?tab=${step.tab}`}
+                className={className}
+              >
+                {step.done ? "Done" : "Next"}: {step.label}
+              </Link>
+              ) : (
+              <span
+                key={step.label}
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition-all ${
+                  step.done
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15"
+                }`}
+              >
+                {step.done ? "Done" : "Next"}: {step.label}
+              </span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          { label: "Add class", tab: "classes" },
+          { label: "Add student", tab: "students" },
+          { label: "Add staff", tab: "staff" },
+          { label: "Mark attendance", tab: "attendance" },
+          { label: "Create fee", tab: "fees" },
+        ].map((action) => (
+          <Link
+            key={action.tab}
+            href={`/schools/portal?tab=${action.tab}`}
+            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition-all hover:border-sky-400/30 hover:text-sky-300"
+          >
+            {action.label}
+          </Link>
+        ))}
+      </div>
+
       {isEmpty && (
         <div className="rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent p-6">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1349,7 +1448,7 @@ function ReportsTab() {
 // ---------- Settings ----------
 
 function SettingsTab() {
-  const { school: contextSchool, refresh } = useSchool();
+  const { school: contextSchool, role, refresh } = useSchool();
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1501,7 +1600,240 @@ function SettingsTab() {
           <SubmitButton loading={saving}>Save settings</SubmitButton>
         </div>
       </form>
+
+      {role === "admin" && (
+        <>
+          <SchoolUsersPanel />
+          <SchoolAuditPanel />
+        </>
+      )}
     </div>
+  );
+}
+
+function SchoolAuditPanel() {
+  const [logs, setLogs] = useState<SchoolAuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const { data } = await getSchoolAuditLogs();
+      setLogs(data?.logs ?? []);
+      setLoading(false);
+    };
+    void load();
+  }, []);
+
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 md:p-8">
+      <div>
+        <h2 className="text-xl font-bold text-slate-50">Recent school activity</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Audit trail for important school portal changes.
+        </p>
+      </div>
+
+      <div className="mt-6">
+        {loading ? (
+          <Loading />
+        ) : logs.length === 0 ? (
+          <EmptyMessage message="No audit events yet. Activity will appear here as users update the portal." />
+        ) : (
+          <ul className="divide-y divide-white/10">
+            {logs.map((log) => (
+              <li key={log.id} className="py-3">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-semibold text-slate-100">
+                    {log.action.replace("_", " ")} {log.entity_type}
+                  </p>
+                  <span className="text-xs text-slate-500">
+                    {new Date(log.created_at).toLocaleString()}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  Actor: {log.actor_user_id ?? "System"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function SchoolUsersPanel() {
+  const [users, setUsers] = useState<SchoolUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<SchoolUser["role"]>("staff");
+  const [submitting, setSubmitting] = useState(false);
+  const { addToast } = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await getSchoolUsers();
+    setLoading(false);
+    if (error) setError(error);
+    else setUsers(data?.users ?? []);
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const onInvite = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    const { data, error } = await inviteSchoolUser({ email, role });
+    setSubmitting(false);
+    if (error) {
+      setError(error);
+      addToast({ type: "error", title: "User link failed", message: error });
+      return;
+    }
+    setEmail("");
+    setRole("staff");
+    addToast({
+      type: "success",
+      title: data?.invite ? "Invite created" : "School user linked",
+      message: data?.invite
+        ? "No account exists yet, so a pending invite was created for this email."
+        : "The account can now access this school portal.",
+    });
+    void load();
+  };
+
+  const onRoleChange = async (userId: string, nextRole: SchoolUser["role"]) => {
+    const { error } = await updateSchoolUserRole({ userId, role: nextRole });
+    if (error) {
+      addToast({ type: "error", title: "Role update failed", message: error });
+      return;
+    }
+    addToast({ type: "success", title: "Role updated" });
+    void load();
+  };
+
+  const onRemove = async (userId: string) => {
+    const ok = window.confirm("Remove this user's school portal access?");
+    if (!ok) return;
+    const { error } = await removeSchoolUser(userId);
+    if (error) {
+      addToast({ type: "error", title: "Remove failed", message: error });
+      return;
+    }
+    addToast({ type: "success", title: "Access removed" });
+    void load();
+  };
+
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 md:p-8">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-50">School user access</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Link existing Shuleyetu accounts to this school and control their portal role.
+          </p>
+        </div>
+        <Badge>Admin only</Badge>
+      </div>
+
+      <form onSubmit={onInvite} className="mt-6 grid gap-4 md:grid-cols-[1fr_180px_auto] md:items-end">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300" htmlFor="invite-email">
+            Account email
+          </label>
+          <input
+            id="invite-email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="staff@example.com"
+            required
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-slate-50 placeholder-slate-500 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300" htmlFor="invite-role">
+            Role
+          </label>
+          <select
+            id="invite-role"
+            value={role}
+            onChange={(event) => setRole(event.target.value as SchoolUser["role"])}
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-slate-50 outline-none focus:border-sky-500"
+          >
+            <option value="staff">Staff</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex justify-center rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition-all hover:scale-[1.02] disabled:opacity-60"
+        >
+          {submitting ? "Linking..." : "Link user"}
+        </button>
+      </form>
+
+      {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+
+      <div className="mt-6 overflow-x-auto">
+        {loading ? (
+          <Loading />
+        ) : users.length === 0 ? (
+          <EmptyMessage message="No school users linked yet. Link an existing account by email to invite staff." />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-xs text-slate-400">
+                <th className="pb-2 font-medium">Email</th>
+                <th className="pb-2 font-medium">Role</th>
+                <th className="pb-2 font-medium">Added</th>
+                <th className="pb-2 text-right font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td className="py-3 text-slate-200">{user.email ?? user.user_id}</td>
+                  <td className="py-3">
+                    <select
+                      value={user.role}
+                      onChange={(event) =>
+                        void onRoleChange(user.user_id, event.target.value as SchoolUser["role"])
+                      }
+                      className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-sky-500"
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                  <td className="py-3 text-slate-400">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => void onRemove(user.user_id)}
+                      className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 transition-all hover:bg-red-500/20"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
   );
 }
 

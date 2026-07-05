@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabaseServerClient
       .from("vendors")
-      .select("id, name")
+      .select("id, name, email, phone_number, region, district, ward, approval_status, is_active, created_at")
       .order("created_at", { ascending: false });
 
     if (error) {

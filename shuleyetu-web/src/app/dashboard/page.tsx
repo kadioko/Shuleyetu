@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { StatCard, LineChart, PieChart } from "@/components/ui/Chart";
 import { EmptyOrders } from "@/components/ui/EmptyState";
+import { getWorkspaceSummary } from "@/lib/workspaces";
 
 type VendorMapping = {
   vendor_id: string;
   vendors?: {
     name: string | null;
+    approval_status?: "pending" | "approved" | "rejected" | null;
   }[] | null;
 };
 
@@ -37,6 +39,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [hasSchoolOnlyAccess, setHasSchoolOnlyAccess] = useState(false);
   const [vendor, setVendor] = useState<VendorMapping | null>(null);
   const [inventoryCount, setInventoryCount] = useState<number | null>(null);
   const [ordersCount, setOrdersCount] = useState<number | null>(null);
@@ -53,6 +56,7 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       setIsDemoMode(false);
+      setHasSchoolOnlyAccess(false);
 
       try {
         const {
@@ -73,7 +77,7 @@ export default function DashboardPage() {
 
         const { data: mapping, error: mapError } = await supabaseClient
           .from('vendor_users')
-          .select('vendor_id, vendors(name)')
+          .select('vendor_id, vendors(name, approval_status)')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -84,6 +88,12 @@ export default function DashboardPage() {
         }
 
         if (!mapping) {
+          const { data: summary } = await getWorkspaceSummary();
+          if (summary?.hasSchool && !summary.hasVendor) {
+            setHasSchoolOnlyAccess(true);
+            setLoading(false);
+            return;
+          }
           setIsDemoMode(true);
           setLoading(false);
           return;
@@ -231,7 +241,85 @@ export default function DashboardPage() {
     );
   }
 
+  if (hasSchoolOnlyAccess) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-lg space-y-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 text-amber-300">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422A12.083 12.083 0 0118.5 17.25c0 1.01-.672 1.9-1.646 2.171A18.487 18.487 0 0112 20a18.487 18.487 0 01-4.854-.579A2.25 2.25 0 015.5 17.25c0-2.35.67-4.55 1.84-6.672L12 14z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-50">
+              This account is linked to a school, not a vendor store
+            </h1>
+            <p className="mt-2 text-slate-400">
+              Vendor tools are only available to accounts linked in vendor users. Continue to the school portal or ask an admin to link your account to a vendor store.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/schools/portal"
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/25 transition-all hover:scale-105"
+            >
+              Open school portal
+            </Link>
+            <Link
+              href="/auth/vendor-login?next=/dashboard"
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-700 bg-slate-900/50 px-6 py-3 text-sm font-semibold text-slate-300 transition-all hover:border-slate-600 hover:text-white"
+            >
+              Use another account
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const vendorName = vendor?.vendors?.[0]?.name ?? 'Your vendor';
+  const approvalStatus = vendor?.vendors?.[0]?.approval_status ?? "approved";
+
+  if (approvalStatus !== "approved") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-lg space-y-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 text-amber-300">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-50">
+              {approvalStatus === "rejected"
+                ? "Your vendor profile needs review"
+                : "Your vendor profile is under review"}
+            </h1>
+            <p className="mt-2 text-slate-400">
+              {approvalStatus === "rejected"
+                ? "An admin rejected or paused this vendor profile. Contact Shuleyetu support to resolve it."
+                : "An admin needs to approve your vendor profile before you can publish inventory and receive orders."}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/contact"
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/25 transition-all hover:scale-105"
+            >
+              Contact support
+            </Link>
+            <Link
+              href="/vendors"
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-700 bg-slate-900/50 px-6 py-3 text-sm font-semibold text-slate-300 transition-all hover:border-slate-600 hover:text-white"
+            >
+              Browse public marketplace
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-TZ') + ' TZS';
@@ -305,12 +393,6 @@ export default function DashboardPage() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-8">
-      {isDemoMode && (
-        <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-          Demo mode: your account is not linked to a vendor yet, so sample dashboard data is shown.
-        </section>
-      )}
-
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Sales"

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { requireSchoolUser } from "@/lib/schoolAuth";
+import { canManageSchoolSettings, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
 import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
 
@@ -39,6 +39,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
+    if (!canManageSchoolSettings(auth.role)) return forbiddenSchoolAction("Only school admins can update settings");
 
     const body = await readJsonBody<{
       name?: string;
@@ -82,6 +83,15 @@ export async function PATCH(request: NextRequest) {
       });
       return jsonError("Failed to update school settings", 500);
     }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "updated",
+      entityType: "settings",
+      entityId: auth.schoolId,
+      metadata: { fields: Object.keys(updates) },
+    });
 
     return jsonOk({ school });
   } catch (error) {

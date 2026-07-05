@@ -11,6 +11,7 @@ type VendorMapping = {
   vendor_id: string;
   vendors?: {
     name: string | null;
+    approval_status?: "pending" | "approved" | "rejected" | null;
   }[] | null;
 };
 
@@ -54,8 +55,8 @@ export default function NewInventoryItemPage() {
       }
 
       const { data: mapping, error: mapError } = await supabaseClient
-        .from('vendor_users')
-        .select('vendor_id, vendors(name)')
+          .from('vendor_users')
+        .select('vendor_id, vendors(name, approval_status)')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -84,6 +85,11 @@ export default function NewInventoryItemPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!vendor) return;
+    const approvalStatus = vendor.vendors?.[0]?.approval_status ?? "approved";
+    if (approvalStatus !== "approved") {
+      setError("Your vendor profile must be approved before publishing inventory.");
+      return;
+    }
 
     setError(null);
 

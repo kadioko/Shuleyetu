@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { requireSchoolUser } from "@/lib/schoolAuth";
+import { canManageFees, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
 import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
 
@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
+    if (!canManageFees(auth.role)) return forbiddenSchoolAction("Only admins and staff can create fees");
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
@@ -119,6 +120,15 @@ export async function POST(request: NextRequest) {
       });
       return jsonError("Failed to create fee", 500);
     }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "created",
+      entityType: "fee",
+      entityId: data.id,
+      metadata: { student_id: data.student_id, amount_tzs: data.amount_tzs, description: data.description },
+    });
 
     return jsonOk({ fee: { ...data, paid_tzs: 0, balance_tzs: Number(data.amount_tzs || 0) } });
   } catch (error) {
