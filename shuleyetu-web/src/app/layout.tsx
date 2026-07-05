@@ -140,13 +140,13 @@ export default function RootLayout({
                       href="/dashboard"
                       className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
-                      Dashboard
+                      Vendor Dashboard
                     </Link>
                     <Link
                       href="/schools/portal"
-                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
+                      className="flex min-h-[44px] items-center rounded-xl bg-amber-500/10 px-4 py-2 font-semibold text-amber-200 ring-1 ring-amber-400/20 transition-all hover:bg-amber-500/15 hover:text-amber-100"
                     >
-                      Schools
+                      School Portal
                     </Link>
                   </div>
 

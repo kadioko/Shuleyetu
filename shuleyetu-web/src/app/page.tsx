@@ -59,6 +59,16 @@ export default function HomePage() {
                 </svg>
               </Link>
               <Link
+                href="/schools/portal"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-8 py-4 text-base font-bold text-slate-950 shadow-2xl shadow-amber-500/20 transition-all duration-300 hover:scale-105 hover:shadow-amber-400/30 hover:from-amber-300 hover:to-amber-400"
+              >
+                <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422A12.083 12.083 0 0118.5 17.25c0 1.01-.672 1.9-1.646 2.171A18.487 18.487 0 0112 20a18.487 18.487 0 01-4.854-.579A2.25 2.25 0 015.5 17.25c0-2.35.67-4.55 1.84-6.672L12 14z" />
+                </svg>
+                Open School Portal
+              </Link>
+              <Link
                 href="/orders/new"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900/50 px-8 py-4 text-base font-bold text-slate-100 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-sky-500 hover:bg-slate-800/80 hover:text-white"
               >
@@ -131,6 +141,82 @@ export default function HomePage() {
         <div className="absolute bottom-20 left-10 h-96 w-96 rounded-full bg-sky-600/10 blur-3xl animate-float" style={{ animationDelay: '2s' }} />
       </section>
 
+      {/* Choose your path */}
+      <section className="border-b border-slate-800 bg-slate-950/70">
+        <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-18">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.4fr] lg:items-center">
+            <div>
+              <h2 className="font-display text-3xl font-extrabold text-slate-50 md:text-4xl">
+                Choose where you need to go
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-400 md:text-lg">
+                Shuleyetu now serves three different journeys. Pick the path that matches your role and continue with the right tools.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link
+                href="/vendors"
+                className="group rounded-3xl border border-sky-500/20 bg-sky-500/10 p-6 transition-all hover:-translate-y-1 hover:border-sky-400/40 hover:bg-sky-500/15"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M5 7l1 12h12l1-12M9 7V5a3 3 0 116 0v2" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-slate-50">Parents</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Browse vendors, compare school supplies, and start an order.</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-300">
+                  Browse vendors
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="group rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 transition-all hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-emerald-500/15"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h10" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-slate-50">Vendors</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Manage products, inventory, customer orders, and sales activity.</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300">
+                  Vendor dashboard
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </Link>
+
+              <Link
+                href="/schools/portal"
+                className="group rounded-3xl border border-amber-400/30 bg-amber-400/10 p-6 shadow-lg shadow-amber-500/5 transition-all hover:-translate-y-1 hover:border-amber-300/50 hover:bg-amber-400/15"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422A12.083 12.083 0 0118.5 17.25c0 1.01-.672 1.9-1.646 2.171A18.487 18.487 0 0112 20a18.487 18.487 0 01-4.854-.579A2.25 2.25 0 015.5 17.25c0-2.35.67-4.55 1.84-6.672L12 14z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-slate-50">Schools</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Run classes, students, attendance, fees, staff, and announcements.</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-amber-200">
+                  Open school portal
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="border-b border-slate-800 bg-slate-900/30">
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-6">
@@ -191,6 +277,15 @@ export default function HomePage() {
                 {t('paySecurely')}
               </li>
             </ul>
+            <Link
+              href="/vendors"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-300 transition-colors hover:text-sky-200"
+            >
+              Start shopping
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
 
           <div className="surface-panel group rounded-3xl p-8 transition-all duration-300 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1">
@@ -221,6 +316,15 @@ export default function HomePage() {
                 {t('reachCustomers')}
               </li>
             </ul>
+            <Link
+              href="/dashboard"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 transition-colors hover:text-emerald-200"
+            >
+              Go to vendor dashboard
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
 
           <div className="surface-panel group rounded-3xl p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1">
@@ -251,6 +355,15 @@ export default function HomePage() {
                 {t('reduceRush')}
               </li>
             </ul>
+            <Link
+              href="/schools/portal"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-200 transition-colors hover:text-amber-100"
+            >
+              Open school portal
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       </section>

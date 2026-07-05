@@ -10,8 +10,8 @@ const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/vendors', label: 'Vendors' },
   { href: '/orders', label: 'Orders' },
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/schools/portal', label: 'Schools' },
+  { href: '/dashboard', label: 'Vendor Dashboard' },
+  { href: '/schools/portal', label: 'School Portal' },
 ];
 
 export function MobileNav() {
@@ -118,7 +118,7 @@ export function MobileNav() {
                 Navigate Shuleyetu
               </p>
               <p className="mt-2 text-sm text-slate-300">
-                Jump between discovery, orders, and your vendor workspace.
+                Choose the right workspace for parents, vendors, or school staff.
               </p>
             </div>
             <ul className="space-y-2" role="menubar">
