@@ -641,12 +641,15 @@ Role-based access control.
 #### Roles
 - **User**: Regular vendor or customer
 - **Admin**: Administrative access
+- **School Admin**: Creates and manages a school in the school portal
+- **School Staff / Teacher**: Accesses school data based on `school_users.school_role`
 
 #### Features
 - Row Level Security (RLS)
 - Role-based policies
 - Vendor-specific data access
 - Admin-only endpoints
+- School-user access via `is_school_user` helper and `school_users` RLS policies
 
 ---
 
@@ -712,6 +715,131 @@ Reliable data storage.
 - Backup and recovery
 - Data integrity
 - Transaction support
+
+---
+
+## School Management Features
+
+### 1. School Portal
+
+**Path**: `/schools/portal`
+
+Dedicated portal for schools to manage students, staff, classes, attendance,
+fees, and announcements.
+
+#### Features
+
+- First-time school setup: create a school and become the linked administrator.
+- Dashboard overview with cards for students, staff, classes, fees due,
+  attendance, and announcements.
+- One-click demo data loader for showcasing the portal with sample classes,
+  students, staff, attendance, fees, and announcements.
+- Tab-based navigation with URL-persisted active tab and role-based tab visibility.
+- School settings tab for updating profile details.
+- Reports tab with daily attendance summaries, fee collection totals, and
+  enrollment by class.
+- Protected by school membership check via `school_users` table.
+
+#### UI Components Used
+
+- Sidebar tab navigation
+- Stat cards
+- Tables for students, staff, classes, fees, and attendance
+- Date picker and summary cards for reports
+- Editable school settings form
+- Demo data loader banner
+- Empty state messages
+- Loading skeletons
+
+---
+
+### 2. Classes Management
+
+**Path**: `/schools/portal?tab=classes`
+
+Create and manage classes within a school.
+
+#### Features
+
+- Add class with name, grade, stream, and capacity.
+- List all classes in a table.
+- Tracks `school_classes` table.
+
+---
+
+### 3. Students Management
+
+**Path**: `/schools/portal?tab=students`
+
+Manage student records and class assignments.
+
+#### Features
+
+- Add student with admission number, names, gender, date of birth, and class
+  assignment.
+- Filter students by class.
+- Active/inactive status tracking.
+- Tracks `school_students` table.
+
+---
+
+### 4. Staff Management
+
+**Path**: `/schools/portal?tab=staff`
+
+Manage teachers and school staff.
+
+#### Features
+
+- Add staff with employee ID, names, role, subject/department, email, and
+  phone.
+- Role-based categorization (teacher, admin, support).
+- Tracks `school_staff` table.
+
+---
+
+### 5. Attendance Tracking
+
+**Path**: `/schools/portal?tab=attendance`
+
+Mark daily attendance by class and date.
+
+#### Features
+
+- Select class and date.
+- Mark each student as present, absent, or late.
+- Visual status badges.
+- Upserts into `school_attendance` table.
+
+---
+
+### 6. Fees Management
+
+**Path**: `/schools/portal?tab=fees`
+
+Create and track school fee invoices.
+
+#### Features
+
+- Add fee with student, title, amount, due date, and description.
+- Automatic paid/balance calculation from `school_fee_payments`.
+- Status badges: pending, partial, paid, overdue.
+- Tracks `school_fees` and `school_fee_payments` tables.
+
+---
+
+### 7. Announcements
+
+**Path**: `/schools/portal?tab=announcements`
+
+Publish school-wide announcements.
+
+#### Features
+
+- Compose announcement with title, content, and audience (all, students,
+  staff, parents).
+- List of published announcements.
+- Tracks `school_announcements` table.
 
 ---
 

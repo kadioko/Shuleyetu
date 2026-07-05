@@ -44,26 +44,61 @@ npm install
 
 ### Database Setup
 
-Apply all migrations in order via Supabase Dashboard SQL Editor:
+Use the Supabase CLI to link the project and apply migrations:
 
-1. `20251204_init_shuleyetu_marketplace.sql` - Core schema (vendors, inventory, orders)
-2. `20251205_auth_rls_open_ordering.sql` - Auth tables and RLS policies
-3. `20251221_create_vendor_users_and_user_roles_tables.sql` - Vendor users and roles
-4. `20251221_add_rls_policies.sql` - Additional RLS policies
-5. `20251230_add_orders_public_access_token.sql` - Public order tracking token
-6. `20251230_rpc_get_user_id_by_email.sql` - Admin helper function
-7. `20251230_rpc_get_user_emails_by_ids.sql` - Admin helper function
+```bash
+# Install/update the Supabase CLI
+npm install -g supabase@latest
 
-**To verify migrations were applied:**
+# Set the access token (PAT) and link the project
+$env:SUPABASE_ACCESS_TOKEN = "sbp_..."
+supabase link --project-ref rqlolaoqstvnffkaqmpt
+
+# Apply pending migrations
+supabase db push
+
+# Or check status
+supabase migration list
+```
+
+Key migrations in order:
+
+1. `20251204_init_shuleyetu_marketplace.sql` - Core schema (vendors,
+   inventory, orders, order_items)
+2. `20251205_auth_rls_open_ordering.sql` - Auth tables, vendor_users, and
+   RLS policies
+3. `20251221_add_rls_policies.sql` - Admin RLS policies and user_roles
+   table
+4. `20251230_add_orders_public_access_token.sql` - Public order tracking
+   token + helper RPCs
+5. `20260111_create_storage_buckets.sql` - Storage buckets and policies
+6. `20260616_add_inventory_image_url.sql` - Inventory image_url +
+   order_messages + indexes + vendor_reviews
+7. `20260618_contact_messages.sql` - Contact form submissions
+8. `20260705_school_portal.sql` - School management schema
+9. `20260706_reconcile_remote.sql` - Reconciles production schema with the
+   codebase
+10. `20260707_add_indexes.sql` - Additional performance indexes
+
+**Note:** `seed_demo_data.sql` is not applied to production because the live
+   database contains real data.
+
+**To verify key objects were applied:**
 ```sql
 -- Check for public_access_token column
-SELECT column_name FROM information_schema.columns 
+SELECT column_name FROM information_schema.columns
 WHERE table_name = 'orders' AND column_name = 'public_access_token';
 
 -- Check for RPC functions
-SELECT routine_name FROM information_schema.routines 
-WHERE routine_schema = 'public' 
-AND routine_name IN ('get_user_id_by_email', 'get_user_emails_by_ids');
+SELECT routine_name FROM information_schema.routines
+WHERE routine_schema = 'public'
+AND routine_name IN (
+  'get_user_id_by_email', 'get_user_emails_by_ids', 'is_school_user'
+);
+
+-- Check for school tables
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name LIKE 'school_%';
 ```
 
 ## Development Workflow
@@ -73,13 +108,14 @@ AND routine_name IN ('get_user_id_by_email', 'get_user_emails_by_ids');
 cd shuleyetu-web
 npm run dev
 ```
-Then open http://localhost:3000
+Then open <http://localhost:3000>.
 
 ### Run tests
 ```bash
-npm run test          # Run all tests
-npm run test:watch    # Run tests in watch mode
+npm run test          # Run all tests (Vitest)
 ```
+
+To run tests in watch mode, use `npx vitest` directly.
 
 ### Lint your code
 ```bash
@@ -106,10 +142,12 @@ shuleyetu-web/
 │   │   ├── api/                # API routes
 │   │   │   ├── admin/          # Admin APIs (role-protected)
 │   │   │   ├── clickpesa/      # Payment integration
-│   │   │   └── orders/         # Public order APIs
+│   │   │   ├── orders/         # Public order APIs
+│   │   │   └── schools/        # School management APIs
 │   │   ├── auth/               # Authentication pages
 │   │   ├── dashboard/          # Vendor dashboard
 │   │   ├── orders/             # Order pages (track, pay, etc.)
+│   │   ├── schools/            # School portal
 │   │   └── vendors/            # Vendor browsing
 │   ├── components/             # Reusable React components
 │   └── lib/                    # Shared utilities
@@ -119,6 +157,8 @@ shuleyetu-web/
 │       ├── logger.ts           # Structured logging
 │       ├── orderTracking.ts    # Order tracking utilities
 │       ├── publicOrderValidation.ts  # Order validation
+│       ├── schoolAuth.ts       # School authorization helpers
+│       ├── schoolPortal.ts     # School portal API client
 │       ├── supabaseClient.ts   # Browser Supabase client
 │       └── supabaseServer.ts   # Server Supabase client
 ├── supabase/migrations/        # Database migrations
@@ -206,6 +246,7 @@ Update admin panel with vendor user management
 - [ ] `.env.local` is gitignored
 - [ ] API routes validate inputs
 - [ ] Admin routes check authorization
+- [ ] School routes check `school_users` membership
 - [ ] Public endpoints use token-based access
 - [ ] Webhook signatures are verified
 

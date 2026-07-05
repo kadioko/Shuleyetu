@@ -429,6 +429,299 @@ ORDER BY total_sales DESC;
 
 ---
 
+## School Management Endpoints
+
+All school endpoints require a valid Supabase JWT bearer token. The user must
+also be a member of the school via the `school_users` table.
+
+### Setup / Create School
+
+```http
+POST /api/schools/setup
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Jangwani Secondary School",
+  "address": "123 School Road",
+  "region": "Dar es Salaam",
+  "district": "Ilala",
+  "contact_email": "admin@jangwani.sc.tz",
+  "contact_phone": "+255712345678"
+}
+```
+
+Creates a new `schools` row and links the current user as `admin` in `school_users`.
+
+```json
+{
+  "success": true,
+  "school": { "id": "school-id", "name": "Jangwani Secondary School" }
+}
+```
+
+---
+
+### Get Current School
+
+```http
+GET /api/schools/me
+Authorization: Bearer <token>
+```
+
+Returns the school the authenticated user belongs to, plus their `school_role`.
+
+```json
+{
+  "school": { "id": "school-id", "name": "...", "region": "..." },
+  "role": "admin"
+}
+```
+
+---
+
+### Dashboard Overview
+
+```http
+GET /api/schools/overview
+Authorization: Bearer <token>
+```
+
+Returns aggregated counts for the school dashboard.
+
+```json
+{
+  "classes": 8,
+  "students": 120,
+  "staff": 15,
+  "attendanceToday": 115,
+  "feesDue": 4500000,
+  "recentStudents": [...],
+  "recentAnnouncements": [...]
+}
+```
+
+---
+
+### Classes
+
+```http
+GET /api/schools/classes
+Authorization: Bearer <token>
+```
+
+```http
+POST /api/schools/classes
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Form 1A",
+  "grade": "Form 1",
+  "stream": "A",
+  "capacity": 40
+}
+```
+
+---
+
+### Students
+
+```http
+GET /api/schools/students?classId=<id>&status=active
+Authorization: Bearer <token>
+```
+
+```http
+POST /api/schools/students
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "admission_number": "JSS/2026/001",
+  "first_name": "Asha",
+  "last_name": "Musa",
+  "gender": "female",
+  "date_of_birth": "2010-05-12",
+  "class_id": "class-id"
+}
+```
+
+---
+
+### Staff
+
+```http
+GET /api/schools/staff
+Authorization: Bearer <token>
+```
+
+```http
+POST /api/schools/staff
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "employee_id": "TCH/001",
+  "first_name": "John",
+  "last_name": "Bwire",
+  "role": "teacher",
+  "subject": "Mathematics",
+  "email": "john@school.sc.tz",
+  "phone": "+255712345678"
+}
+```
+
+---
+
+### Attendance
+
+```http
+GET /api/schools/attendance?classId=<id>&date=2026-07-05
+Authorization: Bearer <token>
+```
+
+```http
+POST /api/schools/attendance
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "student_id": "student-id",
+  "class_id": "class-id",
+  "attendance_date": "2026-07-05",
+  "status": "present",
+  "notes": "Arrived on time"
+}
+```
+
+---
+
+### Fees
+
+```http
+GET /api/schools/fees
+Authorization: Bearer <token>
+```
+
+```http
+POST /api/schools/fees
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "student_id": "student-id",
+  "title": "Tuition Term 2",
+  "amount_tzs": 150000,
+  "due_date": "2026-07-15",
+  "description": "Second term tuition"
+}
+```
+
+---
+
+### Announcements
+
+```http
+GET /api/schools/announcements
+Authorization: Bearer <token>
+```
+
+```http
+POST /api/schools/announcements
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Mid-term Exams",
+  "content": "Mid-term exams start on Monday.",
+  "audience": "all"
+}
+```
+
+---
+
+### School Settings
+
+```http
+GET /api/schools/settings
+Authorization: Bearer <token>
+```
+
+Returns the school record for the authenticated school member.
+
+```http
+PATCH /api/schools/settings
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Jangwani Secondary School",
+  "region": "Dar es Salaam",
+  "district": "Ilala",
+  "ward": "Upanga",
+  "phone": "+255712345678",
+  "email": "admin@jangwani.sc.tz",
+  "address": "123 School Road"
+}
+```
+
+Updates the school profile. Only fields included in the request are changed.
+
+---
+
+### School Reports
+
+```http
+GET /api/schools/reports?date=2026-07-10
+Authorization: Bearer <token>
+```
+
+Returns daily attendance, fee collection, and enrollment summaries.
+
+```json
+{
+  "date": "2026-07-10",
+  "attendanceSummary": {
+    "Form 1A": { "present": 18, "absent": 1, "late": 1, "excused": 0 }
+  },
+  "feeSummary": {
+    "totalInvoiced": 5000000,
+    "totalPaid": 3200000,
+    "totalDue": 1800000
+  },
+  "enrollmentSummary": {
+    "Form 1A": 20,
+    "Form 2B": 22
+  }
+}
+```
+
+---
+
+### Demo Data Seed
+
+```http
+POST /api/schools/seed
+Authorization: Bearer <token>
+```
+
+Populates the current school with a sample dataset: classes, students, staff,
+attendance, fees (with some payments), and announcements. Only works once per
+school (returns `409` if demo data already exists).
+
+```json
+{
+  "success": true,
+  "message": "Demo data loaded successfully",
+  "classes": 4,
+  "students": 12,
+  "fees": 36
+}
+```
+
+---
+
 ## Error Handling
 
 ### Error Response Format

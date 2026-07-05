@@ -46,29 +46,40 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
 
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    setUserEmail(user.email ?? null);
+    try {
+      const {
+        data: { user },
+      } = await supabaseClient.auth.getUser();
+      if (!user) {
+        router.push("/auth/login");
+        return;
+      }
+      setUserEmail(user.email ?? null);
 
-    const { data, error } = await getSchool();
-    if (error) {
-      setError(error);
+      const { data, error } = await getSchool();
+      if (error) {
+        setError(error);
+        setSchool(null);
+        setRole(null);
+      } else if (data?.school) {
+        setSchool(data.school);
+        setRole(data.role ?? null);
+      } else {
+        setSchool(null);
+        setRole(null);
+      }
+    } catch (error) {
+      console.error("SchoolContext: failed to load", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to Shuleyetu. Please check your configuration.",
+      );
       setSchool(null);
       setRole(null);
-    } else if (data?.school) {
-      setSchool(data.school);
-      setRole(data.role ?? null);
-    } else {
-      setSchool(null);
-      setRole(null);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, [router]);
 
   useEffect(() => {
@@ -89,6 +100,22 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
       {loading ? (
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-sky-500/30 border-t-sky-400" />
+        </div>
+      ) : error ? (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+          <div className="inline-flex rounded-full bg-red-500/10 p-4 text-red-400">
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-xl font-bold text-slate-100">Unable to load school portal</h2>
+          <p className="mt-2 max-w-md text-sm text-slate-400">{error}</p>
+          <button
+            onClick={() => load()}
+            className="mt-6 rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:bg-sky-400"
+          >
+            Try again
+          </button>
         </div>
       ) : !school ? (
         <SchoolSetup onCreated={load} />

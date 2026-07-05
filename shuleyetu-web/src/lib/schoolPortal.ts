@@ -157,8 +157,45 @@ export async function getSchool() {
   );
 }
 
+export async function getSchoolSettings() {
+  return fetchWithAuth<{ school: School }>("/api/schools/settings");
+}
+
+export async function updateSchoolSettings(body: {
+  name?: string;
+  region?: string;
+  district?: string;
+  ward?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  is_active?: boolean;
+}) {
+  return fetchWithAuth<{ school: School }>("/api/schools/settings", {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function getOverview() {
   return fetchWithAuth<SchoolOverview>("/api/schools/overview");
+}
+
+export type SchoolReports = {
+  date: string;
+  attendanceSummary: Record<string, Record<string, number>>;
+  feeSummary: {
+    totalInvoiced: number;
+    totalPaid: number;
+    totalDue: number;
+  };
+  enrollmentSummary: Record<string, number>;
+};
+
+export async function getReports(date?: string) {
+  const query = new URLSearchParams();
+  if (date) query.set("date", date);
+  return fetchWithAuth<SchoolReports>(`/api/schools/reports?${query.toString()}`);
 }
 
 export async function getClasses() {
@@ -259,4 +296,15 @@ export async function createAnnouncement(
       body: JSON.stringify(body),
     },
   );
+}
+
+export async function seedDemoData() {
+  return fetchWithAuth<{
+    message: string;
+    classes: number;
+    students: number;
+    fees: number;
+  }>("/api/schools/seed", {
+    method: "POST",
+  });
 }

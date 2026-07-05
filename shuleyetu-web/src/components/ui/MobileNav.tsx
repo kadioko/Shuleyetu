@@ -24,15 +24,27 @@ export function MobileNav() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      setIsLoggedIn(Boolean(session));
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        setIsLoggedIn(Boolean(session));
+      } catch (error) {
+        console.error('MobileNav: failed to check session', error);
+        setIsLoggedIn(false);
+      }
     };
     void checkSession();
 
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(Boolean(session));
-    });
-    return () => subscription.unsubscribe();
+    let subscription: { unsubscribe: () => void } | null = null;
+    try {
+      const { data: { subscription: sub } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setIsLoggedIn(Boolean(session));
+      });
+      subscription = sub;
+    } catch (error) {
+      console.error('MobileNav: failed to subscribe to auth state', error);
+    }
+
+    return () => subscription?.unsubscribe();
   }, []);
 
   // Close on Escape key

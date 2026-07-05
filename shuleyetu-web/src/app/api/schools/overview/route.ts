@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         .eq("attendance_date", today),
       supabaseServerClient
         .from("school_fees")
-        .select("amount_tzs")
+        .select("id, amount_tzs")
         .eq("school_id", schoolId)
         .in("status", ["pending", "partial"]),
       supabaseServerClient
@@ -62,8 +62,27 @@ export async function GET(request: NextRequest) {
         .limit(5),
     ]);
 
+    const feeIds = (feesDue ?? []).map((f) => f.id);
+    const { data: payments } = await supabaseServerClient
+      .from("school_fee_payments")
+      .select("fee_id, amount_tzs")
+      .in(
+        "fee_id",
+        feeIds.length ? feeIds : ["00000000-0000-0000-0000-000000000000"],
+      );
+
+    const paymentsByFee = (payments ?? []).reduce<Record<string, number>>(
+      (acc, p) => {
+        acc[p.fee_id] = (acc[p.fee_id] || 0) + Number(p.amount_tzs || 0);
+        return acc;
+      },
+      {},
+    );
+
     const feesDueTotal = (feesDue ?? []).reduce(
-      (sum, f) => sum + Number(f.amount_tzs || 0),
+      (sum, f) =>
+        sum +
+        Math.max(0, Number(f.amount_tzs || 0) - (paymentsByFee[f.id] || 0)),
       0,
     );
 

@@ -2,12 +2,18 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let _serverClient: SupabaseClient | null = null;
 
+function normalizeSupabaseUrl(url: string | undefined): string {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 export const supabaseServerClient = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     if (!_serverClient) {
-      const supabaseUrl =
+      const rawUrl =
         process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseUrl = normalizeSupabaseUrl(rawUrl);
       if (!supabaseUrl || !supabaseServiceRoleKey) {
         console.warn(
           "Supabase server env vars SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are not set.",

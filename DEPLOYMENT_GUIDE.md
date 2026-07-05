@@ -1,6 +1,6 @@
 # Shuleyetu Deployment Guide
 
-**✅ Production URL**: https://shuleyetu-web.vercel.app
+**✅ Production URL**: <https://shuleyetu-web.vercel.app>
 
 **Status**: Live and Production Ready on Vercel (Free Tier)
 
@@ -9,7 +9,7 @@
 ## Production Deployment Status
 
 - **Platform**: Vercel
-- **URL**: https://shuleyetu-web.vercel.app
+- **URL**: <https://shuleyetu-web.vercel.app>
 - **Status**: ✅ Live
 - **Build**: ✅ Passing
 - **Database**: Supabase (PostgreSQL)
@@ -176,15 +176,38 @@ docker run -p 3000:3000 -e NODE_ENV=production shuleyetu
 
 ## Database Migrations
 
-### Apply Migrations
+The project uses Supabase SQL migrations in `supabase/migrations/`.
+
+### Prerequisites
+
+- Install the Supabase CLI: `npm install -g supabase@latest`
+- Set your Supabase access token (PAT):
+  ```powershell
+  $env:SUPABASE_ACCESS_TOKEN = "sbp_..."
+  ```
+
+### Link and Apply Migrations
 
 ```bash
-# Using Supabase CLI
-supabase migration up
+# Link the project once
+supabase link --project-ref rqlolaoqstvnffkaqmpt
 
-# Or manually in Supabase dashboard
-# Navigate to SQL Editor and run migration files
+# Check migration status
+supabase migration list
+
+# Apply pending migrations
+supabase db push
+
+# Apply a single SQL file manually
+supabase db query -f supabase/migrations/<filename>.sql --linked
 ```
+
+### Important Notes
+
+- Migration files must be named `YYYYMMDD_name.sql`. Files without a timestamp (e.g. `add_indexes.sql`) are ignored by the CLI until renamed.
+- Do not use duplicate timestamps for different migration files. Each timestamp must be unique in `supabase_migrations.schema_migrations`.
+- The `seed_demo_data.sql` migration is **not applied to production** because the live database already contains real vendor, inventory, and order data.
+- A reconciliation migration (`20260706_reconcile_remote.sql`) was applied to align the production schema with the full codebase (missing `order_items`, `user_roles`, `vendor_users`, `order_messages`, `vendor_reviews`, `contact_messages`, storage buckets, `public_access_token`, `image_url`, and school portal tables).
 
 ### Rollback Migrations
 
@@ -225,7 +248,7 @@ Visit `https://shuleyetu-web.vercel.app/status` for real-time service status.
 
 ### Sentry
 
-- Monitor errors at https://sentry.io
+- Monitor errors at <https://sentry.io>
 - Set up alerts for critical errors
 - Configure Slack integration for notifications
 
@@ -309,4 +332,4 @@ For deployment issues:
 - Check logs: `vercel logs --prod`
 - Review Sentry dashboard
 - Check status page: `/status`
-- Contact: devops@shuleyetu.com
+- Contact: `devops@shuleyetu.com`

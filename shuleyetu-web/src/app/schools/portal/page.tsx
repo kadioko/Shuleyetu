@@ -4,9 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/Chart";
+import { useToast } from "@/components/ui/Toast";
 import { useSchool } from "./SchoolContext";
 import {
   getOverview,
+  seedDemoData,
+  getSchoolSettings,
+  updateSchoolSettings,
+  getReports,
   getClasses,
   createClass,
   getStudents,
@@ -25,6 +30,8 @@ import {
   type SchoolFee,
   type SchoolAnnouncement,
   type SchoolOverview,
+  type SchoolReports,
+  type School,
 } from "@/lib/schoolPortal";
 
 type Tab =
@@ -34,7 +41,23 @@ type Tab =
   | "staff"
   | "attendance"
   | "fees"
-  | "announcements";
+  | "announcements"
+  | "settings"
+  | "reports";
+
+function visibleTabs(role: string | null) {
+  const allTabs = tabs;
+  if (role === "admin") return allTabs;
+  if (role === "teacher") {
+    return allTabs.filter((t) =>
+      ["dashboard", "classes", "students", "attendance", "reports"].includes(t.id),
+    );
+  }
+  // staff / support / default
+  return allTabs.filter((t) =>
+    ["dashboard", "classes", "students", "staff", "attendance", "fees", "announcements", "reports"].includes(t.id),
+  );
+}
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -100,22 +123,50 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
+  {
+    id: "reports",
+    label: "Reports",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
 ];
 
 export default function SchoolPortalPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { school, role, userEmail, loading: schoolLoading, refresh } = useSchool();
+  const availableTabs = visibleTabs(role);
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
   useEffect(() => {
     const tab = searchParams.get("tab") as Tab | null;
-    if (tab && tabs.some((t) => t.id === tab)) {
+    if (tab && availableTabs.some((t) => t.id === tab)) {
       setActiveTab(tab);
     }
-  }, [searchParams]);
+  }, [searchParams, availableTabs]);
+
+  useEffect(() => {
+    if (!availableTabs.some((t) => t.id === activeTab)) {
+      setActiveTab("dashboard");
+      router.replace(`/schools/portal?tab=dashboard`, { scroll: false });
+    }
+  }, [activeTab, availableTabs, router]);
 
   const handleTabChange = (tab: Tab) => {
+    if (!availableTabs.some((t) => t.id === tab)) return;
     setActiveTab(tab);
     router.replace(`/schools/portal?tab=${tab}`, { scroll: false });
   };
@@ -165,7 +216,7 @@ export default function SchoolPortalPage() {
         {/* Sidebar / mobile tabs */}
         <aside className="md:w-64 md:flex-shrink-0">
           <nav className="sticky top-24 flex flex-col gap-1 rounded-3xl border border-slate-800 bg-slate-900/40 p-2">
-            {tabs.map((tab) => {
+            {availableTabs.map((tab) => {
               const active = activeTab === tab.id;
               return (
                 <button
@@ -193,6 +244,8 @@ export default function SchoolPortalPage() {
           {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "fees" && <FeesTab />}
           {activeTab === "announcements" && <AnnouncementsTab />}
+          {activeTab === "reports" && <ReportsTab />}
+          {activeTab === "settings" && <SettingsTab />}
         </div>
       </div>
     </main>
@@ -205,8 +258,10 @@ function DashboardTab() {
   const [overview, setOverview] = useState<SchoolOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const { addToast } = useToast();
 
-  useEffect(() => {
+  const loadOverview = useCallback(() => {
     let cancelled = false;
     setLoading(true);
     getOverview().then(({ data, error }) => {
@@ -220,12 +275,61 @@ function DashboardTab() {
     };
   }, []);
 
+  useEffect(() => {
+    return loadOverview();
+  }, [loadOverview]);
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    const { data, error } = await seedDemoData();
+    setSeeding(false);
+    if (error) {
+      addToast({ type: "error", title: "Demo data failed", message: error });
+    } else {
+      addToast({
+        type: "success",
+        title: "Demo data loaded",
+        message: `Added ${data?.students} students, ${data?.classes} classes, and ${data?.fees} fees.`,
+      });
+      loadOverview();
+    }
+  };
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} />;
   if (!overview) return <EmptyMessage message="No overview data available" />;
 
+  const isEmpty = overview.classes === 0 && overview.students === 0;
+
   return (
     <div className="space-y-6">
+      {isEmpty && (
+        <div className="rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent p-6">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-50">Showcase demo data</h3>
+              <p className="mt-1 max-w-2xl text-sm text-slate-400">
+                Load a sample school with classes, students, staff, attendance, fees, and announcements to explore the portal.
+              </p>
+            </div>
+            <button
+              onClick={handleSeed}
+              disabled={seeding}
+              className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:opacity-60"
+            >
+              {seeding ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950/30 border-t-slate-950" />
+                  Loading...
+                </>
+              ) : (
+                "Load demo data"
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Classes"
@@ -1110,6 +1214,293 @@ function AnnouncementsTab() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------- Reports ----------
+
+function ReportsTab() {
+  const [reports, setReports] = useState<SchoolReports | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await getReports(date);
+    setLoading(false);
+    if (error) setError(error);
+    else setReports(data);
+  }, [date]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} />;
+  if (!reports) return <EmptyMessage message="No reports available" />;
+
+  const classes = Object.keys(reports.attendanceSummary);
+  const hasAttendance = classes.length > 0;
+  const hasEnrollment = Object.keys(reports.enrollmentSummary).length > 0;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl font-bold text-slate-50">Reports</h2>
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-slate-400" htmlFor="report-date">
+            Date
+          </label>
+          <input
+            id="report-date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2 text-sm text-slate-50 outline-none focus:border-sky-500"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <SectionCard title="Total Invoiced">
+          <p className="text-2xl font-bold text-slate-50">
+            TZS {reports.feeSummary.totalInvoiced.toLocaleString()}
+          </p>
+        </SectionCard>
+        <SectionCard title="Total Paid">
+          <p className="text-2xl font-bold text-emerald-400">
+            TZS {reports.feeSummary.totalPaid.toLocaleString()}
+          </p>
+        </SectionCard>
+        <SectionCard title="Total Due">
+          <p className="text-2xl font-bold text-amber-400">
+            TZS {reports.feeSummary.totalDue.toLocaleString()}
+          </p>
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title={`Attendance summary for ${reports.date}`}>
+          {!hasAttendance ? (
+            <EmptyMessage message="No attendance records for this date." />
+          ) : (
+            <div className="space-y-4">
+              {classes.map((className) => {
+                const stats = reports.attendanceSummary[className];
+                const total =
+                  stats.present + stats.absent + stats.late + stats.excused;
+                return (
+                  <div key={className} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h4 className="font-semibold text-slate-100">{className}</h4>
+                      <span className="text-xs text-slate-500">{total} students</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                      <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-400">
+                        <div className="font-bold">{stats.present}</div>
+                        <div className="text-slate-500">Present</div>
+                      </div>
+                      <div className="rounded-xl bg-red-500/10 p-2 text-red-400">
+                        <div className="font-bold">{stats.absent}</div>
+                        <div className="text-slate-500">Absent</div>
+                      </div>
+                      <div className="rounded-xl bg-amber-500/10 p-2 text-amber-400">
+                        <div className="font-bold">{stats.late}</div>
+                        <div className="text-slate-500">Late</div>
+                      </div>
+                      <div className="rounded-xl bg-sky-500/10 p-2 text-sky-400">
+                        <div className="font-bold">{stats.excused}</div>
+                        <div className="text-slate-500">Excused</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Enrollment by class">
+          {!hasEnrollment ? (
+            <EmptyMessage message="No students enrolled yet." />
+          ) : (
+            <ul className="divide-y divide-slate-800">
+              {Object.entries(reports.enrollmentSummary)
+                .sort((a, b) => b[1] - a[1])
+                .map(([className, count]) => (
+                  <li key={className} className="flex items-center justify-between py-3">
+                    <span className="text-sm font-medium text-slate-100">{className}</span>
+                    <span className="rounded-full bg-sky-500/10 px-3 py-1 text-xs font-bold text-sky-300">
+                      {count}
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Settings ----------
+
+function SettingsTab() {
+  const { school: contextSchool, refresh } = useSchool();
+  const [school, setSchool] = useState<School | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    if (contextSchool) {
+      setSchool(contextSchool);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      getSchoolSettings().then(({ data, error }) => {
+        setLoading(false);
+        if (error) setError(error);
+        else setSchool(data?.school ?? null);
+      });
+    }
+  }, [contextSchool]);
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const { data, error: updateError } = await updateSchoolSettings({
+      name: String(fd.get("name")).trim(),
+      region: String(fd.get("region")).trim(),
+      district: String(fd.get("district")).trim(),
+      ward: String(fd.get("ward")).trim(),
+      phone: String(fd.get("phone")).trim(),
+      email: String(fd.get("email")).trim(),
+      address: String(fd.get("address")).trim(),
+    });
+    setSaving(false);
+    if (updateError) {
+      setError(updateError);
+      addToast({ type: "error", title: "Save failed", message: updateError });
+    } else {
+      setSchool(data?.school ?? null);
+      refresh();
+      addToast({ type: "success", title: "Settings saved", message: "School details updated successfully." });
+      form.reset();
+    }
+  };
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} />;
+  if (!school) return <EmptyMessage message="No school found" />;
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-slate-50">School settings</h2>
+
+      <form onSubmit={onSubmit} className="space-y-5 rounded-3xl border border-slate-800 bg-slate-900/40 p-6 md:p-8">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300" htmlFor="settings-name">
+            School name
+          </label>
+          <input
+            id="settings-name"
+            name="name"
+            defaultValue={school.name}
+            required
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+          />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-300" htmlFor="settings-region">
+              Region
+            </label>
+            <input
+              id="settings-region"
+              name="region"
+              defaultValue={school.region ?? ""}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-300" htmlFor="settings-district">
+              District
+            </label>
+            <input
+              id="settings-district"
+              name="district"
+              defaultValue={school.district ?? ""}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-300" htmlFor="settings-ward">
+              Ward
+            </label>
+            <input
+              id="settings-ward"
+              name="ward"
+              defaultValue={school.ward ?? ""}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-300" htmlFor="settings-phone">
+              Phone
+            </label>
+            <input
+              id="settings-phone"
+              name="phone"
+              defaultValue={school.phone ?? ""}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300" htmlFor="settings-email">
+            School email
+          </label>
+          <input
+            id="settings-email"
+            name="email"
+            type="email"
+            defaultValue={school.email ?? ""}
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300" htmlFor="settings-address">
+            Address
+          </label>
+          <textarea
+            id="settings-address"
+            name="address"
+            rows={3}
+            defaultValue={school.address ?? ""}
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-50 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+          />
+        </div>
+
+        {error && <p className="text-sm text-red-300">{error}</p>}
+
+        <div className="flex gap-3">
+          <SubmitButton loading={saving}>Save settings</SubmitButton>
+        </div>
+      </form>
     </div>
   );
 }

@@ -27,6 +27,20 @@ export async function POST(request: NextRequest) {
       return jsonError("School name is required", 400);
     }
 
+    // Prevent a user from creating multiple schools
+    const { data: existingSchoolUser } = await supabaseServerClient
+      .from("school_users")
+      .select("school_id")
+      .eq("user_id", auth.user.id)
+      .maybeSingle();
+
+    if (existingSchoolUser) {
+      return jsonError(
+        "You already belong to a school. Only one school can be created per account.",
+        409,
+      );
+    }
+
     // Create the school
     const { data: school, error: schoolError } = await supabaseServerClient
       .from("schools")

@@ -10,22 +10,28 @@ https://shuleyetu-web.vercel.app
 ## Test Accounts
 
 ### Customer Test Account
-**Email**: customer@test.com
+**Email**: `customer@test.com`
 **Password**: TestPassword123!
 **Role**: Customer/Parent
 **Use Case**: Browse vendors, create orders, track orders
 
 ### Vendor Test Account
-**Email**: vendor@test.com
+**Email**: `vendor@test.com`
 **Password**: TestPassword123!
 **Role**: Vendor
 **Use Case**: Manage inventory, view orders, track sales
 
 ### Admin Test Account
-**Email**: admin@test.com
+**Email**: `admin@test.com`
 **Password**: TestPassword123!
 **Role**: Administrator
 **Use Case**: Manage vendors, view analytics, system administration
+
+### School Admin Test Account
+**Email**: `admin@test.com` (or any authenticated account)
+**Password**: TestPassword123!
+**Role**: School Administrator (after creating a school)
+**Use Case**: Create a school and manage classes, students, staff, attendance, fees, and announcements
 
 ---
 
@@ -35,17 +41,17 @@ https://shuleyetu-web.vercel.app
 1. **Dar es Salaam Books**
    - Location: Dar es Salaam, Tanzania
    - Products: Textbooks, Stationery
-   - Contact: vendor1@test.com
+   - Contact: `vendor1@test.com`
 
 2. **Arusha School Supplies**
    - Location: Arusha, Tanzania
    - Products: Uniforms, Textbooks, Stationery
-   - Contact: vendor2@test.com
+   - Contact: `vendor2@test.com`
 
 3. **Mbeya Educational Center**
    - Location: Mbeya, Tanzania
    - Products: Stationery, Uniforms
-   - Contact: vendor3@test.com
+   - Contact: `vendor3@test.com`
 
 ### Sample Products
 - Textbooks (various subjects)
@@ -79,6 +85,18 @@ https://shuleyetu-web.vercel.app
 3. Manage vendor accounts
 4. View system analytics
 5. Check error tracking (Sentry)
+
+### Scenario 4: School Portal Setup & Management
+1. Sign in with an authenticated account (e.g., `admin@test.com`)
+2. Visit `/schools/portal`
+3. Create a school using the setup form (name, address, region, district, contact info)
+4. Verify the dashboard loads with school stats
+5. Add a class (`Classes` tab)
+6. Add a student and assign to a class (`Students` tab)
+7. Add a staff member (`Staff` tab)
+8. Mark attendance for a class/date (`Attendance` tab)
+9. Create a fee invoice (`Fees` tab)
+10. Publish an announcement (`Announcements` tab)
 
 ---
 
@@ -148,6 +166,16 @@ https://shuleyetu-web.vercel.app
 - [ ] View completed orders
 - [ ] Track revenue
 - [ ] View customer feedback
+
+### School Portal
+- [ ] Create a school on first visit
+- [ ] View school dashboard stats
+- [ ] Add and list classes
+- [ ] Add and list students
+- [ ] Add and list staff
+- [ ] Mark attendance by class/date
+- [ ] Create and view fees
+- [ ] Publish and view announcements
 
 ### Payment
 - [ ] Initiate payment
@@ -333,13 +361,13 @@ done
 ## Feedback & Bug Reporting
 
 ### Report Issues
-- Email: support@shuleyetu.com
-- GitHub Issues: https://github.com/kadioko/Shuleyetu/issues
+- Email: `support@shuleyetu.com`
+- GitHub Issues: <https://github.com/kadioko/Shuleyetu/issues>
 - Sentry: Check error tracking dashboard
 
 ### Feature Requests
-- Email: product@shuleyetu.com
-- GitHub Discussions: https://github.com/kadioko/Shuleyetu/discussions
+- Email: `product@shuleyetu.com`
+- GitHub Discussions: <https://github.com/kadioko/Shuleyetu/discussions>
 
 ---
 

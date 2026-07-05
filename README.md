@@ -1,8 +1,11 @@
 # Shuleyetu
 
-Tanzanian school supply marketplace that connects parents, schools, and stationery vendors for textbooks, uniforms, and school materials.
+Tanzanian school supply marketplace that connects parents, schools, and
+stationery vendors for textbooks, uniforms, and school materials — plus a
+school management portal for classes, students, staff, attendance, fees, and
+announcements.
 
-**🚀 Live in Production**: https://shuleyetu-web.vercel.app
+**🚀 Live in Production**: <https://shuleyetu-web.vercel.app>
 
 This repository currently contains a web app (`shuleyetu-web`) plus a Supabase SQL migration defining the core marketplace schema.
 
@@ -10,10 +13,10 @@ This repository currently contains a web app (`shuleyetu-web`) plus a Supabase S
 
 ## Quick Start
 
-- **Production URL**: https://shuleyetu-web.vercel.app
-- **Test Customer**: customer@test.com / TestPassword123!
-- **Test Vendor**: vendor@test.com / TestPassword123!
-- **Test Admin**: admin@test.com / TestPassword123!
+- **Production URL**: <https://shuleyetu-web.vercel.app>
+- **Test Customer**: `customer@test.com` / TestPassword123!
+- **Test Vendor**: `vendor@test.com` / TestPassword123!
+- **Test Admin**: `admin@test.com` / TestPassword123!
 - **Language**: Switch between English (EN) and Swahili (SW) using the toggle button
 
 ---
@@ -21,7 +24,7 @@ This repository currently contains a web app (`shuleyetu-web`) plus a Supabase S
 ## Deployment
 
 - **Platform**: Vercel (Free Tier)
-- **Production URL**: https://shuleyetu-web.vercel.app
+- **Production URL**: <https://shuleyetu-web.vercel.app>
 - **Database**: Supabase (PostgreSQL)
 - **Status**: ✅ Live and Production Ready
 - **Build Status**: ✅ Passing
@@ -50,13 +53,15 @@ This repository currently contains a web app (`shuleyetu-web`) plus a Supabase S
 
 - `shuleyetu-web/`
   - Next.js app (App Router, `src/app`)
-  - **Pages**: vendors, orders, vendor dashboard, admin panel, order tracking, analytics
+  - **Pages**: vendors, orders, vendor dashboard, admin panel, school portal, order tracking, analytics
   - **API routes**: admin management, ClickPesa payment integration, public order access, order messaging
   - **Shared utilities**: `src/lib/` (auth helpers, API utils, logging, validation)
   - **Tests**: unit tests with Vitest for core business logic
 - `supabase/migrations/`
   - Database schema, RLS policies, auth tables, and stored procedures
-  - 11 migration files covering vendors, inventory, orders, auth, admin features, reviews, analytics, and performance indexes
+  - 11 migration files covering vendors, inventory, orders, auth, admin
+    features, reviews, analytics, performance indexes, contact messages, and
+    the school management portal
 
 ---
 
@@ -175,6 +180,33 @@ This repository currently contains a web app (`shuleyetu-web`) plus a Supabase S
   - Uses JWT bearer token authentication for API calls.
   - Structured logging and consistent error handling across all admin APIs.
 
+### School management portal
+
+- **School portal**: `/schools/portal`
+  - Protected by school-based access control (requires membership in
+    `school_users` table).
+  - On first visit, a school admin can create a school and automatically
+    become the linked administrator.
+  - **Dashboard overview**: Stats for students, staff, classes, fees,
+    attendance, and announcements.
+  - **Demo data loader**: One-click sample dataset for showcasing the portal.
+  - **Classes**: Create and manage school classes (`school_classes`).
+  - **Students**: Add and filter student records (`school_students`).
+  - **Staff**: Add and manage school staff and teachers (`school_staff`).
+  - **Attendance**: Mark daily attendance by class and date
+    (`school_attendance`).
+  - **Fees**: Create and track school fees, with automatic paid/balance
+    calculations (`school_fees`, `school_fee_payments`).
+  - **Announcements**: Publish school-wide announcements by audience
+    (`school_announcements`).
+  - **Reports**: Daily attendance summaries, fee collection totals, and
+    enrollment by class.
+  - **Settings**: Update school profile details.
+  - **Role-based tabs**: Tabs filtered by `school_users` role (`admin`,
+    `teacher`, `staff`).
+  - Uses JWT bearer token authentication for API calls under
+    `/api/schools/*`.
+
 ---
 
 ## Getting around the app
@@ -186,7 +218,12 @@ This repository currently contains a web app (`shuleyetu-web`) plus a Supabase S
 5. **Pay via ClickPesa** – from an order, open `/orders/pay/[orderId]` to start a mobile money payment and refresh its status.
 6. **Vendor dashboard** – log in at `/auth/login` and use `/dashboard`, `/dashboard/inventory`, and `/dashboard/orders` to manage items and track orders for a vendor.
 7. **Admin panel** – admins can access `/admin` to manage vendor-user links and admin roles.
-8. **School checklist** – use `/checklist` to generate a back-to-school shopping list.
+8. **School portal** – log in and visit `/schools/portal` to create or
+   manage a school (classes, students, staff, attendance, fees,
+   announcements). Use the **Reports** tab for daily summaries, **Settings**
+   to update school details, and the **Load demo data** button to explore
+   sample data.
+9. **School checklist** – use `/checklist` to generate a back-to-school shopping list.
 
 ---
 
@@ -241,6 +278,28 @@ Defined in `supabase/migrations/`:
   - References `orders(id)` and auth users.
   - Stores message content, sender role, and timestamp.
 
+- **`contact_messages`**
+  - Contact form submissions from the public `/contact` page.
+  - Stores name, email, subject, message, and read status.
+  - Admin-only read access via `user_roles`.
+
+- **`schools` and `school_users`**
+  - `schools` stores general school information (name, address, region,
+    district, contact).
+  - `school_users` links Supabase auth users to a school with a role
+    (`admin`, `staff`, `teacher`, `student`).
+
+- **`school_classes`, `school_students`, `school_staff`**
+  - `school_classes`: classes within a school.
+  - `school_students`: student profiles with class assignment and status.
+  - `school_staff`: teacher/administrator profiles with role and subject.
+
+- **`school_attendance`, `school_fees`, `school_fee_payments`, `school_announcements`**
+  - `school_attendance`: daily attendance records per student.
+  - `school_fees`: invoices with amount, due date, status, and balance.
+  - `school_fee_payments`: individual payments against a fee invoice.
+  - `school_announcements`: school-wide announcements by audience.
+
 ---
 
 ## Environment variables
@@ -282,7 +341,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open <http://localhost:3000>.
 
 ---
 
@@ -303,10 +362,10 @@ npm run test:e2e:ui
 
 ## Useful links
 
-- **Production**: https://shuleyetu-web.vercel.app
-- **Supabase Dashboard**: https://app.supabase.com
-- **Vercel Dashboard**: https://vercel.com/dashboard
-- **Sentry Dashboard**: https://sentry.io (for error tracking)
+- **Production**: <https://shuleyetu-web.vercel.app>
+- **Supabase Dashboard**: <https://app.supabase.com>
+- **Vercel Dashboard**: <https://vercel.com/dashboard>
+- **Sentry Dashboard**: <https://sentry.io> (for error tracking)
 
 ---
 
@@ -319,5 +378,6 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines and contribu
 ## License
 
 MIT License - see LICENSE file for details.
-#   T r i g g e r   b u i l d  
+#   T r i g g e r   b u i l d 
+ 
  

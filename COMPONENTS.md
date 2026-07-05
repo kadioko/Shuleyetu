@@ -586,6 +586,39 @@ All components follow WCAG 2.1 guidelines:
 
 ---
 
+## School Portal UI Composition
+
+The school portal (`/schools/portal`) is built from existing reusable components
+and utility libraries. It is not a single reusable component; rather, it
+composes the primitives above into tab-specific modules.
+
+### Page Structure
+
+- **File**: `src/app/schools/portal/page.tsx`
+- **Layout**: `src/app/schools/portal/layout.tsx` with `SchoolProvider` context
+- **Context**: `src/app/schools/portal/SchoolContext.tsx` (loads the current
+  school and role)
+- **API client**: `src/lib/schoolPortal.ts`
+
+### Tabs / Modules
+
+- **Dashboard**: `StatCard`, `Badge`, `Loading`, `EmptyState`
+- **Classes**: forms with `Input`, `SubmitButton`, tables
+- **Students**: forms with `Input`, `Select`, tables, class filter
+- **Staff**: forms with `Input`, `Select`, tables
+- **Attendance**: `Select`, date `input`, `Badge` for status
+- **Fees**: `Input`, date `input`, `Badge` for status
+- **Announcements**: text `Input`, textarea `Input`, audience `Select`
+
+### Common Components Used
+
+- `StatCard` from `@/components/ui/Chart` for dashboard metrics
+- `Badge` from `@/components/ui/Badge` for status labels
+- `EmptyState` and `Loading` for empty/loading states
+- `useToast` from `@/components/ui/Toast` for success/error feedback
+
+---
+
 ## Future Enhancements
 
 - [ ] Add Storybook for component documentation

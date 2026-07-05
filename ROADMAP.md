@@ -1,7 +1,7 @@
 # Shuleyetu Master Roadmap
 
 A living document tracking all planned improvements across 10 phases.
-Current status: **ALL PHASES COMPLETE** ✅
+Current status: **PHASE 7 COMPLETE — Phase 8 (Content & SEO) in progress** ✅
 
 ---
 
@@ -66,6 +66,29 @@ Current status: **ALL PHASES COMPLETE** ✅
 
 ---
 
+## Phase 7 — School Management Portal ✅
+
+| # | Task | Status | File(s) |
+|---|------|--------|---------|
+| 7.1 | School portal schema (schools, users, classes, students, staff, attendance, fees, announcements) | `completed` | `20260705_school_portal.sql` |
+| 7.2 | School auth helper (`schoolAuth.ts`) and `is_school_user` RPC | `completed` | `src/lib/schoolAuth.ts` |
+| 7.3 | School API routes (`/api/schools/*`) | `completed` | `src/app/api/schools/*` |
+| 7.4 | School portal dashboard page (`/schools/portal`) with tabs | `completed` | `src/app/schools/portal/page.tsx` |
+| 7.5 | School portal navigation links (header, mobile, footer) | `completed` | `layout.tsx`, `MobileNav.tsx`, `Footer.tsx` |
+| 7.6 | Apply school portal migration to production database | `completed` | Supabase CLI |
+
+---
+
+## Phase 8 — Content & SEO (In Progress)
+
+| # | Task | Status | File(s) |
+|---|------|--------|---------|
+| 8.1 | Extract blog posts from `/blog` to a CMS-ready data source | `pending` | `src/app/blog/*` |
+| 8.2 | Add SEO metadata (Open Graph, Twitter cards) to all pages | `pending` | `src/app/layout.tsx`, page metadata |
+| 8.3 | Generate sitemap and `robots.txt` | `pending` | `public/sitemap.xml`, `public/robots.txt` |
+
+---
+
 ## Phase 9 — Performance ✅
 
 | # | Task | Status | File(s) |
@@ -93,13 +116,17 @@ Current status: **ALL PHASES COMPLETE** ✅
 
 ---
 
-*Last updated: 2026-06-16*
-*Status: ALL PHASES COMPLETE — 13 commits shipped*
+*Last updated: 2026-07-05*
+*Status: PHASE 7 COMPLETE — School management portal live; Phase 8 in progress*
 
 ## Documentation Updates
 
 | Document | Status |
 |----------|--------|
-| `README.md` | ✅ Updated with all new features (PWA, Accessibility, Cart, Analytics, etc.) |
-| `FEATURES.md` | ✅ Updated with Shopping Cart, Print Invoice, School Checklist, Revenue Analytics, Order Timeline, Order Messaging, Vendor Reviews, Product Images, PWA, Accessibility |
+| `README.md` | ✅ Updated with school portal, current schema, and navigation |
+| `FEATURES.md` | ✅ Updated with school portal features, classes, students, staff, attendance, fees, announcements |
 | `ROADMAP.md` | ✅ Current |
+| `API.md` | ✅ Updated with `/api/schools/*` endpoints |
+| `DEPLOYMENT_GUIDE.md` | ✅ Updated with Supabase link/push workflow and migration notes |
+| `TEST_ACCOUNTS.md` | ✅ Updated with school portal testing scenario |
+| `AGENTS.md` | ✅ Created with project commands and migration notes |
