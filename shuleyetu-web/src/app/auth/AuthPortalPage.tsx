@@ -88,6 +88,90 @@ function safeNextPath(value: string | null, fallback: string) {
   return value;
 }
 
+export function AuthPortalChooser() {
+  return (
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
+      <div className="absolute bottom-20 left-10 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl" />
+
+      <section className="relative w-full max-w-5xl">
+        <div className="text-center">
+          <Link href="/" className="group inline-flex items-center gap-3 text-2xl font-bold text-slate-50">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 text-xl font-extrabold text-white shadow-lg shadow-sky-500/25 transition-transform group-hover:scale-110">
+              S
+            </div>
+            <span className="font-display">Shuleyetu</span>
+          </Link>
+          <h1 className="mx-auto mt-8 max-w-3xl font-display text-4xl font-extrabold tracking-tight text-slate-50 md:text-5xl">
+            Sign in to the right Shuleyetu workspace
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
+            Vendor and school teams use the same secure account system, but each portal has its own dashboard and access rules.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          <Link
+            href="/auth/vendor-login"
+            className="group rounded-[28px] border border-sky-500/25 bg-sky-500/10 p-7 transition-all hover:-translate-y-1 hover:border-sky-400/45 hover:bg-sky-500/15"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/25">
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h10" />
+              </svg>
+            </div>
+            <h2 className="mt-6 text-2xl font-bold text-slate-50">Vendor Portal</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Manage inventory, orders, pricing, and your supplier dashboard.
+            </p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-300">
+              Sign in as vendor
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </Link>
+
+          <Link
+            href="/auth/school-login"
+            className="group rounded-[28px] border border-amber-400/30 bg-amber-400/10 p-7 transition-all hover:-translate-y-1 hover:border-amber-300/50 hover:bg-amber-400/15"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/25">
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422A12.083 12.083 0 0118.5 17.25c0 1.01-.672 1.9-1.646 2.171A18.487 18.487 0 0112 20a18.487 18.487 0 01-4.854-.579A2.25 2.25 0 015.5 17.25c0-2.35.67-4.55 1.84-6.672L12 14z" />
+              </svg>
+            </div>
+            <h2 className="mt-6 text-2xl font-bold text-slate-50">School Portal</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Manage classes, students, attendance, fees, staff, and reports.
+            </p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-200">
+              Sign in as school
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </Link>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-5 text-center text-sm text-slate-400">
+          Parents and public customers do not need a portal login to browse vendors, create orders, or track order links.
+          <div className="mt-3 flex flex-wrap justify-center gap-3">
+            <Link href="/vendors" className="font-semibold text-sky-300 hover:text-sky-200">
+              Browse vendors
+            </Link>
+            <Link href="/orders/track" className="font-semibold text-sky-300 hover:text-sky-200">
+              Track an order
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export function AuthPortalPage({ type }: { type: PortalType }) {
   const searchParams = useSearchParams();
   const config = portalConfigs[type];
@@ -230,19 +314,14 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
                 <label className="block text-sm font-medium text-slate-300" htmlFor="email">
                   Email address
                 </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-                    <svg className="h-5 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
+                <div>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
-                    className={`w-full rounded-2xl border border-white/10 bg-slate-950/80 py-3.5 pl-12 pr-4 text-base text-slate-50 placeholder-slate-500 outline-none transition-all focus:ring-2 ${accentClasses.focus}`}
+                    className={`w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3.5 text-base text-slate-50 placeholder-slate-500 outline-none transition-all focus:ring-2 ${accentClasses.focus}`}
                     autoComplete="email"
                   />
                 </div>
@@ -252,19 +331,14 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
                 <label className="block text-sm font-medium text-slate-300" htmlFor="password">
                   Password
                 </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
+                <div>
                   <input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="Password"
-                    className={`w-full rounded-2xl border border-white/10 bg-slate-950/80 py-3 pl-10 pr-4 text-sm text-slate-50 placeholder-slate-500 outline-none transition-all focus:ring-2 ${accentClasses.focus}`}
+                    className={`w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-slate-50 placeholder-slate-500 outline-none transition-all focus:ring-2 ${accentClasses.focus}`}
                     autoComplete={isSignUp ? 'new-password' : 'current-password'}
                   />
                 </div>

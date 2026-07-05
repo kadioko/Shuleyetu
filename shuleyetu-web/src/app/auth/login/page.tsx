@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { AuthPortalPage } from "../AuthPortalPage";
+import { AuthPortalChooser } from "../AuthPortalPage";
 
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
-      <AuthPortalPage type="vendor" />
+      <AuthPortalChooser />
     </Suspense>
   );
 }
