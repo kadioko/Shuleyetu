@@ -66,7 +66,7 @@ export default function EditInventoryItemPage({ params }: PageProps) {
       }
 
       if (!user) {
-        router.push("/auth/login");
+        router.push(`/auth/vendor-login?next=/dashboard/inventory/${params.itemId}/edit`);
         return;
       }
 

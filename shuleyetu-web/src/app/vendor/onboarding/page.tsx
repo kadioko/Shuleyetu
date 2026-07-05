@@ -69,7 +69,7 @@ export default function VendorOnboardingPage() {
           title: 'Authentication required',
           message: 'Please log in to continue',
         });
-        router.push('/auth/login');
+        router.push('/auth/vendor-login?next=/vendor/onboarding');
         return;
       }
 
@@ -348,7 +348,7 @@ export default function VendorOnboardingPage() {
       <div className="text-center">
         <p className="text-sm text-slate-400">
           Already have an account?{' '}
-          <Link href="/auth/login" className="font-medium text-sky-400 hover:text-sky-300">
+          <Link href="/auth/vendor-login?next=/vendor/onboarding" className="font-medium text-sky-400 hover:text-sky-300">
             Sign in
           </Link>
         </p>

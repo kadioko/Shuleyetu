@@ -248,7 +248,7 @@ export default function ContactPage() {
               <p className="text-slate-400 mb-6">Common topics we can help with.</p>
             </div>
             {[
-              { title: 'Vendor Registration', desc: 'Want to list your shop on Shuleyetu? Contact us to get started.', href: '/auth/login', cta: 'Sign up as vendor' },
+              { title: 'Vendor Registration', desc: 'Want to list your shop on Shuleyetu? Contact us to get started.', href: '/auth/vendor-login?next=/vendor/onboarding', cta: 'Sign up as vendor' },
               { title: 'School Partnerships', desc: 'Schools can partner with us to streamline supply lists for parents.', href: '/why-shuleyetu', cta: 'Learn more' },
               { title: 'Order Support', desc: 'Having trouble with an order? Track it or reach out directly.', href: '/orders/track', cta: 'Track order' },
               { title: 'Technical Issues', desc: 'Experiencing a bug or technical problem? Let us know.', href: 'mailto:support@shuleyetu.com', cta: 'Email support' },

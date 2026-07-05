@@ -214,7 +214,7 @@ She also recommends keeping stock quantities accurate. "If you show something as
 
 ---
 
-*Interested in joining Shuleyetu as a vendor? [Sign up here](/auth/login).*
+*Interested in joining Shuleyetu as a vendor? [Sign up here](/auth/vendor-login?next=/vendor/onboarding).*
     `,
   },
   {

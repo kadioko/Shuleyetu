@@ -157,7 +157,7 @@ export function MobileNav() {
                 </button>
               ) : (
                 <Link
-                  href="/auth/login"
+                  href="/auth/vendor-login"
                   onClick={() => setIsOpen(false)}
                   className="block rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 transition-all hover:from-sky-400 hover:to-sky-500"
                 >

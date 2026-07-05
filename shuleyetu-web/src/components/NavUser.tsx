@@ -68,7 +68,7 @@ export function NavUser() {
   if (!user) {
     return (
       <Link
-        href="/auth/login"
+        href="/auth/vendor-login"
         className="inline-flex min-h-[44px] items-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition-all hover:border-sky-400/30 hover:bg-white/10 hover:text-sky-300"
       >
         Login

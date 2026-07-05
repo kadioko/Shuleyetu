@@ -401,7 +401,7 @@ export default function AdminPage() {
         <div className="space-y-3 rounded-xl border border-amber-500/40 bg-amber-950/40 p-4 text-sm text-amber-100">
           <p>You must be logged in with an admin account to access this page.</p>
           <Link
-            href="/auth/login"
+            href="/auth/vendor-login?next=/admin"
             className="text-sm font-medium text-sky-400 hover:text-sky-300"
           >
             Go to login

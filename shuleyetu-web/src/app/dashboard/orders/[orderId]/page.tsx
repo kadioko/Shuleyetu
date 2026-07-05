@@ -76,7 +76,7 @@ export default function DashboardOrderDetailPage({ params }: PageProps) {
       }
 
       if (!user) {
-        router.push("/auth/login");
+        router.push(`/auth/vendor-login?next=/dashboard/orders/${orderId}`);
         return;
       }
 

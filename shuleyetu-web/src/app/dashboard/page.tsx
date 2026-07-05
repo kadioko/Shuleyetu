@@ -67,7 +67,7 @@ export default function DashboardPage() {
         }
 
         if (!user) {
-          router.push("/auth/login");
+          router.push("/auth/vendor-login?next=/dashboard");
           return;
         }
 
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             <p className="text-lg font-bold text-red-200">Dashboard error</p>
             <p className="mt-1 text-sm text-red-300/70">{error}</p>
           </div>
-          <Link href="/auth/login" className="inline-flex items-center gap-2 rounded-xl bg-red-500/20 px-5 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/30">
+          <Link href="/auth/vendor-login?next=/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-red-500/20 px-5 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/30">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Go to vendor login
           </Link>

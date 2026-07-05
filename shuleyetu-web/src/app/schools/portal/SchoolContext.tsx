@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { createSchool, getSchool, type School } from "@/lib/schoolPortal";
@@ -51,7 +52,7 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
         data: { user },
       } = await supabaseClient.auth.getUser();
       if (!user) {
-        router.push("/auth/login");
+        router.push("/auth/school-login?next=/schools/portal");
         return;
       }
       setUserEmail(user.email ?? null);
@@ -127,6 +128,7 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
 }
 
 function SchoolSetup({ onCreated }: { onCreated: () => void }) {
+  const [setupOpen, setSetupOpen] = useState(false);
   const [name, setName] = useState("");
   const [region, setRegion] = useState("");
   const [district, setDistrict] = useState("");
@@ -167,23 +169,70 @@ function SchoolSetup({ onCreated }: { onCreated: () => void }) {
       <section className="border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="mx-auto max-w-3xl px-4 py-16 md:px-6 md:py-24">
           <div className="text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-sky-500/10 text-sky-400">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 text-amber-300">
               <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
             <h1 className="mt-6 font-display text-3xl font-bold text-slate-50 md:text-4xl">
-              Set up your school portal
+              Your account is not linked to a school yet
             </h1>
             <p className="mx-auto mt-4 max-w-lg text-slate-400">
-              Create a school workspace to manage classes, students, staff, attendance, and fees.
+              If your school already has a portal, ask your school admin to invite or link your email. If you are setting up a new school workspace, you can create it here.
             </p>
           </div>
 
+          <div className="mx-auto mt-10 grid max-w-3xl gap-4 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setSetupOpen(true)}
+              className="rounded-3xl border border-amber-400/30 bg-amber-400/10 p-6 text-left transition-all hover:-translate-y-1 hover:border-amber-300/50 hover:bg-amber-400/15"
+            >
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-slate-50">Create a new school portal</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Use this if you are authorized to create and manage the school workspace.
+              </p>
+            </button>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-slate-300">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M9 20H4v-2a3 3 0 015.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-slate-50">Join an existing school</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Ask your school admin to add your account email to the school users list.
+              </p>
+              <Link
+                href="/contact"
+                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-300 transition-colors hover:text-sky-200"
+              >
+                Contact Shuleyetu support
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+
+          {setupOpen && (
           <form
             onSubmit={handleSubmit}
             className="mx-auto mt-10 max-w-xl space-y-5 rounded-[28px] border border-slate-800 bg-slate-900/40 p-6 md:p-8"
           >
+            <div>
+              <h2 className="text-xl font-bold text-slate-50">Create school portal</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                This will create a new school workspace and link your account as the school admin.
+              </p>
+            </div>
+
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-slate-300" htmlFor="school-name">
                 School name
@@ -289,11 +338,12 @@ function SchoolSetup({ onCreated }: { onCreated: () => void }) {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-[1.02] disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] disabled:opacity-60"
             >
               {submitting ? "Creating..." : "Create school portal"}
             </button>
           </form>
+          )}
         </div>
       </section>
     </main>

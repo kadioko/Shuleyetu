@@ -497,7 +497,7 @@ export default function HomePage() {
                 </svg>
               </Link>
               <Link
-                href="/auth/login"
+                href="/auth/vendor-login?next=/vendor/onboarding"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900/50 px-8 py-4 text-base font-bold text-slate-100 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-sky-500 hover:bg-slate-800/80"
               >
                 {t('vendorSignUp')}

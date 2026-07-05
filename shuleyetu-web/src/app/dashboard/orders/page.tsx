@@ -134,7 +134,7 @@ export default function DashboardOrdersPage() {
         }
 
         if (!user) {
-          router.push("/auth/login");
+          router.push("/auth/vendor-login?next=/dashboard/orders");
           return;
         }
 

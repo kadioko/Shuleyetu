@@ -120,31 +120,31 @@ export default function RootLayout({
                   <div className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:flex">
                     <Link
                       href="/"
-                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
+                      className="flex min-h-[44px] items-center whitespace-nowrap rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Home
                     </Link>
                     <Link
                       href="/vendors"
-                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
+                      className="flex min-h-[44px] items-center whitespace-nowrap rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Vendors
                     </Link>
                     <Link
                       href="/orders"
-                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
+                      className="flex min-h-[44px] items-center whitespace-nowrap rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Orders
                     </Link>
                     <Link
                       href="/dashboard"
-                      className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
+                      className="flex min-h-[44px] items-center whitespace-nowrap rounded-xl px-4 py-2 text-slate-300 transition-all hover:bg-white/5 hover:text-sky-300 font-medium"
                     >
                       Vendor Dashboard
                     </Link>
                     <Link
                       href="/schools/portal"
-                      className="flex min-h-[44px] items-center rounded-xl bg-amber-500/10 px-4 py-2 font-semibold text-amber-200 ring-1 ring-amber-400/20 transition-all hover:bg-amber-500/15 hover:text-amber-100"
+                      className="flex min-h-[44px] items-center whitespace-nowrap rounded-xl bg-amber-500/10 px-4 py-2 font-semibold text-amber-200 ring-1 ring-amber-400/20 transition-all hover:bg-amber-500/15 hover:text-amber-100"
                     >
                       School Portal
                     </Link>

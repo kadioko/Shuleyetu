@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
         } = await supabaseClient.auth.getUser();
 
         if (!user) {
-          router.push('/auth/login');
+          router.push('/auth/vendor-login?next=/dashboard/analytics');
           return;
         }
 

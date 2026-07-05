@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { AuthPortalPage } from "../AuthPortalPage";
 
-export default function LoginPage() {
+export default function SchoolLoginPage() {
   return (
     <Suspense fallback={null}>
-      <AuthPortalPage type="vendor" />
+      <AuthPortalPage type="school" />
     </Suspense>
   );
 }
