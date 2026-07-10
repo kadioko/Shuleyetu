@@ -47,7 +47,7 @@ create table if not exists public.school_invites (
   email text not null,
   role text not null default 'staff'
     check (role in ('admin', 'teacher', 'staff')),
-  token text not null unique default encode(gen_random_bytes(24), 'hex'),
+  token text not null unique default replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''),
   status text not null default 'pending'
     check (status in ('pending', 'accepted', 'revoked')),
   invited_by uuid references auth.users(id) on delete set null,
