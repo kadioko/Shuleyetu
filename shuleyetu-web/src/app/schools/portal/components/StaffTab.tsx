@@ -6,6 +6,7 @@ import {
   getStaff,
   createStaff,
   updateStaffStatus,
+  updateStaff,
   type SchoolStaff,
 } from "@/lib/schoolPortal";
 import {
@@ -38,6 +39,8 @@ export function StaffTab() {
   const [statusChanging, setStatusChanging] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [editTarget, setEditTarget] = useState<SchoolStaff | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const { addToast } = useToast();
 
   const load = async () => {
@@ -70,6 +73,31 @@ export function StaffTab() {
       addToast({ type: "success", title: "Staff member added" });
       setFormOpen(false);
       e.currentTarget.reset();
+      void load();
+    }
+  };
+
+  const onEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditSubmitting(true);
+    const fd = new FormData(e.currentTarget);
+    const { error } = await updateStaff(editTarget.id, {
+      first_name: String(fd.get("first_name") ?? "").trim(),
+      last_name: String(fd.get("last_name") ?? "").trim(),
+      employee_id: String(fd.get("employee_id") ?? "").trim() || null,
+      email: String(fd.get("email") ?? "").trim() || null,
+      phone: String(fd.get("phone") ?? "").trim() || null,
+      role: String(fd.get("role")) as SchoolStaff["role"],
+      subject: String(fd.get("subject") ?? "").trim() || null,
+      status: String(fd.get("status")) as SchoolStaff["status"],
+    });
+    setEditSubmitting(false);
+    if (error) {
+      addToast({ type: "error", title: "Failed to update staff", message: error });
+    } else {
+      addToast({ type: "success", title: "Staff member updated" });
+      setEditTarget(null);
       void load();
     }
   };
@@ -168,6 +196,33 @@ export function StaffTab() {
         </form>
       )}
 
+      {/* Edit panel */}
+      {editTarget && (
+        <form onSubmit={onEditSubmit} className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
+          <h3 className="font-semibold text-slate-200">Edit staff — {editTarget.first_name} {editTarget.last_name}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="employee_id" label="Employee ID" defaultValue={editTarget.employee_id ?? ""} />
+            <Select name="role" label="Role" defaultValue={editTarget.role} options={ROLE_OPTIONS} required />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="first_name" label="First name" required defaultValue={editTarget.first_name} />
+            <Input name="last_name" label="Last name" required defaultValue={editTarget.last_name} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="email" type="email" label="Email" defaultValue={editTarget.email ?? ""} />
+            <Input name="phone" label="Phone" defaultValue={editTarget.phone ?? ""} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="subject" label="Subject / department" defaultValue={editTarget.subject ?? ""} />
+            <Select name="status" label="Status" defaultValue={editTarget.status} options={STATUS_OPTIONS} />
+          </div>
+          <div className="flex gap-3">
+            <SubmitButton loading={editSubmitting}>Update staff</SubmitButton>
+            <Button variant="secondary" onClick={() => setEditTarget(null)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+
       {filtered.length === 0 ? (
         <EmptyMessage message="No staff found. Adjust filters or add a new staff member." />
       ) : (
@@ -183,6 +238,7 @@ export function StaffTab() {
                   <th className="px-6 py-4">Subject</th>
                   <th className="px-6 py-4">Phone</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -209,6 +265,14 @@ export function StaffTab() {
                           <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => setEditTarget(s)}
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all hover:bg-white/10"
+                      >
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 ))}

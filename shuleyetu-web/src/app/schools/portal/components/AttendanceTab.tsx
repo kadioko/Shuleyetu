@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import {
   getClasses,
+  getStudents,
   getAttendance,
   saveAttendance,
   saveBulkAttendance,
+  getStudentAttendanceHistory,
   type SchoolClass,
   type SchoolStudent,
+  type SchoolAttendanceRecord,
 } from "@/lib/schoolPortal";
 import { Loading, EmptyMessage, downloadCsv } from "./shared";
 
@@ -30,7 +33,10 @@ function statusColor(status: string | null) {
   }
 }
 
+type TabMode = "mark" | "history";
+
 export function AttendanceTab() {
+  const [mode, setMode] = useState<TabMode>("mark");
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
@@ -40,6 +46,18 @@ export function AttendanceTab() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const { addToast } = useToast();
 
+  // History mode state
+  const [allStudents, setAllStudents] = useState<SchoolStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [historyDateFrom, setHistoryDateFrom] = useState<string>(
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  );
+  const [historyDateTo, setHistoryDateTo] = useState<string>(
+    new Date().toISOString().slice(0, 10),
+  );
+  const [historyRecords, setHistoryRecords] = useState<SchoolAttendanceRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   useEffect(() => {
     getClasses().then(({ data }) => {
       const list = data?.classes ?? [];
@@ -48,15 +66,46 @@ export function AttendanceTab() {
     });
   }, []);
 
+  // Load students for history mode
   useEffect(() => {
-    if (!selectedClass) return;
+    if (mode === "history") {
+      getStudents({ classId: selectedClass || undefined }).then(({ data }) => {
+        setAllStudents(data?.students ?? []);
+      });
+    }
+  }, [mode, selectedClass]);
+
+  useEffect(() => {
+    if (mode !== "mark" || !selectedClass) return;
     setLoading(true);
     getAttendance({ classId: selectedClass, date }).then(({ data, error }) => {
       setLoading(false);
       if (error) addToast({ type: "error", title: "Failed to load attendance", message: error });
       else setRows((data?.students as AttendanceRow[]) ?? []);
     });
-  }, [selectedClass, date]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedClass, date, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadHistory = async () => {
+    if (!selectedStudentId) return;
+    setHistoryLoading(true);
+    const { data, error } = await getStudentAttendanceHistory({
+      studentId: selectedStudentId,
+      dateFrom: historyDateFrom,
+      dateTo: historyDateTo,
+    });
+    setHistoryLoading(false);
+    if (error) {
+      addToast({ type: "error", title: "Failed to load history", message: error });
+    } else {
+      setHistoryRecords(data?.records ?? []);
+    }
+  };
+
+  useEffect(() => {
+    if (mode === "history" && selectedStudentId) {
+      void loadHistory();
+    }
+  }, [selectedStudentId, historyDateFrom, historyDateTo, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mark = async (student: AttendanceRow, status: AttendanceStatus) => {
     setSavingId(student.id);
@@ -108,6 +157,19 @@ export function AttendanceTab() {
     downloadCsv(`attendance-${className}-${date}.csv`, headers, rowData);
   };
 
+  const handleHistoryExport = () => {
+    const student = allStudents.find((s) => s.id === selectedStudentId);
+    const studentName = student ? `${student.first_name}-${student.last_name}` : selectedStudentId;
+    const headers = ["Date", "Class", "Status", "Notes"];
+    const rowData = historyRecords.map((r) => [
+      r.attendance_date,
+      r.class_name ?? "",
+      r.status,
+      r.notes ?? "",
+    ]);
+    downloadCsv(`attendance-history-${studentName}-${historyDateFrom}-to-${historyDateTo}.csv`, headers, rowData);
+  };
+
   const stats = rows.reduce(
     (acc, r) => {
       const s = r.attendance_status ?? "unmarked";
@@ -132,115 +194,228 @@ export function AttendanceTab() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-sm text-slate-50 outline-none focus:border-sky-500"
-          />
+          {mode === "mark" && (
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-sm text-slate-50 outline-none focus:border-sky-500"
+            />
+          )}
         </div>
       </div>
 
-      {!selectedClass ? (
-        <EmptyMessage message="Select a class to mark attendance." />
-      ) : loading ? (
-        <Loading />
-      ) : rows.length === 0 ? (
-        <EmptyMessage message="No active students in this class." />
-      ) : (
+      {/* Mode toggle */}
+      <div className="flex gap-1 rounded-2xl border border-slate-800 bg-slate-900/40 p-1 w-fit">
+        <button
+          onClick={() => setMode("mark")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+            mode === "mark"
+              ? "bg-sky-600 text-white shadow"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          Mark attendance
+        </button>
+        <button
+          onClick={() => setMode("history")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+            mode === "history"
+              ? "bg-sky-600 text-white shadow"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          Student history
+        </button>
+      </div>
+
+      {mode === "mark" && (
         <>
-          {/* Summary + bulk actions */}
-          <div className="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/40 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-4 text-center text-xs">
-              {[
-                { label: "Present", key: "present", color: "text-emerald-400" },
-                { label: "Absent", key: "absent", color: "text-red-400" },
-                { label: "Late", key: "late", color: "text-amber-400" },
-                { label: "Excused", key: "excused", color: "text-violet-400" },
-                { label: "Unmarked", key: "unmarked", color: "text-slate-500" },
-              ].map(({ label, key, color }) => (
-                <div key={key}>
-                  <div className={`text-2xl font-bold ${color}`}>{stats[key] ?? 0}</div>
-                  <div className="text-slate-500">{label}</div>
+          {!selectedClass ? (
+            <EmptyMessage message="Select a class to mark attendance." />
+          ) : loading ? (
+            <Loading />
+          ) : rows.length === 0 ? (
+            <EmptyMessage message="No active students in this class." />
+          ) : (
+            <>
+              {/* Summary + bulk actions */}
+              <div className="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/40 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-4 text-center text-xs">
+                  {[
+                    { label: "Present", key: "present", color: "text-emerald-400" },
+                    { label: "Absent", key: "absent", color: "text-red-400" },
+                    { label: "Late", key: "late", color: "text-amber-400" },
+                    { label: "Excused", key: "excused", color: "text-violet-400" },
+                    { label: "Unmarked", key: "unmarked", color: "text-slate-500" },
+                  ].map(({ label, key, color }) => (
+                    <div key={key}>
+                      <div className={`text-2xl font-bold ${color}`}>{stats[key] ?? 0}</div>
+                      <div className="text-slate-500">{label}</div>
+                    </div>
+                  ))}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-slate-500 self-center">Mark all:</span>
+                  {STATUSES.map((s) => (
+                    <button
+                      key={s}
+                      disabled={bulkSaving}
+                      onClick={() => void markBulk(s)}
+                      className={`rounded-xl border px-3 py-1.5 text-xs font-semibold capitalize transition-all hover:opacity-80 disabled:opacity-50 ${statusColor(s)}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                  <button
+                    onClick={handleExport}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-white/10"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/40">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-6 py-4">Student</th>
+                      <th className="px-6 py-4">Admission</th>
+                      <th className="px-6 py-4">Current status</th>
+                      <th className="px-6 py-4">Mark</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {rows.map((s) => (
+                      <tr key={s.id} className="hover:bg-white/[0.02]">
+                        <td className="px-6 py-4 font-medium text-slate-100">
+                          {s.first_name} {s.last_name}
+                        </td>
+                        <td className="px-6 py-4 text-slate-400">{s.admission_number}</td>
+                        <td className="px-6 py-4">
+                          {s.attendance_status ? (
+                            <span
+                              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusColor(s.attendance_status)}`}
+                            >
+                              {s.attendance_status}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {savingId === s.id ? (
+                              <span className="text-xs text-slate-500">Saving...</span>
+                            ) : (
+                              STATUSES.map((status) => (
+                                <button
+                                  key={status}
+                                  onClick={() => void mark(s, status)}
+                                  disabled={!!savingId}
+                                  className={`rounded-lg border px-2.5 py-1 text-xs font-medium capitalize transition-all hover:opacity-90 disabled:opacity-40 ${
+                                    s.attendance_status === status
+                                      ? statusColor(status)
+                                      : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10"
+                                  }`}
+                                >
+                                  {status}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {mode === "history" && (
+        <>
+          {/* Student selector and date range */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <select
+              value={selectedStudentId}
+              onChange={(e) => setSelectedStudentId(e.target.value)}
+              className="flex-1 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-sm text-slate-50 outline-none focus:border-sky-500"
+            >
+              <option value="">Select student</option>
+              {allStudents.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.first_name} {s.last_name} ({s.admission_number})
+                </option>
               ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="text-xs text-slate-500 self-center">Mark all:</span>
-              {STATUSES.map((s) => (
-                <button
-                  key={s}
-                  disabled={bulkSaving}
-                  onClick={() => void markBulk(s)}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold capitalize transition-all hover:opacity-80 disabled:opacity-50 ${statusColor(s)}`}
-                >
-                  {s}
-                </button>
-              ))}
-              <button
-                onClick={handleExport}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-white/10"
-              >
-                Export CSV
-              </button>
-            </div>
+            </select>
+            <input
+              type="date"
+              value={historyDateFrom}
+              onChange={(e) => setHistoryDateFrom(e.target.value)}
+              className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-sm text-slate-50 outline-none focus:border-sky-500"
+            />
+            <span className="text-xs text-slate-500">to</span>
+            <input
+              type="date"
+              value={historyDateTo}
+              onChange={(e) => setHistoryDateTo(e.target.value)}
+              className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-sm text-slate-50 outline-none focus:border-sky-500"
+            />
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/40">
-            <table className="w-full text-sm">
-              <thead className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-500">
-                <tr>
-                  <th className="px-6 py-4">Student</th>
-                  <th className="px-6 py-4">Admission</th>
-                  <th className="px-6 py-4">Current status</th>
-                  <th className="px-6 py-4">Mark</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {rows.map((s) => (
-                  <tr key={s.id} className="hover:bg-white/[0.02]">
-                    <td className="px-6 py-4 font-medium text-slate-100">
-                      {s.first_name} {s.last_name}
-                    </td>
-                    <td className="px-6 py-4 text-slate-400">{s.admission_number}</td>
-                    <td className="px-6 py-4">
-                      {s.attendance_status ? (
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusColor(s.attendance_status)}`}
-                        >
-                          {s.attendance_status}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-600">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {savingId === s.id ? (
-                          <span className="text-xs text-slate-500">Saving...</span>
-                        ) : (
-                          STATUSES.map((status) => (
-                            <button
-                              key={status}
-                              onClick={() => void mark(s, status)}
-                              disabled={!!savingId}
-                              className={`rounded-lg border px-2.5 py-1 text-xs font-medium capitalize transition-all hover:opacity-90 disabled:opacity-40 ${
-                                s.attendance_status === status
-                                  ? statusColor(status)
-                                  : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10"
-                              }`}
-                            >
-                              {status}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {!selectedStudentId ? (
+            <EmptyMessage message="Select a student to view their attendance history." />
+          ) : historyLoading ? (
+            <Loading />
+          ) : historyRecords.length === 0 ? (
+            <EmptyMessage message="No attendance records found for this period." />
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {historyRecords.length} record{historyRecords.length !== 1 ? "s" : ""} found
+                </p>
+                <button
+                  onClick={handleHistoryExport}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-white/10"
+                >
+                  Export CSV
+                </button>
+              </div>
+              <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/40">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Class</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {historyRecords.map((r) => (
+                      <tr key={r.id} className="hover:bg-white/[0.02]">
+                        <td className="px-6 py-4 text-slate-300">{r.attendance_date}</td>
+                        <td className="px-6 py-4 text-slate-400">{r.class_name ?? "—"}</td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusColor(r.status)}`}
+                          >
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-400">{r.notes ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

@@ -13,41 +13,16 @@ type Vendor = {
   region: string | null;
   district: string | null;
   ward: string | null;
+  approval_status: string | null;
+  avg_rating: number;
+  review_count: number;
 };
-
-const DEMO_VENDORS: Vendor[] = [
-  {
-    id: "demo-vendor-1",
-    name: "Mlimani School Supplies",
-    description: "Affordable textbooks, exercise books, and exam prep materials.",
-    region: "Dar es Salaam",
-    district: "Kinondoni",
-    ward: "Msasani",
-  },
-  {
-    id: "demo-vendor-2",
-    name: "Uhuru Uniform Center",
-    description: "Quality school uniforms, shoes, and sports wear for all levels.",
-    region: "Arusha",
-    district: "Arusha Urban",
-    ward: "Kaloleni",
-  },
-  {
-    id: "demo-vendor-3",
-    name: "Twiga Stationery Hub",
-    description: "Pens, geometry sets, backpacks, and daily school essentials.",
-    region: "Mwanza",
-    district: "Nyamagana",
-    ward: "Pamba",
-  },
-];
 
 function VendorsInner() {
   const searchParams = useSearchParams();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showingDemo, setShowingDemo] = useState(false);
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(
@@ -58,41 +33,89 @@ function VendorsInner() {
     const load = async () => {
       setLoading(true);
       setError(null);
-      setShowingDemo(false);
 
       try {
-        const { data, error } = await supabaseClient
-          .from('vendors')
-          .select('id, name, description, region, district, ward')
-          .order('created_at', { ascending: false });
+        // Step 1: If category filter is set, find vendor IDs that have matching inventory
+        let vendorIdFilter: string[] | null = null;
+        if (categoryFilter) {
+          const { data: invData, error: invError } = await supabaseClient
+            .from('inventory')
+            .select('vendor_id')
+            .eq('category', categoryFilter);
 
-        if (error) {
-          console.error('Error loading vendors', error);
-          setVendors(DEMO_VENDORS);
-          setShowingDemo(true);
-          setError(null);
+          if (invError) {
+            console.error('Error filtering by category', invError);
+            setError('Failed to load vendors. Please try again later.');
+            setLoading(false);
+            return;
+          }
+
+          // Deduplicate vendor IDs
+          const ids = [...new Set((invData ?? []).map((row) => row.vendor_id as string))];
+          vendorIdFilter = ids;
+        }
+
+        // If categoryFilter is set but no vendors match, show empty state immediately
+        if (vendorIdFilter !== null && vendorIdFilter.length === 0) {
+          setVendors([]);
+          setLoading(false);
           return;
         }
 
-        const loadedVendors = (data as Vendor[]) ?? [];
-        if (loadedVendors.length === 0) {
-          setVendors(DEMO_VENDORS);
-          setShowingDemo(true);
-        } else {
-          setVendors(loadedVendors);
+        // Step 2: Fetch vendors (optionally filtered by IDs)
+        let query = supabaseClient
+          .from('vendors')
+          .select('id, name, description, region, district, ward, approval_status')
+          .order('created_at', { ascending: false });
+
+        if (vendorIdFilter !== null) {
+          query = query.in('id', vendorIdFilter);
         }
+
+        const { data, error: vendorError } = await query;
+
+        if (vendorError) {
+          console.error('Error loading vendors', vendorError);
+          setError('Failed to load vendors. Please try again later.');
+          setLoading(false);
+          return;
+        }
+
+        const rawVendors = (data ?? []) as Omit<Vendor, 'avg_rating' | 'review_count'>[];
+
+        // Step 3: Fetch average ratings for all vendors via RPC
+        // get_vendor_average_rating(vendor_id) and get_vendor_review_count(vendor_id)
+        // We call them per-vendor using Promise.all for best compatibility
+        const enriched: Vendor[] = await Promise.all(
+          rawVendors.map(async (v) => {
+            try {
+              const [ratingRes, countRes] = await Promise.all([
+                supabaseClient.rpc('get_vendor_average_rating', { vendor_id: v.id }),
+                supabaseClient.rpc('get_vendor_review_count', { vendor_id: v.id }),
+              ]);
+              return {
+                ...v,
+                avg_rating: (ratingRes.data as number) ?? 0,
+                review_count: (countRes.data as number) ?? 0,
+              };
+            } catch {
+              return { ...v, avg_rating: 0, review_count: 0 };
+            }
+          }),
+        );
+
+        setVendors(enriched);
       } catch (err) {
         console.error('Unexpected error loading vendors', err);
-        setVendors(DEMO_VENDORS);
-        setShowingDemo(true);
-        setError(null);
+        setError('An unexpected error occurred. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
     void load();
-  }, []);
+    // Re-run whenever categoryFilter changes
+  }, [categoryFilter]);
 
   const regions = useMemo(() => {
     const set = new Set<string>();
@@ -173,11 +196,6 @@ function VendorsInner() {
       </section>
 
       <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6 flex flex-col gap-6">
-      {showingDemo && (
-        <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-          Demo mode: these are sample vendors to help you test browsing and ordering flows.
-        </section>
-      )}
 
       {categoryFilter && (
         <section className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-5 py-4">
@@ -308,7 +326,23 @@ function VendorsInner() {
             Try again
           </button>
         </div>
+      ) : vendors.length === 0 && !hasFilters ? (
+        /* Empty DB — no vendors exist yet */
+        <div className="surface-panel flex flex-col items-center gap-4 rounded-3xl border-dashed p-12 text-center">
+          <div className="rounded-full bg-slate-800 p-5 text-slate-400">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-slate-200">No vendors yet</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Vendors are being onboarded. Check back soon!
+            </p>
+          </div>
+        </div>
       ) : filteredVendors.length === 0 ? (
+        /* Filters returned no matches */
         <div className="surface-panel flex flex-col items-center gap-4 rounded-3xl border-dashed p-12 text-center">
           <div className="rounded-full bg-slate-800 p-4 text-slate-400">
             <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -341,9 +375,19 @@ function VendorsInner() {
                   {vendor.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-base font-semibold text-slate-50 group-hover:text-sky-400 transition-colors">
-                    {vendor.name}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="truncate text-base font-semibold text-slate-50 group-hover:text-sky-400 transition-colors">
+                      {vendor.name}
+                    </h2>
+                    {vendor.approval_status === 'approved' && (
+                      <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 ring-1 ring-emerald-500/30">
+                        <svg className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                        </svg>
+                        Verified
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -355,6 +399,17 @@ function VendorsInner() {
                   </div>
                 </div>
               </div>
+
+              {/* Star rating */}
+              {vendor.avg_rating > 0 && (
+                <div className="mt-2 flex items-center gap-1 text-xs text-amber-400">
+                  <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  <span className="font-medium">{vendor.avg_rating.toFixed(1)}</span>
+                  <span className="text-slate-500">({vendor.review_count})</span>
+                </div>
+              )}
 
               {vendor.description && (
                 <p className="mt-3 line-clamp-2 text-sm text-slate-400">
@@ -380,34 +435,29 @@ function VendorsInner() {
           ))}
         </section>
       )}
-
-      {!loading && vendors.length > 0 && (
-        <section className="surface-panel flex flex-col items-center gap-4 rounded-3xl bg-gradient-to-r from-slate-900/50 to-slate-900/30 p-6 text-center sm:flex-row sm:text-left">
-          <div className="flex-1">
-            <h3 className="font-semibold text-slate-200">Can&apos;t find what you&apos;re looking for?</h3>
-            <p className="mt-1 text-sm text-slate-400">
-              Create an order and we&apos;ll help you find the right vendor.
-            </p>
-          </div>
-          <Link
-            href="/orders/new"
-            className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Order
-          </Link>
-        </section>
-      )}
-    </div>
+      </div>
     </main>
   );
 }
 
 export default function VendorsPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <main className="flex min-h-screen flex-col">
+        <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
+            <div className="h-10 w-48 animate-pulse rounded-xl bg-slate-800" />
+          </div>
+        </section>
+        <div className="mx-auto max-w-6xl w-full px-4 py-8 md:px-6">
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <VendorCardSkeleton key={i} />
+            ))}
+          </section>
+        </div>
+      </main>
+    }>
       <VendorsInner />
     </Suspense>
   );

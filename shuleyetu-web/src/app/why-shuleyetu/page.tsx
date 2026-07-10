@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: 'Why Shuleyetu | Tanzania\'s School Supply Marketplace',
-  description: 'Discover how Shuleyetu connects Tanzanian families with trusted local vendors for textbooks, uniforms, and stationery — making school prep simple and affordable.',
+  title: 'Why Choose Shuleyetu',
+  description: 'Learn how Shuleyetu simplifies school supply procurement for Tanzanian families, schools and vendors.',
   openGraph: {
-    title: 'Why Shuleyetu | Tanzania\'s School Supply Marketplace',
-    description: 'Discover how Shuleyetu connects Tanzanian families with trusted local vendors for textbooks, uniforms, and stationery.',
+    title: 'Why Choose Shuleyetu | Shuleyetu',
+    description: 'Learn how Shuleyetu simplifies school supply procurement for Tanzanian families, schools and vendors.',
     type: 'website',
   },
 };

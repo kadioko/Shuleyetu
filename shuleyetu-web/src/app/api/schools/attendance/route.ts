@@ -15,6 +15,43 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId");
+    const studentId = searchParams.get("studentId");
+
+    // Student history mode
+    if (studentId) {
+      const now = new Date();
+      const defaultFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const dateFrom = searchParams.get("dateFrom") ?? defaultFrom;
+      const dateTo = searchParams.get("dateTo") ?? now.toISOString().slice(0, 10);
+
+      const { data, error } = await supabaseServerClient
+        .from("school_attendance")
+        .select("id, attendance_date, status, notes, school_classes(name)")
+        .eq("school_id", auth.schoolId)
+        .eq("student_id", studentId)
+        .gte("attendance_date", dateFrom)
+        .lte("attendance_date", dateTo)
+        .order("attendance_date", { ascending: false });
+
+      if (error) {
+        logError("Error loading student attendance history", error, {
+          schoolId: auth.schoolId,
+        });
+        return jsonError("Failed to load attendance history", 500);
+      }
+
+      const records = (data ?? []).map((r) => ({
+        id: r.id,
+        attendance_date: r.attendance_date,
+        status: r.status,
+        notes: r.notes,
+        class_name: (r.school_classes as unknown as { name: string | null } | null)?.name ?? null,
+      }));
+
+      return jsonOk({ records });
+    }
+
+    // Class attendance mode (existing behavior)
     const date = searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
 
     if (!classId) {

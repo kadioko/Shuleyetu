@@ -112,24 +112,55 @@ export async function PATCH(request: NextRequest) {
     const staffId = searchParams.get("id");
     if (!staffId) return jsonError("Staff id is required", 400);
 
-    const body = await readJsonBody<{ status?: string }>(request);
+    const body = await readJsonBody<{
+      status?: string;
+      first_name?: string;
+      last_name?: string;
+      employee_id?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      subject?: string;
+    }>(request);
 
     const validStatuses = ["active", "inactive"];
-    if (!body?.status || !validStatuses.includes(body.status)) {
+    if (body?.status !== undefined && !validStatuses.includes(body.status)) {
       return jsonError(`Status must be one of: ${validStatuses.join(", ")}`, 400);
+    }
+
+    const validRoles = ["admin", "teacher", "support"];
+    if (body?.role !== undefined && !validRoles.includes(body.role)) {
+      return jsonError(`Role must be one of: ${validRoles.join(", ")}`, 400);
+    }
+
+    // Build updates object from only provided fields
+    const updates: Record<string, unknown> = {};
+    if (body?.status !== undefined) updates.status = body.status;
+    if (body?.first_name !== undefined) updates.first_name = body.first_name.trim();
+    if (body?.last_name !== undefined) updates.last_name = body.last_name.trim();
+    if (body?.employee_id !== undefined) updates.employee_id = body.employee_id.trim() || null;
+    if (body?.email !== undefined) updates.email = body.email.trim() || null;
+    if (body?.phone !== undefined) updates.phone = body.phone.trim() || null;
+    if (body?.role !== undefined) updates.role = body.role;
+    if (body?.subject !== undefined) updates.subject = body.subject.trim() || null;
+
+    if (Object.keys(updates).length === 0) {
+      return jsonError("No fields to update", 400);
     }
 
     const { data, error } = await supabaseServerClient
       .from("school_staff")
-      .update({ status: body.status })
+      .update(updates)
       .eq("id", staffId)
       .eq("school_id", auth.schoolId)
-      .select("id, first_name, last_name, role, status")
+      .select(
+        "id, employee_id, first_name, last_name, email, phone, role, subject, status, created_at",
+      )
       .single();
 
     if (error || !data) {
-      logError("Error updating staff status", error, { schoolId: auth.schoolId });
-      return jsonError("Failed to update staff status", 500);
+      logError("Error updating staff", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to update staff", 500);
     }
 
     await writeSchoolAuditLog({
@@ -138,7 +169,7 @@ export async function PATCH(request: NextRequest) {
       action: "updated",
       entityType: "staff",
       entityId: data.id,
-      metadata: { status: body.status },
+      metadata: updates,
     });
 
     return jsonOk({ staff: data });

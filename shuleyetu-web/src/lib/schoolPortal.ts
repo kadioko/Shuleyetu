@@ -272,6 +272,16 @@ export async function updateStudentStatus(studentId: string, status: string) {
   );
 }
 
+export async function updateStudent(
+  studentId: string,
+  body: Partial<Omit<SchoolStudent, "id" | "created_at" | "school_classes">>,
+) {
+  return fetchWithAuth<{ student: SchoolStudent }>(
+    `/api/schools/students?id=${encodeURIComponent(studentId)}`,
+    { method: "PATCH", body: JSON.stringify(body) },
+  );
+}
+
 export async function getStaff() {
   return fetchWithAuth<{ staff: SchoolStaff[] }>("/api/schools/staff");
 }
@@ -287,6 +297,16 @@ export async function updateStaffStatus(staffId: string, status: "active" | "ina
   return fetchWithAuth<{ staff: SchoolStaff }>(
     `/api/schools/staff?id=${encodeURIComponent(staffId)}`,
     { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
+
+export async function updateStaff(
+  staffId: string,
+  body: Partial<Omit<SchoolStaff, "id" | "created_at">>,
+) {
+  return fetchWithAuth<{ staff: SchoolStaff }>(
+    `/api/schools/staff?id=${encodeURIComponent(staffId)}`,
+    { method: "PATCH", body: JSON.stringify(body) },
   );
 }
 
@@ -368,6 +388,27 @@ export async function saveBulkAttendance(body: {
     method: "PUT",
     body: JSON.stringify(body),
   });
+}
+
+export type SchoolAttendanceRecord = {
+  id: string;
+  attendance_date: string;
+  status: "present" | "absent" | "late" | "excused";
+  notes: string | null;
+  class_name: string | null;
+};
+
+export async function getStudentAttendanceHistory(params: {
+  studentId: string;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const q = new URLSearchParams({ studentId: params.studentId });
+  if (params.dateFrom) q.set("dateFrom", params.dateFrom);
+  if (params.dateTo) q.set("dateTo", params.dateTo);
+  return fetchWithAuth<{ records: SchoolAttendanceRecord[] }>(
+    `/api/schools/attendance?${q.toString()}`,
+  );
 }
 
 export async function getAnnouncements(params?: { audience?: string }) {

@@ -7,6 +7,7 @@ import {
   getStudents,
   createStudent,
   updateStudentStatus,
+  updateStudent,
   type SchoolClass,
   type SchoolStudent,
 } from "@/lib/schoolPortal";
@@ -37,6 +38,8 @@ export function StudentsTab() {
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusChanging, setStatusChanging] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<SchoolStudent | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const { addToast } = useToast();
 
   const load = async () => {
@@ -77,6 +80,35 @@ export function StudentsTab() {
       addToast({ type: "success", title: "Student added" });
       setFormOpen(false);
       e.currentTarget.reset();
+      void load();
+    }
+  };
+
+  const onEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditSubmitting(true);
+    const fd = new FormData(e.currentTarget);
+    const { error } = await updateStudent(editTarget.id, {
+      first_name: String(fd.get("first_name") ?? "").trim(),
+      last_name: String(fd.get("last_name") ?? "").trim(),
+      admission_number: String(fd.get("admission_number") ?? "").trim(),
+      gender: (String(fd.get("gender")) as SchoolStudent["gender"]) || null,
+      date_of_birth: String(fd.get("date_of_birth") ?? "") || null,
+      class_id: String(fd.get("class_id") ?? "") || null,
+      parent_name: String(fd.get("parent_name") ?? "").trim() || null,
+      parent_phone: String(fd.get("parent_phone") ?? "").trim() || null,
+      parent_email: String(fd.get("parent_email") ?? "").trim() || null,
+      address: String(fd.get("address") ?? "").trim() || null,
+      enrollment_date: String(fd.get("enrollment_date") ?? "") || null,
+      status: String(fd.get("status") ?? "active"),
+    });
+    setEditSubmitting(false);
+    if (error) {
+      addToast({ type: "error", title: "Failed to update student", message: error });
+    } else {
+      addToast({ type: "success", title: "Student updated" });
+      setEditTarget(null);
       void load();
     }
   };
@@ -199,6 +231,46 @@ export function StudentsTab() {
         </form>
       )}
 
+      {/* Edit panel */}
+      {editTarget && (
+        <form onSubmit={onEditSubmit} className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
+          <h3 className="font-semibold text-slate-200">Edit student — {editTarget.first_name} {editTarget.last_name}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="admission_number" label="Admission number" required defaultValue={editTarget.admission_number} />
+            <Select
+              name="class_id"
+              label="Class"
+              defaultValue={editTarget.class_id ?? ""}
+              options={[{ value: "", label: "— no class —" }, ...classes.map((c) => ({ value: c.id, label: c.name }))]}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="first_name" label="First name" required defaultValue={editTarget.first_name} />
+            <Input name="last_name" label="Last name" required defaultValue={editTarget.last_name} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select name="gender" label="Gender" defaultValue={editTarget.gender ?? ""} options={[{ value: "", label: "— select —" }, { value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }]} />
+            <Input name="date_of_birth" type="date" label="Date of birth" defaultValue={editTarget.date_of_birth ?? ""} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="parent_name" label="Parent / guardian name" defaultValue={editTarget.parent_name ?? ""} />
+            <Input name="parent_phone" label="Parent phone" defaultValue={editTarget.parent_phone ?? ""} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="parent_email" type="email" label="Parent email" defaultValue={editTarget.parent_email ?? ""} />
+            <Input name="enrollment_date" type="date" label="Enrollment date" defaultValue={editTarget.enrollment_date ?? ""} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input name="address" label="Address" defaultValue={editTarget.address ?? ""} />
+            <Select name="status" label="Status" defaultValue={editTarget.status} options={STATUS_OPTIONS} />
+          </div>
+          <div className="flex gap-3">
+            <SubmitButton loading={editSubmitting}>Update student</SubmitButton>
+            <Button variant="secondary" onClick={() => setEditTarget(null)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+
       {filtered.length === 0 ? (
         <EmptyMessage message="No students found. Try adjusting filters or add a new student." />
       ) : (
@@ -214,6 +286,7 @@ export function StudentsTab() {
                   <th className="px-6 py-4">Gender</th>
                   <th className="px-6 py-4">Parent</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -239,6 +312,14 @@ export function StudentsTab() {
                           <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => setEditTarget(s)}
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all hover:bg-white/10"
+                      >
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 ))}

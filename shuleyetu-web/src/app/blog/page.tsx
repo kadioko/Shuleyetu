@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Blog & Resources | Shuleyetu',
-  description: 'Tips, guides, and resources for Tanzanian parents, students, and vendors navigating school supply season. Back-to-school checklists, vendor guides, and more.',
+  title: 'School Supply Tips & Guides',
+  description: 'Helpful guides, tips and news for Tanzanian families navigating back-to-school season. Written by the Shuleyetu team.',
   openGraph: {
-    title: 'Blog & Resources | Shuleyetu',
-    description: 'Tips and guides for Tanzanian parents and vendors navigating school supply season.',
+    title: 'School Supply Tips & Guides | Shuleyetu',
+    description: 'Helpful guides, tips and news for Tanzanian families navigating back-to-school season.',
     type: 'website',
   },
 };

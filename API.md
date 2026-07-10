@@ -25,7 +25,7 @@ Authorization: Bearer <jwt_token>
 
 Order tracking endpoints use UUID-based public access tokens.
 
-```
+```text
 GET /orders/track?orderId=<id>&token=<token>
 ```
 
@@ -37,12 +37,13 @@ GET /orders/track?orderId=<id>&token=<token>
 
 Verify if current user is an admin.
 
-```
+```text
 GET /api/admin/check
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "isAdmin": true,
@@ -57,12 +58,13 @@ Authorization: Bearer <token>
 
 #### List All Vendors
 
-```
+```text
 GET /api/admin/vendors
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "vendors": [
@@ -86,7 +88,7 @@ Authorization: Bearer <token>
 
 Link a user to a vendor, granting them access to that vendor's dashboard.
 
-```
+```text
 POST /api/admin/link-vendor-user
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -97,7 +99,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -106,7 +109,8 @@ Content-Type: application/json
 }
 ```
 
-**Errors**
+#### Errors
+
 - `400`: Invalid email or vendor ID
 - `404`: User or vendor not found
 - `409`: User already linked to vendor
@@ -117,7 +121,7 @@ Content-Type: application/json
 
 Remove a user's access to a vendor's dashboard.
 
-```
+```text
 POST /api/admin/unlink-vendor-user
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -128,7 +132,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -142,12 +147,13 @@ Content-Type: application/json
 
 List all users linked to a vendor.
 
-```
+```text
 GET /api/admin/vendor-users?vendorId=<vendor-id>
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "vendorUsers": [
@@ -169,7 +175,7 @@ Authorization: Bearer <token>
 
 Give a user admin privileges.
 
-```
+```text
 POST /api/admin/grant-admin
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -179,7 +185,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -188,7 +195,8 @@ Content-Type: application/json
 }
 ```
 
-**Errors**
+#### Errors
+
 - `400`: Invalid email
 - `404`: User not found
 - `409`: User already has admin role
@@ -199,7 +207,7 @@ Content-Type: application/json
 
 Remove admin privileges from a user.
 
-```
+```text
 POST /api/admin/revoke-admin
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -209,7 +217,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -223,12 +232,13 @@ Content-Type: application/json
 
 Get all users with admin role.
 
-```
+```text
 GET /api/admin/admins
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "admins": [
@@ -249,7 +259,7 @@ Authorization: Bearer <token>
 
 Start a ClickPesa USSD payment.
 
-```
+```text
 POST /api/clickpesa/pay
 Content-Type: application/json
 
@@ -260,7 +270,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -270,7 +281,8 @@ Content-Type: application/json
 }
 ```
 
-**Errors**
+#### Errors
+
 - `400`: Invalid order or phone number
 - `401`: Invalid access token
 - `404`: Order not found
@@ -282,11 +294,12 @@ Content-Type: application/json
 
 Get current payment status for an order.
 
-```
+```text
 GET /api/clickpesa/status?orderId=<order-id>&token=<token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "orderId": "order-id",
@@ -303,7 +316,7 @@ GET /api/clickpesa/status?orderId=<order-id>&token=<token>
 
 ClickPesa sends payment updates to this endpoint.
 
-```
+```text
 POST /api/clickpesa/webhook
 Content-Type: application/json
 X-Clickpesa-Signature: <hmac-signature>
@@ -317,11 +330,11 @@ X-Clickpesa-Signature: <hmac-signature>
 }
 ```
 
-**Signature Verification**
+#### Signature Verification
 
 The webhook includes an HMAC SHA256 signature in the `X-Clickpesa-Signature` header. Verify it using:
 
-```
+```text
 signature = HMAC-SHA256(payload, CLICKPESA_API_KEY)
 ```
 
@@ -333,11 +346,12 @@ signature = HMAC-SHA256(payload, CLICKPESA_API_KEY)
 
 Retrieve orders using public access token (no authentication required).
 
-```
+```text
 GET /api/orders/public?orderId=<order-id>&token=<token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "order": {
@@ -366,7 +380,8 @@ GET /api/orders/public?orderId=<order-id>&token=<token>
 }
 ```
 
-**Errors**
+#### Errors
+
 - `400`: Invalid order ID or token
 - `404`: Order not found
 - `401`: Invalid access token
@@ -752,13 +767,15 @@ school (returns `409` if demo data already exists).
 
 API endpoints are rate limited to prevent abuse.
 
-**Limits**
+#### Limits
+
 - Public endpoints: 100 requests per minute per IP
 - Authenticated endpoints: 1000 requests per minute per user
 - Payment endpoints: 10 requests per minute per order
 
-**Headers**
-```
+#### Headers
+
+```text
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1234567890
@@ -770,12 +787,14 @@ X-RateLimit-Reset: 1234567890
 
 List endpoints support pagination.
 
-**Query Parameters**
+#### Query Parameters
+
 - `page`: Page number (default: 1)
 - `limit`: Items per page (default: 20, max: 100)
 - `offset`: Skip N items (alternative to page)
 
-**Response**
+#### Response
+
 ```json
 {
   "data": [...],
@@ -794,7 +813,8 @@ List endpoints support pagination.
 
 List endpoints support filtering.
 
-**Query Parameters**
+#### Query Parameters
+
 - `search`: Search by name or description
 - `status`: Filter by status
 - `category`: Filter by category
@@ -802,8 +822,9 @@ List endpoints support filtering.
 - `fromDate`: Filter by start date (ISO 8601)
 - `toDate`: Filter by end date (ISO 8601)
 
-**Example**
-```
+#### Example
+
+```text
 GET /api/orders?status=completed&fromDate=2024-01-01&toDate=2024-01-31
 ```
 
@@ -813,12 +834,14 @@ GET /api/orders?status=completed&fromDate=2024-01-01&toDate=2024-01-31
 
 List endpoints support sorting.
 
-**Query Parameters**
+#### Query Parameters
+
 - `sortBy`: Field to sort by
 - `sortOrder`: `asc` or `desc` (default: `desc`)
 
-**Example**
-```
+#### Example
+
+```text
 GET /api/orders?sortBy=createdAt&sortOrder=desc
 ```
 
@@ -837,6 +860,7 @@ GET /api/orders?sortBy=createdAt&sortOrder=desc
 ### Webhook Retry
 
 Failed webhook deliveries are retried with exponential backoff:
+
 - 1st retry: 5 minutes
 - 2nd retry: 30 minutes
 - 3rd retry: 2 hours
@@ -846,12 +870,13 @@ Failed webhook deliveries are retried with exponential backoff:
 
 All webhooks include an HMAC SHA256 signature:
 
-```
+```text
 X-Webhook-Signature: sha256=<signature>
 ```
 
 Verify using:
-```
+
+```text
 signature = HMAC-SHA256(body, webhook_secret)
 ```
 
@@ -861,7 +886,7 @@ signature = HMAC-SHA256(body, webhook_secret)
 
 API version is specified in the URL path.
 
-```
+```text
 GET /api/v1/orders
 GET /api/v2/orders
 ```
@@ -873,6 +898,7 @@ Current version: **v1**
 ## CORS
 
 Cross-Origin Resource Sharing is enabled for:
+
 - `http://localhost:3000`
 - `https://shuleyetu-web.vercel.app`
 - `https://*.shuleyetu.com`
@@ -883,7 +909,7 @@ Cross-Origin Resource Sharing is enabled for:
 
 All API responses include security headers:
 
-```
+```text
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 X-XSS-Protection: 1; mode=block
@@ -942,7 +968,8 @@ response = requests.get(
 
 ### v1.0.0 (2024-01-12)
 
-**Initial Release**
+#### Initial Release
+
 - Admin management endpoints
 - Vendor user management
 - Payment integration
@@ -955,7 +982,7 @@ response = requests.get(
 
 ### Generate Sales Report
 
-```
+```text
 POST /api/analytics/sales
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -967,7 +994,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "period": { "start": "2024-01-01", "end": "2024-01-31" },
@@ -987,7 +1015,7 @@ Content-Type: application/json
 
 ### Export Analytics Report
 
-```
+```text
 GET /api/analytics/export?format=csv&startDate=2024-01-01&endDate=2024-01-31
 Authorization: Bearer <token>
 ```
@@ -1000,7 +1028,7 @@ Authorization: Bearer <token>
 
 ### Generate Inventory Forecast
 
-```
+```text
 POST /api/forecasting/generate
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -1012,7 +1040,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "generatedAt": "2024-01-21T12:00:00Z",
@@ -1041,7 +1070,7 @@ Content-Type: application/json
 
 ### Get Urgent Reorders
 
-```
+```text
 GET /api/forecasting/urgent-reorders?vendorId=vendor-id&leadTimeDays=7
 Authorization: Bearer <token>
 ```
@@ -1050,7 +1079,7 @@ Authorization: Bearer <token>
 
 ### Get Overstocked Items
 
-```
+```text
 GET /api/forecasting/overstocked?vendorId=vendor-id
 Authorization: Bearer <token>
 ```
@@ -1063,7 +1092,7 @@ Authorization: Bearer <token>
 
 ### Send SMS Notification
 
-```
+```text
 POST /api/notifications/sms
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -1074,7 +1103,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -1085,7 +1115,7 @@ Content-Type: application/json
 
 ### Send WhatsApp Notification
 
-```
+```text
 POST /api/notifications/whatsapp
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -1096,7 +1126,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -1107,12 +1138,13 @@ Content-Type: application/json
 
 ### Get Notification Logs
 
-```
+```text
 GET /api/notifications/logs?limit=100&offset=0
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "logs": [
@@ -1130,12 +1162,13 @@ Authorization: Bearer <token>
 
 ### Get Notification Statistics
 
-```
+```text
 GET /api/notifications/stats?days=7
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "period": "7 days",
@@ -1152,7 +1185,7 @@ Authorization: Bearer <token>
 
 ### Report Error
 
-```
+```text
 POST /api/errors/report
 Content-Type: application/json
 
@@ -1167,7 +1200,8 @@ Content-Type: application/json
 }
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "success": true,
@@ -1177,12 +1211,13 @@ Content-Type: application/json
 
 ### Get Error Statistics
 
-```
+```text
 GET /api/errors/stats?days=7
 Authorization: Bearer <token>
 ```
 
-**Response**
+#### Response
+
 ```json
 {
   "period": "7 days",
@@ -1264,6 +1299,7 @@ Authorization: Bearer <token>
 ## Support
 
 For API support, contact:
+
 - Email: `api-support@shuleyetu.com`
 - Issues: `https://github.com/kadioko/Shuleyetu/issues`
 - Documentation: `https://docs.shuleyetu.com`
@@ -1273,6 +1309,7 @@ For API support, contact:
 ## Terms of Service
 
 By using the Shuleyetu API, you agree to:
+
 - Not abuse rate limits
 - Not scrape data
 - Maintain API key security

@@ -338,16 +338,22 @@ export function generateStaticParams() {
   return posts.map((p) => ({ slug: p.slug }));
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://shuleyetu.com';
+
 export function generateMetadata({ params }: PageProps): Metadata {
   const post = posts.find((p) => p.slug === params.slug);
   if (!post) return {};
   return {
-    title: post.title,
+    title: `${post.title} | Shuleyetu`,
     description: post.excerpt,
     openGraph: {
       title: post.title,
       description: post.excerpt,
       type: 'article',
+      url: `${BASE_URL}/blog/${post.slug}`,
+    },
+    alternates: {
+      canonical: `${BASE_URL}/blog/${post.slug}`,
     },
   };
 }

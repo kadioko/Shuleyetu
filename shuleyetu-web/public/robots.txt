@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Disallow authenticated areas
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /schools/portal
+Disallow: /auth/
+Disallow: /vendor/
+Disallow: /workspaces
+Disallow: /api/
+
+Sitemap: https://shuleyetu.com/sitemap.xml
