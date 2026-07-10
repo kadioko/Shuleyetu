@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseServerClient
       .from("school_announcements")
-      .select("id, title, content, audience, created_at, updated_at")
+      .select("id, title, content, audience, status, scheduled_at, created_at, updated_at")
       .eq("school_id", auth.schoolId);
 
     if (audience) {
@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       title?: string;
       content?: string;
       audience?: string;
+      status?: string;
+      scheduled_at?: string | null;
     }>(request);
 
     const title = body?.title?.trim();
@@ -67,6 +69,10 @@ export async function POST(request: NextRequest) {
       ? (audience as "all" | "parents" | "staff" | "students")
       : "all";
 
+    const validStatus = ["published", "draft"].includes(body?.status ?? "")
+      ? body!.status
+      : "published";
+
     const { data, error } = await supabaseServerClient
       .from("school_announcements")
       .insert({
@@ -74,8 +80,10 @@ export async function POST(request: NextRequest) {
         title,
         content,
         audience: validAudience,
+        status: validStatus,
+        scheduled_at: body?.scheduled_at ?? null,
       })
-      .select("id, title, content, audience, created_at, updated_at")
+      .select("id, title, content, audience, status, scheduled_at, created_at, updated_at")
       .single();
 
     if (error || !data) {
@@ -97,6 +105,43 @@ export async function POST(request: NextRequest) {
     return jsonOk({ announcement: data });
   } catch (error) {
     logError("Unexpected error in school announcements POST", error);
+    return jsonError("Internal server error", 500);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await requireSchoolUser(request);
+    if (!auth.ok) return auth.response;
+    if (!canManageAnnouncements(auth.role)) return forbiddenSchoolAction("Only admins and staff can delete announcements");
+
+    const { searchParams } = new URL(request.url);
+    const announcementId = searchParams.get("id");
+    if (!announcementId) return jsonError("Announcement id is required", 400);
+
+    const { error } = await supabaseServerClient
+      .from("school_announcements")
+      .delete()
+      .eq("id", announcementId)
+      .eq("school_id", auth.schoolId);
+
+    if (error) {
+      logError("Error deleting announcement", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to delete announcement", 500);
+    }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "deleted",
+      entityType: "announcement",
+      entityId: announcementId,
+      metadata: {},
+    });
+
+    return jsonOk({ ok: true });
+  } catch (error) {
+    logError("Unexpected error in school announcements DELETE", error);
     return jsonError("Internal server error", 500);
   }
 }

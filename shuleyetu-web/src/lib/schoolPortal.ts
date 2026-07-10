@@ -230,6 +230,23 @@ export async function createClass(body: Omit<SchoolClass, "id" | "created_at">) 
   });
 }
 
+export async function updateClass(
+  classId: string,
+  body: Partial<Omit<SchoolClass, "id" | "created_at">>,
+) {
+  return fetchWithAuth<{ class: SchoolClass }>(
+    `/api/schools/classes?id=${encodeURIComponent(classId)}`,
+    { method: "PATCH", body: JSON.stringify(body) },
+  );
+}
+
+export async function deleteClass(classId: string) {
+  return fetchWithAuth<{ ok: true }>(
+    `/api/schools/classes?id=${encodeURIComponent(classId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function getStudents(params?: { classId?: string; status?: string }) {
   const query = new URLSearchParams();
   if (params?.classId) query.set("classId", params.classId);
@@ -248,6 +265,13 @@ export async function createStudent(
   });
 }
 
+export async function updateStudentStatus(studentId: string, status: string) {
+  return fetchWithAuth<{ student: SchoolStudent }>(
+    `/api/schools/students?id=${encodeURIComponent(studentId)}`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
+
 export async function getStaff() {
   return fetchWithAuth<{ staff: SchoolStaff[] }>("/api/schools/staff");
 }
@@ -257,6 +281,13 @@ export async function createStaff(body: Omit<SchoolStaff, "id" | "created_at" | 
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function updateStaffStatus(staffId: string, status: "active" | "inactive") {
+  return fetchWithAuth<{ staff: SchoolStaff }>(
+    `/api/schools/staff?id=${encodeURIComponent(staffId)}`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  );
 }
 
 export async function getSchoolUsers() {
@@ -327,6 +358,18 @@ export async function saveAttendance(body: {
   });
 }
 
+export async function saveBulkAttendance(body: {
+  class_id: string;
+  attendance_date: string;
+  status: string;
+  student_ids: string[];
+}) {
+  return fetchWithAuth<{ ok: true; count: number }>("/api/schools/attendance", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function getAnnouncements(params?: { audience?: string }) {
   const query = new URLSearchParams();
   if (params?.audience) query.set("audience", params.audience);
@@ -336,7 +379,10 @@ export async function getAnnouncements(params?: { audience?: string }) {
 }
 
 export async function createAnnouncement(
-  body: Omit<SchoolAnnouncement, "id" | "created_at" | "updated_at">,
+  body: Omit<SchoolAnnouncement, "id" | "created_at" | "updated_at"> & {
+    status?: string;
+    scheduled_at?: string | null;
+  },
 ) {
   return fetchWithAuth<{ announcement: SchoolAnnouncement }>(
     "/api/schools/announcements",
@@ -344,6 +390,25 @@ export async function createAnnouncement(
       method: "POST",
       body: JSON.stringify(body),
     },
+  );
+}
+
+export async function deleteAnnouncement(announcementId: string) {
+  return fetchWithAuth<{ ok: true }>(
+    `/api/schools/announcements?id=${encodeURIComponent(announcementId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function recordFeePayment(body: {
+  fee_id: string;
+  amount_tzs: number;
+  payment_method?: string;
+  reference?: string | null;
+}) {
+  return fetchWithAuth<{ payment: unknown; fee_status: string; total_paid: number }>(
+    "/api/schools/payments",
+    { method: "POST", body: JSON.stringify(body) },
   );
 }
 

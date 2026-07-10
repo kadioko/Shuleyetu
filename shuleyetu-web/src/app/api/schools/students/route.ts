@@ -128,3 +128,49 @@ export async function POST(request: NextRequest) {
     return jsonError("Internal server error", 500);
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = await requireSchoolUser(request);
+    if (!auth.ok) return auth.response;
+    if (!canManageStudents(auth.role)) return forbiddenSchoolAction("Only admins and teachers can update students");
+
+    const { searchParams } = new URL(request.url);
+    const studentId = searchParams.get("id");
+    if (!studentId) return jsonError("Student id is required", 400);
+
+    const body = await readJsonBody<{ status?: string }>(request);
+
+    const validStatuses = ["active", "inactive", "transferred"];
+    if (!body?.status || !validStatuses.includes(body.status)) {
+      return jsonError(`Status must be one of: ${validStatuses.join(", ")}`, 400);
+    }
+
+    const { data, error } = await supabaseServerClient
+      .from("school_students")
+      .update({ status: body.status })
+      .eq("id", studentId)
+      .eq("school_id", auth.schoolId)
+      .select("id, admission_number, first_name, last_name, status")
+      .single();
+
+    if (error || !data) {
+      logError("Error updating student status", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to update student status", 500);
+    }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "updated",
+      entityType: "student",
+      entityId: data.id,
+      metadata: { status: body.status },
+    });
+
+    return jsonOk({ student: data });
+  } catch (error) {
+    logError("Unexpected error in school students PATCH", error);
+    return jsonError("Internal server error", 500);
+  }
+}

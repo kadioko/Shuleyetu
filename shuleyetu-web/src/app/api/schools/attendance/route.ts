@@ -141,3 +141,63 @@ export async function POST(request: NextRequest) {
     return jsonError("Internal server error", 500);
   }
 }
+
+// Bulk attendance: mark all students in a class with the same status
+export async function PUT(request: NextRequest) {
+  try {
+    const auth = await requireSchoolUser(request);
+    if (!auth.ok) return auth.response;
+    if (!canManageAttendance(auth.role)) return forbiddenSchoolAction("Only admins and teachers can mark attendance");
+
+    const body = await readJsonBody<{
+      class_id?: string;
+      attendance_date?: string;
+      status?: string;
+      student_ids?: string[];
+    }>(request);
+
+    const classId = body?.class_id?.trim();
+    const date = body?.attendance_date?.trim();
+    const status = body?.status?.trim();
+    const studentIds = body?.student_ids;
+
+    if (!classId || !date || !status || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return jsonError("class_id, attendance_date, status, and student_ids are required", 400);
+    }
+
+    if (!["present", "absent", "late", "excused"].includes(status)) {
+      return jsonError("Invalid attendance status", 400);
+    }
+
+    const records = studentIds.map((studentId) => ({
+      school_id: auth.schoolId,
+      student_id: studentId,
+      class_id: classId,
+      attendance_date: date,
+      status: status as "present" | "absent" | "late" | "excused",
+      notes: null,
+    }));
+
+    const { error } = await supabaseServerClient
+      .from("school_attendance")
+      .upsert(records, { onConflict: "student_id, attendance_date" });
+
+    if (error) {
+      logError("Error saving bulk attendance", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to save bulk attendance", 500);
+    }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "bulk_marked",
+      entityType: "attendance",
+      metadata: { class_id: classId, status, count: studentIds.length, date },
+    });
+
+    return jsonOk({ ok: true, count: studentIds.length });
+  } catch (error) {
+    logError("Unexpected error in school attendance PUT", error);
+    return jsonError("Internal server error", 500);
+  }
+}

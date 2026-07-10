@@ -1,0 +1,10 @@
+export { DashboardTab } from "./DashboardTab";
+export { ClassesTab } from "./ClassesTab";
+export { StudentsTab } from "./StudentsTab";
+export { StaffTab } from "./StaffTab";
+export { AttendanceTab } from "./AttendanceTab";
+export { FeesTab } from "./FeesTab";
+export { AnnouncementsTab } from "./AnnouncementsTab";
+export { ReportsTab } from "./ReportsTab";
+export { SettingsTab } from "./SettingsTab";
+export { TabErrorBoundary } from "./shared";

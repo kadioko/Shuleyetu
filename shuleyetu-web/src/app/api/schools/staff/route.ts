@@ -101,3 +101,49 @@ export async function POST(request: NextRequest) {
     return jsonError("Internal server error", 500);
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = await requireSchoolUser(request);
+    if (!auth.ok) return auth.response;
+    if (!canManageStaff(auth.role)) return forbiddenSchoolAction("Only admins and staff can update staff records");
+
+    const { searchParams } = new URL(request.url);
+    const staffId = searchParams.get("id");
+    if (!staffId) return jsonError("Staff id is required", 400);
+
+    const body = await readJsonBody<{ status?: string }>(request);
+
+    const validStatuses = ["active", "inactive"];
+    if (!body?.status || !validStatuses.includes(body.status)) {
+      return jsonError(`Status must be one of: ${validStatuses.join(", ")}`, 400);
+    }
+
+    const { data, error } = await supabaseServerClient
+      .from("school_staff")
+      .update({ status: body.status })
+      .eq("id", staffId)
+      .eq("school_id", auth.schoolId)
+      .select("id, first_name, last_name, role, status")
+      .single();
+
+    if (error || !data) {
+      logError("Error updating staff status", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to update staff status", 500);
+    }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "updated",
+      entityType: "staff",
+      entityId: data.id,
+      metadata: { status: body.status },
+    });
+
+    return jsonOk({ staff: data });
+  } catch (error) {
+    logError("Unexpected error in school staff PATCH", error);
+    return jsonError("Internal server error", 500);
+  }
+}
