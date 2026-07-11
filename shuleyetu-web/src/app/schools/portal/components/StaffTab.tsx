@@ -7,6 +7,7 @@ import {
   createStaff,
   updateStaffStatus,
   updateStaff,
+  deleteStaff,
   type SchoolStaff,
 } from "@/lib/schoolPortal";
 import {
@@ -17,6 +18,7 @@ import {
   Button,
   SubmitButton,
   Badge,
+  ConfirmModal,
   downloadCsv,
 } from "./shared";
 
@@ -41,6 +43,8 @@ export function StaffTab() {
   const [filterRole, setFilterRole] = useState("");
   const [editTarget, setEditTarget] = useState<SchoolStaff | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SchoolStaff | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const { addToast } = useToast();
 
   const load = async () => {
@@ -112,6 +116,20 @@ export function StaffTab() {
       addToast({ type: "success", title: "Status updated" });
       void load();
     }
+  };
+
+  const onDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    const { error } = await deleteStaff(deleteTarget.id);
+    setDeleteSubmitting(false);
+    if (error) {
+      addToast({ type: "error", title: "Failed to delete staff member", message: error });
+    } else {
+      addToast({ type: "success", title: "Staff member deleted" });
+      void load();
+    }
+    setDeleteTarget(null);
   };
 
   const handleExport = () => {
@@ -267,12 +285,21 @@ export function StaffTab() {
                       </select>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => setEditTarget(s)}
-                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all hover:bg-white/10"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditTarget(s)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all hover:bg-white/10"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(s)}
+                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 transition-all hover:bg-red-500/20"
+                          aria-label={`Delete ${s.first_name} ${s.last_name}`}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -281,6 +308,17 @@ export function StaffTab() {
           </div>
         </>
       )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete staff member"
+        message={deleteTarget ? `Are you sure you want to delete ${deleteTarget.first_name} ${deleteTarget.last_name}? This action cannot be undone.` : ''}
+        confirmLabel="Delete"
+        danger
+        loading={deleteSubmitting}
+        onConfirm={onDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

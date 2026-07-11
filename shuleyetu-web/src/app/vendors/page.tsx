@@ -83,26 +83,39 @@ function VendorsInner() {
 
         const rawVendors = (data ?? []) as Omit<Vendor, 'avg_rating' | 'review_count'>[];
 
-        // Step 3: Fetch average ratings for all vendors via RPC
-        // get_vendor_average_rating(vendor_id) and get_vendor_review_count(vendor_id)
-        // We call them per-vendor using Promise.all for best compatibility
-        const enriched: Vendor[] = await Promise.all(
-          rawVendors.map(async (v) => {
-            try {
-              const [ratingRes, countRes] = await Promise.all([
-                supabaseClient.rpc('get_vendor_average_rating', { vendor_id: v.id }),
-                supabaseClient.rpc('get_vendor_review_count', { vendor_id: v.id }),
-              ]);
-              return {
-                ...v,
-                avg_rating: (ratingRes.data as number) ?? 0,
-                review_count: (countRes.data as number) ?? 0,
-              };
-            } catch {
-              return { ...v, avg_rating: 0, review_count: 0 };
-            }
-          }),
-        );
+        // Step 3: Fetch all approved reviews in one query and compute stats client-side
+        // This avoids the N+1 RPC pattern (2 DB calls per vendor).
+        const vendorIds = rawVendors.map((v) => v.id);
+        let reviewStats: { vendor_id: string; rating: number }[] | null = null;
+        if (vendorIds.length > 0) {
+          const { data: reviewsData, error: reviewsError } = await supabaseClient
+            .from('vendor_reviews')
+            .select('vendor_id, rating')
+            .in('vendor_id', vendorIds)
+            .eq('is_approved', true);
+
+          if (reviewsError) {
+            console.error('Error loading vendor reviews', reviewsError);
+          }
+          reviewStats = reviewsData ?? [];
+        }
+
+        const ratingMap = new Map<string, { sum: number; count: number }>();
+        (reviewStats ?? []).forEach((r) => {
+          const entry = ratingMap.get(r.vendor_id) ?? { sum: 0, count: 0 };
+          entry.sum += r.rating;
+          entry.count += 1;
+          ratingMap.set(r.vendor_id, entry);
+        });
+
+        const enriched: Vendor[] = rawVendors.map((v) => {
+          const stats = ratingMap.get(v.id);
+          return {
+            ...v,
+            avg_rating: stats ? stats.sum / stats.count : 0,
+            review_count: stats?.count ?? 0,
+          };
+        });
 
         setVendors(enriched);
       } catch (err) {

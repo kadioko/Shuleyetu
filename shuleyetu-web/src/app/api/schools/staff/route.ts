@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
-    if (!canManageStaff(auth.role)) return forbiddenSchoolAction("Only admins and staff can add staff records");
+    // All school users can view staff (write permissions checked in POST/PATCH only)
 
     const { data, error } = await supabaseServerClient
       .from("school_staff")
@@ -175,6 +175,43 @@ export async function PATCH(request: NextRequest) {
     return jsonOk({ staff: data });
   } catch (error) {
     logError("Unexpected error in school staff PATCH", error);
+    return jsonError("Internal server error", 500);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await requireSchoolUser(request);
+    if (!auth.ok) return auth.response;
+    if (!canManageStaff(auth.role)) return forbiddenSchoolAction("Only admins and staff managers can delete staff records");
+
+    const { searchParams } = new URL(request.url);
+    const staffId = searchParams.get("id");
+    if (!staffId) return jsonError("Staff id is required", 400);
+
+    const { error } = await supabaseServerClient
+      .from("school_staff")
+      .delete()
+      .eq("id", staffId)
+      .eq("school_id", auth.schoolId);
+
+    if (error) {
+      logError("Error deleting school staff", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to delete staff", 500);
+    }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "deleted",
+      entityType: "staff",
+      entityId: staffId,
+      metadata: {},
+    });
+
+    return jsonOk({ deleted: true });
+  } catch (error) {
+    logError("Unexpected error in school staff DELETE", error);
     return jsonError("Internal server error", 500);
   }
 }

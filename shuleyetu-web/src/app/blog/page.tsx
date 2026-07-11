@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { NewsletterForm } from '@/components/NewsletterForm';
 
 export const metadata: Metadata = {
   title: 'School Supply Tips & Guides',
@@ -18,7 +19,7 @@ const posts = [
     excerpt: 'Everything you need to prepare your child for the new school year — from textbooks to uniforms and stationery.',
     category: 'Tips & Guides',
     categoryColor: 'sky',
-    date: 'January 15, 2026',
+    date: 'July 1, 2025',
     readTime: '5 min read',
     featured: true,
   },
@@ -28,7 +29,7 @@ const posts = [
     excerpt: 'A practical guide to evaluating vendors on Shuleyetu — what to look for, how to compare prices, and how to avoid common mistakes.',
     category: 'Guides',
     categoryColor: 'emerald',
-    date: 'January 10, 2026',
+    date: 'June 15, 2025',
     readTime: '4 min read',
     featured: false,
   },
@@ -38,7 +39,7 @@ const posts = [
     excerpt: 'M-Pesa and Airtel Money have transformed everyday payments. Here\'s how they\'re making school supply purchases safer and easier.',
     category: 'Finance',
     categoryColor: 'violet',
-    date: 'January 5, 2026',
+    date: 'June 1, 2025',
     readTime: '3 min read',
     featured: false,
   },
@@ -48,7 +49,7 @@ const posts = [
     excerpt: 'A case study on how a small vendor in Kinondoni used Shuleyetu to reach more parents and grow their business.',
     category: 'Success Stories',
     categoryColor: 'amber',
-    date: 'December 28, 2025',
+    date: 'May 20, 2025',
     readTime: '6 min read',
     featured: false,
   },
@@ -58,7 +59,7 @@ const posts = [
     excerpt: 'Buying the wrong uniform size is one of the most common and costly mistakes. This guide helps you measure correctly.',
     category: 'Tips & Guides',
     categoryColor: 'sky',
-    date: 'December 20, 2025',
+    date: 'May 10, 2025',
     readTime: '4 min read',
     featured: false,
   },
@@ -68,7 +69,7 @@ const posts = [
     excerpt: 'Last-minute shopping costs more and causes stress. Here\'s why starting early with Shuleyetu makes a real difference.',
     category: 'Tips & Guides',
     categoryColor: 'sky',
-    date: 'December 12, 2025',
+    date: 'April 28, 2025',
     readTime: '3 min read',
     featured: false,
   },
@@ -181,16 +182,12 @@ export default function BlogPage() {
         <div className="mt-20 rounded-3xl border border-slate-800 bg-gradient-to-br from-sky-950/40 to-slate-900/60 p-10 text-center md:p-14">
           <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-3">Never miss an article</h2>
           <p className="text-slate-400 mb-8 max-w-md mx-auto">Get the latest tips and guides delivered straight to your inbox.</p>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-            />
-            <button className="rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3 font-bold text-white transition-all hover:scale-105 hover:shadow-lg hover:shadow-sky-500/30">
-              Subscribe
-            </button>
-          </div>
+          <NewsletterForm
+            source="blog"
+            className="max-w-md mx-auto"
+            inputClassName="flex-1 rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+            buttonClassName="rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3 font-bold text-white transition-all hover:scale-105 hover:shadow-lg hover:shadow-sky-500/30"
+          />
         </div>
       </section>
     </main>

@@ -18,42 +18,40 @@ export async function POST(request: NextRequest) {
       }
     })();
 
-    // Verify the webhook signature using HMAC-SHA256 when CLICKPESA_WEBHOOK_SECRET is set.
-    // In production the secret is always required; locally it is optional for easier testing.
+    // Verify the webhook signature using HMAC-SHA256.
+    // Always required when secret is configured (any environment).
     const webhookSecret = process.env.CLICKPESA_WEBHOOK_SECRET;
     const signatureHeader = request.headers.get("x-clickpesa-signature");
-    const requireSignature = process.env.NODE_ENV === "production" && Boolean(webhookSecret);
 
-    if (requireSignature && !signatureHeader) {
+    if (!webhookSecret) {
+      logError("CLICKPESA_WEBHOOK_SECRET not configured — rejecting webhook", new Error("Missing CLICKPESA_WEBHOOK_SECRET"));
+      return jsonError("Server misconfiguration", 500);
+    }
+
+    if (!signatureHeader) {
       return jsonError("Missing signature", 401);
     }
 
-    if (webhookSecret && !signatureHeader) {
-      log("warn", "ClickPesa webhook signature missing", { hasSecret: true });
+    const presented = signatureHeader.replace(/^sha256=/i, "").trim();
+    const computed = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(rawBody, "utf8")
+      .digest("hex");
+
+    let presentedBuf: Buffer;
+    let computedBuf: Buffer;
+    try {
+      presentedBuf = Buffer.from(presented, "hex");
+      computedBuf = Buffer.from(computed, "hex");
+    } catch {
+      return jsonError("Invalid signature", 401);
     }
+    const matches =
+      presentedBuf.length === computedBuf.length &&
+      crypto.timingSafeEqual(presentedBuf, computedBuf);
 
-    if (webhookSecret && signatureHeader) {
-      const presented = signatureHeader.replace(/^sha256=/i, "").trim();
-      const computed = crypto
-        .createHmac("sha256", webhookSecret)
-        .update(rawBody, "utf8")
-        .digest("hex");
-
-      let presentedBuf: Buffer;
-      let computedBuf: Buffer;
-      try {
-        presentedBuf = Buffer.from(presented, "hex");
-        computedBuf = Buffer.from(computed, "hex");
-      } catch {
-        return jsonError("Invalid signature", 401);
-      }
-      const matches =
-        presentedBuf.length === computedBuf.length &&
-        crypto.timingSafeEqual(presentedBuf, computedBuf);
-
-      if (!matches) {
-        return jsonError("Invalid signature", 401);
-      }
+    if (!matches) {
+      return jsonError("Invalid signature", 401);
     }
 
     const eventType = payload?.event?.type;
@@ -78,6 +76,26 @@ export async function POST(request: NextRequest) {
       return "pending";
     })();
 
+    // Idempotency: check if this transaction was already processed
+    const { data: existingOrder } = await supabaseServerClient
+      .from("orders")
+      .select("id, clickpesa_transaction_id, payment_status")
+      .eq("payment_reference", orderReference)
+      .single();
+
+    if (!existingOrder) {
+      log("warn", "Webhook received for unknown order reference", { orderReference });
+      return jsonError("Order not found", 404);
+    }
+
+    if (
+      existingOrder.clickpesa_transaction_id === transaction.id &&
+      existingOrder.payment_status === mappedPaymentStatus
+    ) {
+      // Already processed — acknowledge without re-updating
+      return jsonOk({ success: true, message: "Already processed" });
+    }
+
     // Update the order
     const { error: updateError } = await supabaseServerClient
       .from("orders")
@@ -87,7 +105,7 @@ export async function POST(request: NextRequest) {
         clickpesa_transaction_id: transaction.id,
         clickpesa_raw_payload: payload,
       })
-      .eq("payment_reference", orderReference);
+      .eq("id", existingOrder.id);
 
     if (updateError) {
       logError("Failed to update order from webhook", updateError, { orderReference });

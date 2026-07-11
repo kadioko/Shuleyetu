@@ -189,7 +189,8 @@ export default function DashboardOrdersPage() {
     const { error: updateErr } = await supabaseClient
       .from('orders')
       .update({ status: newStatus })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .eq('vendor_id', vendor.vendor_id);
 
     if (updateErr) {
       console.error('Error updating order status', updateErr);

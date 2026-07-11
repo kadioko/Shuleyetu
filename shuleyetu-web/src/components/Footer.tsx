@@ -10,12 +10,23 @@ export function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setSubscribed(true);
-      setEmail('');
-      setTimeout(() => setSubscribed(false), 3000);
+    if (!email) return;
+    setSubscribed(false);
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'footer' }),
+      });
+      if (res.ok) {
+        setSubscribed(true);
+        setEmail('');
+        setTimeout(() => setSubscribed(false), 5000);
+      }
+    } catch {
+      // Silently fail — don't break the page
     }
   };
 
@@ -67,7 +78,7 @@ export function Footer() {
 
       <div className="py-12 md:py-16">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
-          <div className="mb-12 grid gap-8 md:grid-cols-4">
+          <div className="mb-12 grid gap-8 md:grid-cols-5">
             <div>
               <h4 className="font-display text-lg font-bold text-slate-50 mb-4">Shuleyetu</h4>
               <p className="text-sm leading-6 text-slate-400 mb-6">
@@ -138,7 +149,23 @@ export function Footer() {
                 </li>
                 <li>
                   <Link href="/contact" className="text-slate-400 hover:text-sky-400 transition-colors">
-                    Careers
+                    Join Our Team
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-50 mb-4">Support</h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/contact" className="text-slate-400 hover:text-sky-400 transition-colors">
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/status" className="text-slate-400 hover:text-sky-400 transition-colors">
+                    System Status
                   </Link>
                 </li>
               </ul>
@@ -155,16 +182,6 @@ export function Footer() {
                 <li>
                   <Link href="/terms" className="text-slate-400 hover:text-sky-400 transition-colors">
                     Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy" className="text-slate-400 hover:text-sky-400 transition-colors">
-                    Cookie Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/terms" className="text-slate-400 hover:text-sky-400 transition-colors">
-                    Disclaimer
                   </Link>
                 </li>
               </ul>

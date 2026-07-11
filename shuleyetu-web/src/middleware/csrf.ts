@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import Csrf from 'csrf';
 
 const csrf = new Csrf();
-const CSRF_SECRET = process.env.CSRF_SECRET || 'your-secret-key-change-in-production';
+const CSRF_SECRET = process.env.CSRF_SECRET;
+if (!CSRF_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("CSRF_SECRET environment variable must be set in production");
+}
+const effectiveSecret = CSRF_SECRET || "dev-only-csrf-secret-not-for-production";
 
 export async function generateCSRFToken(): Promise<string> {
-  return csrf.create(CSRF_SECRET);
+  return csrf.create(effectiveSecret);
 }
 
 export async function verifyCSRFToken(token: string): Promise<boolean> {
   try {
-    return csrf.verify(CSRF_SECRET, token);
+    return csrf.verify(effectiveSecret, token);
   } catch (error) {
     console.error('CSRF verification failed:', error);
     return false;

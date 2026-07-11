@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 export interface CartItem {
   itemId: string;
@@ -22,6 +23,7 @@ interface CartContextType {
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
+  validateCart: () => Promise<{ valid: boolean; warnings: string[] }>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
@@ -100,6 +102,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   }, []);
 
+  const validateCart = useCallback(async (): Promise<{ valid: boolean; warnings: string[] }> => {
+    if (items.length === 0) return { valid: true, warnings: [] };
+
+    const { data: stockData } = await supabaseClient
+      .from('inventory')
+      .select('id, stock_quantity, name')
+      .in('id', items.map((i) => i.itemId));
+
+    if (!stockData) return { valid: true, warnings: [] };
+
+    const warnings: string[] = [];
+    const stockMap = new Map(stockData.map((s) => [s.id, { qty: s.stock_quantity, name: s.name }]));
+
+    for (const item of items) {
+      const stock = stockMap.get(item.itemId);
+      if (!stock) {
+        warnings.push(`"${item.name}" is no longer available`);
+      } else if (stock.qty <= 0) {
+        warnings.push(`"${item.name}" is out of stock`);
+      } else if (item.quantity > stock.qty) {
+        warnings.push(`Only ${stock.qty} of "${item.name}" available (you have ${item.quantity} in cart)`);
+      }
+    }
+
+    return { valid: warnings.length === 0, warnings };
+  }, [items]);
+
   return (
     <CartContext.Provider
       value={{
@@ -112,6 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeItem,
         updateQuantity,
         clearCart,
+        validateCart,
         isOpen,
         setIsOpen,
       }}

@@ -64,8 +64,8 @@ export default function ContactPage() {
         </svg>
       ),
       label: 'Call Us',
-      value: '+255 700 000 000',
-      href: 'tel:+255700000000',
+      value: '+255 762 000 000',
+      href: 'tel:+255762000000',
       color: 'emerald',
     },
     {
@@ -77,7 +77,7 @@ export default function ContactPage() {
       ),
       label: 'Visit Us',
       value: 'Dar es Salaam, Tanzania',
-      href: '#',
+      href: 'https://maps.google.com',
       color: 'violet',
     },
   ];
@@ -196,12 +196,12 @@ export default function ContactPage() {
                     className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-slate-50 transition-all focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                   >
                     <option value="">Select a subject</option>
-                    <option value="general">General Inquiry</option>
-                    <option value="vendor">Vendor Partnership</option>
-                    <option value="school">School Partnership</option>
-                    <option value="support">Technical Support</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="other">Other</option>
+                    <option value="General Inquiry">General Inquiry</option>
+                    <option value="Vendor Partnership">Vendor Partnership</option>
+                    <option value="Order Support">Order Support</option>
+                    <option value="Technical Issue">Technical Issue</option>
+                    <option value="Feedback">Feedback</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">

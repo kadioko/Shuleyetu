@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
-    if (!canManageAnnouncements(auth.role)) return forbiddenSchoolAction("Only admins and staff can publish announcements");
+    // All school users can view announcements (write permissions checked in POST/DELETE only)
 
     const { searchParams } = new URL(request.url);
     const audience = searchParams.get("audience");

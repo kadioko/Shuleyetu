@@ -40,6 +40,22 @@ export async function POST(request: NextRequest) {
       return jsonError("Fee not found", 404);
     }
 
+    // Validate payment doesn't exceed remaining balance
+    const { data: existingPayments } = await supabaseServerClient
+      .from("school_fee_payments")
+      .select("amount_tzs")
+      .eq("fee_id", feeId);
+
+    const totalPaidSoFar = (existingPayments ?? []).reduce((s, p) => s + Number(p.amount_tzs), 0);
+    const remainingBalance = Number(fee.amount_tzs) - totalPaidSoFar;
+
+    if (amount > remainingBalance) {
+      return jsonError(
+        `Payment amount TZS ${amount.toLocaleString()} exceeds remaining balance TZS ${remainingBalance.toLocaleString()}`,
+        400,
+      );
+    }
+
     // Insert payment
     const { data: payment, error: payError } = await supabaseServerClient
       .from("school_fee_payments")

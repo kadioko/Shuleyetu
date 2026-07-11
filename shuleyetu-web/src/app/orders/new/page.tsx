@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
+import { useCart } from '@/lib/cartContext';
 import { useToast } from '@/components/ui/Toast';
 import { ProgressSteps } from '@/components/ui/ProgressSteps';
 import { CardSkeleton } from '@/components/ui/SkeletonLoader';
@@ -23,6 +24,7 @@ type InventoryItem = {
 
 export default function NewOrderPage() {
   const { addToast } = useToast();
+  const { validateCart } = useCart();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendorId, setSelectedVendorId] = useState('');
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -63,13 +65,6 @@ export default function NewOrderPage() {
         });
       } else {
         setVendors(data ?? []);
-        if (data && data.length > 0) {
-          addToast({
-            type: 'success',
-            title: 'Vendors loaded',
-            message: `Found ${data.length} vendors`
-          });
-        }
       }
       setLoadingVendors(false);
     };
@@ -209,6 +204,57 @@ export default function NewOrderPage() {
       return;
     }
 
+    // Validate cart stock and current stock for selected items before submitting
+    const { valid: cartValid, warnings: cartWarnings } = await validateCart();
+    if (!cartValid) {
+      cartWarnings.forEach((warning) =>
+        addToast({
+          type: 'warning',
+          title: 'Cart stock changed',
+          message: warning
+        })
+      );
+    }
+
+    const { data: stockData } = await supabaseClient
+      .from('inventory')
+      .select('id, stock_quantity, name')
+      .in(
+        'id',
+        selectedItems.map((item) => item.id)
+      );
+
+    const stockMap = new Map(
+      (stockData ?? []).map((s) => [
+        s.id,
+        { qty: typeof s.stock_quantity === 'number' ? s.stock_quantity : 0, name: s.name }
+      ])
+    );
+
+    const stockWarnings: string[] = [];
+    for (const item of selectedItems) {
+      const stock = stockMap.get(item.id);
+      const quantity = quantities[item.id] ?? 0;
+      if (!stock) {
+        stockWarnings.push(`"${item.name}" is no longer available`);
+      } else if (stock.qty <= 0) {
+        stockWarnings.push(`"${item.name}" is out of stock`);
+      } else if (quantity > stock.qty) {
+        stockWarnings.push(`Only ${stock.qty} of "${item.name}" available (you requested ${quantity})`);
+      }
+    }
+
+    if (stockWarnings.length > 0) {
+      stockWarnings.forEach((warning) =>
+        addToast({
+          type: 'error',
+          title: 'Stock issue',
+          message: warning
+        })
+      );
+      return;
+    }
+
     if (totalAmount <= 0) {
       addToast({
         type: 'error',
@@ -221,79 +267,60 @@ export default function NewOrderPage() {
     setSubmitting(true);
 
     try {
-      const publicAccessToken = (() => {
-        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-          return crypto.randomUUID();
-        }
-
-        // UUID v4 fallback
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-          const r = Math.floor(Math.random() * 16);
-          const v = c === 'x' ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        });
-      })();
-
-      const { data: orderData, error: orderError } = await supabaseClient
-        .from('orders')
-        .insert({
-          vendor_id: selectedVendorId,
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim(),
-          student_name: studentName.trim() || null,
-          school_name: schoolName.trim() || null,
-          total_amount_tzs: totalAmount,
-          public_access_token: publicAccessToken,
-        })
-        .select('id')
-        .single();
-
-      if (orderError || !orderData) {
-        console.error('Error creating order', orderError);
-        const message =
-          orderError?.message?.includes('public_access_token')
-            ? 'Failed to create order. The database is missing public access tokens. Apply the latest Supabase migration and try again.'
-            : 'Failed to create order.';
-        addToast({
-          type: 'error',
-          title: 'Order creation failed',
-          message: message
-        });
-        setSubmitting(false);
-        return;
-      }
-
-      const orderId = orderData.id as string;
-
+      // Build items payload for RPC
       const itemsPayload = selectedItems.map((item) => {
         const quantity = quantities[item.id] ?? 0;
         const priceNumber =
           typeof item.price_tzs === 'string'
             ? Number.parseFloat(item.price_tzs)
             : item.price_tzs;
-
         return {
-          order_id: orderId,
           inventory_id: item.id,
           quantity,
           unit_price_tzs: priceNumber,
         };
       });
 
-      const { error: itemsError } = await supabaseClient
-        .from('order_items')
-        .insert(itemsPayload);
+      const { data: orderResult, error: orderError } = await supabaseClient.rpc(
+        'create_order_with_items',
+        {
+          p_vendor_id: selectedVendorId,
+          p_customer_name: customerName.trim(),
+          p_customer_phone: customerPhone.trim(),
+          p_student_name: studentName.trim() || null,
+          p_school_name: schoolName.trim() || null,
+          p_delivery_address: null,
+          p_notes: null,
+          p_items: itemsPayload,
+        }
+      );
 
-      if (itemsError) {
-        console.error('Error creating order items', itemsError);
-        addToast({
-          type: 'warning',
-          title: 'Order partially created',
-          message: 'Order was created but adding items failed. Please contact support.'
-        });
+      if (orderError) {
+        console.error('Error creating order:', orderError);
+        const message = orderError.message.includes('Insufficient stock')
+          ? 'Some items are out of stock. Please review your cart and try again.'
+          : orderError.message.includes('not found')
+          ? 'One or more items are no longer available.'
+          : 'Failed to create order. Please try again.';
+        addToast({ type: 'error', title: 'Order failed', message });
         setSubmitting(false);
         return;
       }
+
+      const orderId = orderResult.order_id;
+
+      // Fetch the public access token generated by the database
+      const { data: tokenRow, error: tokenError } = await supabaseClient
+        .from('orders')
+        .select('public_access_token')
+        .eq('id', orderId)
+        .single();
+
+      if (tokenError || !tokenRow) {
+        console.error('Error fetching order token:', tokenError);
+      }
+
+      const publicAccessToken = tokenRow?.public_access_token ?? null;
 
       addToast({
         type: 'success',

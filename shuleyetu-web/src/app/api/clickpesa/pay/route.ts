@@ -82,11 +82,34 @@ export async function POST(request: NextRequest) {
         : order.id;
 
     const cleanedPhone = String(order.customer_phone).replace(/\s+/g, "");
-    const amountNumber = Number(order.total_amount_tzs);
+    const storedAmount = Number(order.total_amount_tzs);
 
-    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+    if (!Number.isFinite(storedAmount) || storedAmount <= 0) {
       return jsonError("Order amount is invalid", 400);
     }
+
+    // Recalculate total from order items to prevent amount tampering
+    const { data: orderItems } = await supabaseServerClient
+      .from("order_items")
+      .select("quantity, unit_price_tzs")
+      .eq("order_id", orderId);
+
+    if (orderItems && orderItems.length > 0) {
+      const calculatedTotal = orderItems.reduce(
+        (sum, item) => sum + Number(item.unit_price_tzs) * item.quantity,
+        0,
+      );
+      if (Math.abs(calculatedTotal - storedAmount) > 1) {
+        logError("Payment amount mismatch", new Error("Amount mismatch"), {
+          orderId,
+          storedAmount,
+          calculatedTotal,
+        });
+        return jsonError("Order amount mismatch — please contact support", 400);
+      }
+    }
+
+    const amountNumber = storedAmount;
 
     const clickpesaToken = await generateClickpesaToken();
 

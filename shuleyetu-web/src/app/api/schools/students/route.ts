@@ -79,6 +79,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate class_id belongs to this school if provided
+    if (body?.class_id) {
+      const { data: classCheck } = await supabaseServerClient
+        .from("school_classes")
+        .select("id")
+        .eq("id", body.class_id)
+        .eq("school_id", auth.schoolId)
+        .single();
+      if (!classCheck) {
+        return jsonError("Class not found in this school", 400);
+      }
+    }
+
     const { data, error } = await supabaseServerClient
       .from("school_students")
       .insert({
@@ -169,7 +182,21 @@ export async function PATCH(request: NextRequest) {
         : null;
     }
     if (body?.date_of_birth !== undefined) updates.date_of_birth = body.date_of_birth || null;
-    if (body?.class_id !== undefined) updates.class_id = body.class_id || null;
+    if (body?.class_id !== undefined) {
+      if (body.class_id) {
+        // Validate class belongs to this school
+        const { data: classCheck } = await supabaseServerClient
+          .from("school_classes")
+          .select("id")
+          .eq("id", body.class_id)
+          .eq("school_id", auth.schoolId)
+          .single();
+        if (!classCheck) {
+          return jsonError("Class not found in this school", 400);
+        }
+      }
+      updates.class_id = body.class_id || null;
+    }
     if (body?.parent_name !== undefined) updates.parent_name = body.parent_name.trim() || null;
     if (body?.parent_phone !== undefined) updates.parent_phone = body.parent_phone.trim() || null;
     if (body?.parent_email !== undefined) updates.parent_email = body.parent_email.trim() || null;
@@ -207,6 +234,43 @@ export async function PATCH(request: NextRequest) {
     return jsonOk({ student: data });
   } catch (error) {
     logError("Unexpected error in school students PATCH", error);
+    return jsonError("Internal server error", 500);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await requireSchoolUser(request);
+    if (!auth.ok) return auth.response;
+    if (!canManageStudents(auth.role)) return forbiddenSchoolAction("Only admins and teachers can delete students");
+
+    const { searchParams } = new URL(request.url);
+    const studentId = searchParams.get("id");
+    if (!studentId) return jsonError("Student id is required", 400);
+
+    const { error } = await supabaseServerClient
+      .from("school_students")
+      .delete()
+      .eq("id", studentId)
+      .eq("school_id", auth.schoolId);
+
+    if (error) {
+      logError("Error deleting school student", error, { schoolId: auth.schoolId });
+      return jsonError("Failed to delete student", 500);
+    }
+
+    await writeSchoolAuditLog({
+      schoolId: auth.schoolId,
+      actorUserId: auth.user.id,
+      action: "deleted",
+      entityType: "student",
+      entityId: studentId,
+      metadata: {},
+    });
+
+    return jsonOk({ deleted: true });
+  } catch (error) {
+    logError("Unexpected error in school students DELETE", error);
     return jsonError("Internal server error", 500);
   }
 }

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
-    if (!canManageClasses(auth.role)) return forbiddenSchoolAction("Only school admins can create classes");
+    // All school users can view classes (write permissions checked in POST/PATCH/DELETE only)
 
     const { data, error } = await supabaseServerClient
       .from("school_classes")

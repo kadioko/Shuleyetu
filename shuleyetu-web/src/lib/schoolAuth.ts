@@ -71,11 +71,27 @@ export async function requireSchoolUser(
     };
   }
 
-  const schoolUser =
-    (requestedSchoolId
-      ? schoolUsers.find((row) => row.school_id === requestedSchoolId)
-      : null) ?? schoolUsers[0];
+  // If a specific school was requested, verify access to it (don't fall back silently)
+  if (requestedSchoolId) {
+    const matched = schoolUsers.find((row) => row.school_id === requestedSchoolId);
+    if (!matched) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: "You do not have access to this school" },
+          { status: 403 },
+        ),
+      };
+    }
+    return {
+      ok: true,
+      user: { id: user.id, email: user.email ?? null },
+      schoolId: matched.school_id,
+      role: matched.role,
+    };
+  }
 
+  const schoolUser = schoolUsers[0];
   return {
     ok: true,
     user: { id: user.id, email: user.email ?? null },

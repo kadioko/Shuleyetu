@@ -95,8 +95,9 @@ export default function EditInventoryItemPage({ params }: PageProps) {
 
       const { data, error: invError } = await supabaseClient
         .from('inventory')
-        .select('id, name, description, category, price_tzs, stock_quantity, is_active, image_url')
+        .select('id, name, description, category, price_tzs, stock_quantity, is_active, image_url, vendor_id')
         .eq('id', params.itemId)
+        .eq('vendor_id', mapping.vendor_id)
         .maybeSingle();
 
       if (invError) {
@@ -139,8 +140,8 @@ export default function EditInventoryItemPage({ params }: PageProps) {
     const priceNumber = Number(price);
     const stockNumber = Number(stock);
 
-    if (Number.isNaN(priceNumber) || priceNumber < 0) {
-      setError('Enter a valid price (0 or more).');
+    if (Number.isNaN(priceNumber) || priceNumber <= 0) {
+      setError('Enter a valid price (must be greater than 0).');
       return;
     }
 
@@ -162,7 +163,8 @@ export default function EditInventoryItemPage({ params }: PageProps) {
         is_active: isActive,
         image_url: imageUrl.trim() || null,
       })
-      .eq('id', params.itemId);
+      .eq('id', params.itemId)
+      .eq('vendor_id', vendor!.vendor_id);
 
     if (updateError) {
       console.error('Error updating inventory item', updateError);

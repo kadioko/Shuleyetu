@@ -93,7 +93,15 @@ Current status: **PHASE 7 COMPLETE — Phase 8 (Content & SEO) in progress** ✅
 
 | # | Task | Status | File(s) |
 |---|------|--------|---------|
-| 9.3 | Database indexes on hot queries | `completed` | `add_performance_indexes.sql` |
+| 9.3 | Database indexes on hot queries | `completed` | Priority	Area	What it is
+High	Deploy	The Vercel NEXT_PUBLIC_SUPABASE_URL env var still needs updating, then redeploy
+High	DB migration	school_announcements table needs status and scheduled_at columns; school_fee_payments needs payment_method and reference columns
+Medium	Edit students/staff	Can change status but can't edit name, class, contact details
+Medium	Attendance history	View per-student attendance record across dates
+Medium	Marketplace	Nothing has been touched there in a while
+Low	SEO	Phase 8 from the roadmap: sitemap, OG tags, meta descriptions
+Low	Markdownlint	Pre-existing MD040/MD036/MD031/MD032 warnings in legacy API.md sections
+`add_performance_indexes.sql` |
 
 ---
 

@@ -282,6 +282,13 @@ export async function updateStudent(
   );
 }
 
+export async function deleteStudent(studentId: string) {
+  return fetchWithAuth<{ deleted: boolean }>(
+    `/api/schools/students?id=${encodeURIComponent(studentId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function getStaff() {
   return fetchWithAuth<{ staff: SchoolStaff[] }>("/api/schools/staff");
 }
@@ -307,6 +314,13 @@ export async function updateStaff(
   return fetchWithAuth<{ staff: SchoolStaff }>(
     `/api/schools/staff?id=${encodeURIComponent(staffId)}`,
     { method: "PATCH", body: JSON.stringify(body) },
+  );
+}
+
+export async function deleteStaff(staffId: string) {
+  return fetchWithAuth<{ deleted: boolean }>(
+    `/api/schools/staff?id=${encodeURIComponent(staffId)}`,
+    { method: "DELETE" },
   );
 }
 

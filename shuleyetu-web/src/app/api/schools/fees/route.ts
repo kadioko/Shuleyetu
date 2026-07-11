@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
-    if (!canManageFees(auth.role)) return forbiddenSchoolAction("Only admins and staff can create fees");
+    // All school users can view fees (write permissions checked in POST only)
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");

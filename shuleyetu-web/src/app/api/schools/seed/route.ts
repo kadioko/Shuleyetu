@@ -94,6 +94,10 @@ export async function POST(request: NextRequest) {
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
+    if (auth.role !== "admin") {
+      return jsonError("Only school admins can seed demo data", 403);
+    }
+
     const schoolId = auth.schoolId;
 
     // Prevent duplicate demo data

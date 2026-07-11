@@ -33,6 +33,15 @@ validateSupabaseEnv();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'rqlolaoqstvnffkaqmpt.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
 
