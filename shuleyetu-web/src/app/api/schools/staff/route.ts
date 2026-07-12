@@ -13,13 +13,20 @@ export async function GET(request: NextRequest) {
     if (!auth.ok) return auth.response;
     // All school users can view staff (write permissions checked in POST/PATCH only)
 
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
     const { data, error } = await supabaseServerClient
       .from("school_staff")
       .select(
         "id, employee_id, first_name, last_name, email, phone, role, subject, status, created_at",
       )
       .eq("school_id", auth.schoolId)
-      .order("first_name", { ascending: true });
+      .order("first_name", { ascending: true })
+      .range(from, to);
 
     if (error) {
       logError("Error loading school staff", error, {
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
       return jsonError("Failed to load staff", 500);
     }
 
-    return jsonOk({ staff: data ?? [] });
+    return jsonOk({ staff: data ?? [], page, limit, hasMore: (data?.length ?? 0) === limit });
   } catch (error) {
     logError("Unexpected error in school staff GET", error);
     return jsonError("Internal server error", 500);

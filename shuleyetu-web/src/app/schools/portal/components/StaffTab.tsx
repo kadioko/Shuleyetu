@@ -36,6 +36,9 @@ const STATUS_OPTIONS = [
 export function StaffTab() {
   const [staff, setStaff] = useState<SchoolStaff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusChanging, setStatusChanging] = useState<string | null>(null);
@@ -47,15 +50,29 @@ export function StaffTab() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const { addToast } = useToast();
 
-  const load = async () => {
-    setLoading(true);
-    const { data, error } = await getStaff();
-    setLoading(false);
-    if (error) addToast({ type: "error", title: "Failed to load staff", message: error });
-    else setStaff(data?.staff ?? []);
+  const load = async (pageNum: number, append: boolean) => {
+    if (append) setLoadingMore(true); else setLoading(true);
+    const { data, error } = await getStaff({ page: pageNum });
+    if (append) setLoadingMore(false); else setLoading(false);
+    if (error) {
+      addToast({ type: "error", title: "Failed to load staff", message: error });
+    } else {
+      const incoming = data?.staff ?? [];
+      setStaff(append ? (prev) => [...prev, ...incoming] : incoming);
+      setHasMore(data?.hasMore ?? false);
+    }
   };
 
-  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setPage(1);
+    void load(1, false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    void load(nextPage, true);
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,7 +94,8 @@ export function StaffTab() {
       addToast({ type: "success", title: "Staff member added" });
       setFormOpen(false);
       e.currentTarget.reset();
-      void load();
+      setPage(1);
+      void load(1, false);
     }
   };
 
@@ -102,7 +120,8 @@ export function StaffTab() {
     } else {
       addToast({ type: "success", title: "Staff member updated" });
       setEditTarget(null);
-      void load();
+      setPage(1);
+      void load(1, false);
     }
   };
 
@@ -114,7 +133,8 @@ export function StaffTab() {
       addToast({ type: "error", title: "Status update failed", message: error });
     } else {
       addToast({ type: "success", title: "Status updated" });
-      void load();
+      setPage(1);
+      void load(1, false);
     }
   };
 
@@ -127,7 +147,8 @@ export function StaffTab() {
       addToast({ type: "error", title: "Failed to delete staff member", message: error });
     } else {
       addToast({ type: "success", title: "Staff member deleted" });
-      void load();
+      setPage(1);
+      void load(1, false);
     }
     setDeleteTarget(null);
   };
@@ -245,7 +266,7 @@ export function StaffTab() {
         <EmptyMessage message="No staff found. Adjust filters or add a new staff member." />
       ) : (
         <>
-          <p className="text-xs text-slate-500">{filtered.length} staff member{filtered.length !== 1 ? "s" : ""} shown</p>
+          <p className="text-xs text-slate-500">{staff.length} staff member{staff.length !== 1 ? "s" : ""} loaded</p>
           <div className="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-900/40">
             <table className="w-full text-sm">
               <thead className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-500">
@@ -307,6 +328,14 @@ export function StaffTab() {
             </table>
           </div>
         </>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="secondary" onClick={handleLoadMore} disabled={loadingMore}>
+            {loadingMore ? "Loading…" : "Load more"}
+          </Button>
+        </div>
       )}
 
       <ConfirmModal

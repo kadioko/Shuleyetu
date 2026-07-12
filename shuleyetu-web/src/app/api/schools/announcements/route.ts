@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const audience = searchParams.get("audience");
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
     let query = supabaseServerClient
       .from("school_announcements")
@@ -26,7 +30,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { data, error } = await query
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       logError("Error loading school announcements", error, {
@@ -35,7 +40,7 @@ export async function GET(request: NextRequest) {
       return jsonError("Failed to load announcements", 500);
     }
 
-    return jsonOk({ announcements: data ?? [] });
+    return jsonOk({ announcements: data ?? [], page, limit, hasMore: (data?.length ?? 0) === limit });
   } catch (error) {
     logError("Unexpected error in school announcements GET", error);
     return jsonError("Internal server error", 500);

@@ -219,8 +219,14 @@ export async function getReports(date?: string) {
   return fetchWithAuth<SchoolReports>(`/api/schools/reports?${query.toString()}`);
 }
 
-export async function getClasses() {
-  return fetchWithAuth<{ classes: SchoolClass[] }>("/api/schools/classes");
+export async function getClasses(params?: { page?: number; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  const qs = query.toString();
+  return fetchWithAuth<{ classes: SchoolClass[]; page: number; limit: number; hasMore: boolean }>(
+    `/api/schools/classes${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export async function createClass(body: Omit<SchoolClass, "id" | "created_at">) {
@@ -247,11 +253,13 @@ export async function deleteClass(classId: string) {
   );
 }
 
-export async function getStudents(params?: { classId?: string; status?: string }) {
+export async function getStudents(params?: { classId?: string; status?: string; page?: number; limit?: number }) {
   const query = new URLSearchParams();
   if (params?.classId) query.set("classId", params.classId);
   if (params?.status) query.set("status", params.status);
-  return fetchWithAuth<{ students: SchoolStudent[] }>(
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  return fetchWithAuth<{ students: SchoolStudent[]; page: number; limit: number; hasMore: boolean }>(
     `/api/schools/students?${query.toString()}`,
   );
 }
@@ -289,8 +297,14 @@ export async function deleteStudent(studentId: string) {
   );
 }
 
-export async function getStaff() {
-  return fetchWithAuth<{ staff: SchoolStaff[] }>("/api/schools/staff");
+export async function getStaff(params?: { page?: number; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  const qs = query.toString();
+  return fetchWithAuth<{ staff: SchoolStaff[]; page: number; limit: number; hasMore: boolean }>(
+    `/api/schools/staff${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export async function createStaff(body: Omit<SchoolStaff, "id" | "created_at" | "status">) {
@@ -352,11 +366,13 @@ export async function getSchoolAuditLogs() {
   return fetchWithAuth<{ logs: SchoolAuditLog[] }>("/api/schools/audit");
 }
 
-export async function getFees(params?: { status?: string; studentId?: string }) {
+export async function getFees(params?: { status?: string; studentId?: string; page?: number; limit?: number }) {
   const query = new URLSearchParams();
   if (params?.status) query.set("status", params.status);
   if (params?.studentId) query.set("studentId", params.studentId);
-  return fetchWithAuth<{ fees: SchoolFee[] }>(
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  return fetchWithAuth<{ fees: SchoolFee[]; page: number; limit: number; hasMore: boolean }>(
     `/api/schools/fees?${query.toString()}`,
   );
 }
@@ -425,10 +441,12 @@ export async function getStudentAttendanceHistory(params: {
   );
 }
 
-export async function getAnnouncements(params?: { audience?: string }) {
+export async function getAnnouncements(params?: { audience?: string; page?: number; limit?: number }) {
   const query = new URLSearchParams();
   if (params?.audience) query.set("audience", params.audience);
-  return fetchWithAuth<{ announcements: SchoolAnnouncement[] }>(
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  return fetchWithAuth<{ announcements: SchoolAnnouncement[]; page: number; limit: number; hasMore: boolean }>(
     `/api/schools/announcements?${query.toString()}`,
   );
 }

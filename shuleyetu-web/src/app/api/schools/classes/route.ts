@@ -13,12 +13,19 @@ export async function GET(request: NextRequest) {
     if (!auth.ok) return auth.response;
     // All school users can view classes (write permissions checked in POST/PATCH/DELETE only)
 
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
     const { data, error } = await supabaseServerClient
       .from("school_classes")
       .select("id, name, grade, stream, room, capacity, created_at")
       .eq("school_id", auth.schoolId)
       .order("grade", { ascending: true })
-      .order("name", { ascending: true });
+      .order("name", { ascending: true })
+      .range(from, to);
 
     if (error) {
       logError("Error loading school classes", error, {
@@ -27,7 +34,7 @@ export async function GET(request: NextRequest) {
       return jsonError("Failed to load classes", 500);
     }
 
-    return jsonOk({ classes: data ?? [] });
+    return jsonOk({ classes: data ?? [], page, limit, hasMore: (data?.length ?? 0) === limit });
   } catch (error) {
     logError("Unexpected error in school classes GET", error);
     return jsonError("Internal server error", 500);

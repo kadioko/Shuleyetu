@@ -34,6 +34,9 @@ export function StudentsTab() {
   const [students, setStudents] = useState<SchoolStudent[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [filterClass, setFilterClass] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("active");
   const [search, setSearch] = useState("");
@@ -46,19 +49,33 @@ export function StudentsTab() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const { addToast } = useToast();
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (pageNum: number, append: boolean) => {
+    if (append) setLoadingMore(true); else setLoading(true);
     const [{ data: classData }, { data: studentData, error }] = await Promise.all([
-      getClasses(),
-      getStudents({ classId: filterClass || undefined, status: filterStatus || undefined }),
+      pageNum === 1 ? getClasses() : Promise.resolve({ data: { classes, page: 1, limit: 50, hasMore: false }, error: null }),
+      getStudents({ classId: filterClass || undefined, status: filterStatus || undefined, page: pageNum }),
     ]);
-    setLoading(false);
-    setClasses(classData?.classes ?? []);
-    if (error) addToast({ type: "error", title: "Failed to load students", message: error });
-    else setStudents(studentData?.students ?? []);
+    if (append) setLoadingMore(false); else setLoading(false);
+    if (pageNum === 1) setClasses(classData?.classes ?? []);
+    if (error) {
+      addToast({ type: "error", title: "Failed to load students", message: error });
+    } else {
+      const incoming = studentData?.students ?? [];
+      setStudents(append ? (prev) => [...prev, ...incoming] : incoming);
+      setHasMore(studentData?.hasMore ?? false);
+    }
   };
 
-  useEffect(() => { void load(); }, [filterClass, filterStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setPage(1);
+    void load(1, false);
+  }, [filterClass, filterStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    void load(nextPage, true);
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,7 +101,8 @@ export function StudentsTab() {
       addToast({ type: "success", title: "Student added" });
       setFormOpen(false);
       e.currentTarget.reset();
-      void load();
+      setPage(1);
+      void load(1, false);
     }
   };
 
@@ -113,7 +131,8 @@ export function StudentsTab() {
     } else {
       addToast({ type: "success", title: "Student updated" });
       setEditTarget(null);
-      void load();
+      setPage(1);
+      void load(1, false);
     }
   };
 
@@ -125,7 +144,8 @@ export function StudentsTab() {
       addToast({ type: "error", title: "Status update failed", message: error });
     } else {
       addToast({ type: "success", title: "Status updated" });
-      void load();
+      setPage(1);
+      void load(1, false);
     }
   };
 
@@ -138,7 +158,8 @@ export function StudentsTab() {
       addToast({ type: "error", title: "Failed to delete student", message: error });
     } else {
       addToast({ type: "success", title: "Student deleted" });
-      void load();
+      setPage(1);
+      void load(1, false);
     }
     setDeleteTarget(null);
   };
@@ -170,6 +191,7 @@ export function StudentsTab() {
   });
 
   if (loading) return <Loading />;
+
 
   return (
     <div className="space-y-6">
@@ -293,7 +315,7 @@ export function StudentsTab() {
         <EmptyMessage message="No students found. Try adjusting filters or add a new student." />
       ) : (
         <>
-          <p className="text-xs text-slate-500">{filtered.length} student{filtered.length !== 1 ? "s" : ""} shown</p>
+          <p className="text-xs text-slate-500">{students.length} student{students.length !== 1 ? "s" : ""} loaded</p>
           <div className="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-900/40">
             <table className="w-full text-sm">
               <thead className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-500">
@@ -354,6 +376,14 @@ export function StudentsTab() {
             </table>
           </div>
         </>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="secondary" onClick={handleLoadMore} disabled={loadingMore}>
+            {loadingMore ? "Loading…" : "Load more"}
+          </Button>
+        </div>
       )}
 
       <ConfirmModal

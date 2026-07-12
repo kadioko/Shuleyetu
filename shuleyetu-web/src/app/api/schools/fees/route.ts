@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const studentId = searchParams.get("studentId");
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
     let query = supabaseServerClient
       .from("school_fees")
@@ -32,7 +36,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: fees, error: feesError } = await query
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (feesError) {
       logError("Error loading school fees", feesError, {
@@ -70,7 +75,7 @@ export async function GET(request: NextRequest) {
       ),
     }));
 
-    return jsonOk({ fees: feesWithPayments });
+    return jsonOk({ fees: feesWithPayments, page, limit, hasMore: (fees?.length ?? 0) === limit });
   } catch (error) {
     logError("Unexpected error in school fees GET", error);
     return jsonError("Internal server error", 500);
