@@ -165,8 +165,8 @@ create policy "Admins can read audit log"
   to authenticated
   using (
     exists (
-      select 1 from public.admin_users
-      where user_id = auth.uid()
+      select 1 from public.user_roles
+      where user_id = auth.uid() and role = 'admin'
     )
   );
 
