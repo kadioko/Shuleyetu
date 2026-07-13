@@ -1,3 +1,6 @@
+# Build artifacts
+*.tsbuildinfo
+
 # Environment variables
 shuleyetu-web/.env.local
 shuleyetu-web/.env*.local
