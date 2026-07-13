@@ -1,21 +1,59 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageStaff, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, paginationSchema, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const staffRoleSchema = z.enum(["admin", "teacher", "support"]);
+const staffStatusSchema = z.enum(["active", "inactive"]);
+
+const getStaffQuerySchema = paginationSchema;
+
+const createStaffBodySchema = z.object({
+  employee_id: z.string().max(50).optional(),
+  first_name: z.string().min(1, "First name is required").max(100),
+  last_name: z.string().min(1, "Last name is required").max(100),
+  email: z.string().email().max(254).optional(),
+  phone: z.string().max(50).optional(),
+  role: staffRoleSchema.default("teacher"),
+  subject: z.string().max(100).optional(),
+});
+
+const staffIdQuerySchema = z.object({
+  id: uuidSchema,
+});
+
+const updateStaffBodySchema = z.object({
+  status: staffStatusSchema.optional(),
+  first_name: z.string().min(1).max(100).optional(),
+  last_name: z.string().min(1).max(100).optional(),
+  employee_id: z.string().max(50).optional(),
+  email: z.string().email().max(254).optional(),
+  phone: z.string().max(50).optional(),
+  role: staffRoleSchema.optional(),
+  subject: z.string().max(100).optional(),
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     // All school users can view staff (write permissions checked in POST/PATCH only)
 
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const validated = await validateRequest(request, {
+      query: getStaffQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { page, limit } = validated.query!;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
@@ -44,42 +82,29 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{
-      employee_id?: string;
-      first_name?: string;
-      last_name?: string;
-      email?: string;
-      phone?: string;
-      role?: string;
-      subject?: string;
-    }>(request);
-
-    const firstName = body?.first_name?.trim();
-    const lastName = body?.last_name?.trim();
-    const role = body?.role?.trim();
-
-    if (!firstName || !lastName) {
-      return jsonError("First and last name are required", 400);
-    }
-
-    const validRole = ["admin", "teacher", "support"].includes(role ?? "")
-      ? (role as "admin" | "teacher" | "support")
-      : "teacher";
+    const validated = await validateRequest(request, {
+      body: createStaffBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     const { data, error } = await supabaseServerClient
       .from("school_staff")
       .insert({
         school_id: auth.schoolId,
-        employee_id: body?.employee_id?.trim() ?? null,
-        first_name: firstName,
-        last_name: lastName,
-        email: body?.email?.trim() ?? null,
-        phone: body?.phone?.trim() ?? null,
-        role: validRole,
-        subject: body?.subject?.trim() ?? null,
+        employee_id: body.employee_id?.trim() ?? null,
+        first_name: body.first_name.trim(),
+        last_name: body.last_name.trim(),
+        email: body.email?.trim() ?? null,
+        phone: body.phone?.trim() ?? null,
+        role: body.role,
+        subject: body.subject?.trim() ?? null,
       })
       .select(
         "id, employee_id, first_name, last_name, email, phone, role, subject, status, created_at",
@@ -111,45 +136,31 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageStaff(auth.role)) return forbiddenSchoolAction("Only admins and staff can update staff records");
 
-    const { searchParams } = new URL(request.url);
-    const staffId = searchParams.get("id");
-    if (!staffId) return jsonError("Staff id is required", 400);
-
-    const body = await readJsonBody<{
-      status?: string;
-      first_name?: string;
-      last_name?: string;
-      employee_id?: string;
-      email?: string;
-      phone?: string;
-      role?: string;
-      subject?: string;
-    }>(request);
-
-    const validStatuses = ["active", "inactive"];
-    if (body?.status !== undefined && !validStatuses.includes(body.status)) {
-      return jsonError(`Status must be one of: ${validStatuses.join(", ")}`, 400);
-    }
-
-    const validRoles = ["admin", "teacher", "support"];
-    if (body?.role !== undefined && !validRoles.includes(body.role)) {
-      return jsonError(`Role must be one of: ${validRoles.join(", ")}`, 400);
-    }
+    const validated = await validateRequest(request, {
+      query: staffIdQuerySchema,
+      body: updateStaffBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: staffId } = validated.query!;
+    const body = validated.body!;
 
     // Build updates object from only provided fields
     const updates: Record<string, unknown> = {};
-    if (body?.status !== undefined) updates.status = body.status;
-    if (body?.first_name !== undefined) updates.first_name = body.first_name.trim();
-    if (body?.last_name !== undefined) updates.last_name = body.last_name.trim();
-    if (body?.employee_id !== undefined) updates.employee_id = body.employee_id.trim() || null;
-    if (body?.email !== undefined) updates.email = body.email.trim() || null;
-    if (body?.phone !== undefined) updates.phone = body.phone.trim() || null;
-    if (body?.role !== undefined) updates.role = body.role;
-    if (body?.subject !== undefined) updates.subject = body.subject.trim() || null;
+    if (body.status !== undefined) updates.status = body.status;
+    if (body.first_name !== undefined) updates.first_name = body.first_name.trim();
+    if (body.last_name !== undefined) updates.last_name = body.last_name.trim();
+    if (body.employee_id !== undefined) updates.employee_id = body.employee_id.trim() || null;
+    if (body.email !== undefined) updates.email = body.email.trim() || null;
+    if (body.phone !== undefined) updates.phone = body.phone.trim() || null;
+    if (body.role !== undefined) updates.role = body.role;
+    if (body.subject !== undefined) updates.subject = body.subject.trim() || null;
 
     if (Object.keys(updates).length === 0) {
       return jsonError("No fields to update", 400);
@@ -188,13 +199,18 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageStaff(auth.role)) return forbiddenSchoolAction("Only admins and staff managers can delete staff records");
 
-    const { searchParams } = new URL(request.url);
-    const staffId = searchParams.get("id");
-    if (!staffId) return jsonError("Staff id is required", 400);
+    const validated = await validateRequest(request, {
+      query: staffIdQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: staffId } = validated.query!;
 
     const { error } = await supabaseServerClient
       .from("school_staff")

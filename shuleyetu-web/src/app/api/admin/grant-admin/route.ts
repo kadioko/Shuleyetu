@@ -1,22 +1,33 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { requireAdmin } from "@/lib/adminAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
+import { validateRequest, emailSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
+const grantAdminBodySchema = z.object({
+  email: emailSchema,
+});
+
 export async function POST(request: NextRequest) {
+  const rateLimitError = await withRateLimit(request, rateLimitConfigs.admin);
+  if (rateLimitError) return rateLimitError;
+
   try {
     const auth = await requireAdmin(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{ email?: string }>(request);
+    const validated = await validateRequest(request, { body: grantAdminBodySchema });
+    if (!validated.ok) return validated.response;
 
-    const email = body?.email?.trim().toLowerCase() ?? "";
-    if (!email) {
-      return jsonError("email is required", 400);
-    }
+    const body = validated.body;
+    if (!body) return jsonError("Invalid request body", 400);
+
+    const email = body.email.trim().toLowerCase();
 
     const { data: targetUserId, error: userIdErr } = await supabaseServerClient.rpc(
       "get_user_id_by_email",

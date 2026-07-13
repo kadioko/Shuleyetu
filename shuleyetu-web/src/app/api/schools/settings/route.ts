@@ -1,14 +1,31 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageSchoolSettings, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const updateSettingsBodySchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  region: z.string().max(100).optional(),
+  district: z.string().max(100).optional(),
+  ward: z.string().max(100).optional(),
+  phone: z.string().max(50).optional(),
+  email: z.string().email().max(254).optional(),
+  address: z.string().max(500).optional(),
+  is_active: z.boolean().optional(),
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
@@ -37,29 +54,27 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageSchoolSettings(auth.role)) return forbiddenSchoolAction("Only school admins can update settings");
 
-    const body = await readJsonBody<{
-      name?: string;
-      region?: string;
-      district?: string;
-      ward?: string;
-      phone?: string;
-      email?: string;
-      address?: string;
-      is_active?: boolean;
-    }>(request);
+    const validated = await validateRequest(request, {
+      body: updateSettingsBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     const updates: Record<string, unknown> = {};
-    const stringFields = ["name", "region", "district", "ward", "phone", "email", "address"];
+    const stringFields: Array<keyof typeof body> = ["name", "region", "district", "ward", "phone", "email", "address"];
     for (const field of stringFields) {
-      if (body?.[field as keyof typeof body] !== undefined) {
-        updates[field] = String(body[field as keyof typeof body] ?? "").trim() || null;
+      if (body[field] !== undefined) {
+        updates[field] = String(body[field] ?? "").trim() || null;
       }
     }
-    if (body?.is_active !== undefined) {
+    if (body.is_active !== undefined) {
       updates.is_active = Boolean(body.is_active);
     }
 

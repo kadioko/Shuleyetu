@@ -1,35 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabaseServer';
+import { withRateLimit, rateLimitConfigs } from '@/lib/rateLimit';
+import { validateRequest, uuidSchema } from '@/lib/validation';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const postBodySchema = z.object({
+  orderId: uuidSchema,
+  token: z.string().min(1, 'Token is required'),
+  senderName: z.string().min(1, 'Sender name is required').max(100),
+  senderRole: z.enum(['customer', 'vendor']),
+  content: z.string().min(1, 'Content is required').max(2000, 'Message too long (max 2000 characters)'),
+});
+
 export async function POST(request: NextRequest) {
+  // Rate-limit: general-tier (100 req / 15 min per IP)
+  const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.general);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // Validate and parse request body
+  const validation = await validateRequest(request, { body: postBodySchema });
+  if (!validation.ok) return validation.response;
+
+  const { orderId, token, senderName, senderRole, content } = validation.body!;
+
   try {
-    const body = await request.json();
-    const { orderId, token, senderName, senderRole, content } = body;
-
-    if (!orderId || !token || !senderName || !senderRole || !content?.trim()) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    if (!['customer', 'vendor'].includes(senderRole)) {
-      return NextResponse.json(
-        { error: 'Invalid sender role' },
-        { status: 400 }
-      );
-    }
-
-    if (content.trim().length > 2000) {
-      return NextResponse.json(
-        { error: 'Message too long (max 2000 characters)' },
-        { status: 400 }
-      );
-    }
-
     // Verify the caller has the correct access token for this order
     const { data: order, error: orderError } = await supabaseServerClient
       .from('orders')

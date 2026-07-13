@@ -1,23 +1,43 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageFees, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, paginationSchema, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const feeStatusSchema = z.enum(["pending", "partial", "paid", "cancelled"]);
+
+const getFeesQuerySchema = paginationSchema.extend({
+  status: feeStatusSchema.optional(),
+  studentId: uuidSchema.optional(),
+});
+
+const createFeeBodySchema = z.object({
+  student_id: uuidSchema,
+  description: z.string().min(1, "Description is required").max(500),
+  amount_tzs: z.coerce.number().positive("Amount must be greater than 0"),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format").optional(),
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     // All school users can view fees (write permissions checked in POST only)
 
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
-    const studentId = searchParams.get("studentId");
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const validated = await validateRequest(request, {
+      query: getFeesQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { page, limit, status, studentId } = validated.query!;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
@@ -84,35 +104,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{
-      student_id?: string;
-      description?: string;
-      amount_tzs?: number;
-      due_date?: string;
-    }>(request);
-
-    const studentId = body?.student_id?.trim();
-    const description = body?.description?.trim();
-    const amount = body?.amount_tzs;
-
-    if (!studentId || !description || amount === undefined || amount <= 0) {
-      return jsonError(
-        "Student, description, and a positive amount are required",
-        400,
-      );
-    }
+    const validated = await validateRequest(request, {
+      body: createFeeBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     const { data, error } = await supabaseServerClient
       .from("school_fees")
       .insert({
         school_id: auth.schoolId,
-        student_id: studentId,
-        description,
-        amount_tzs: amount,
-        due_date: body?.due_date ?? null,
+        student_id: body.student_id,
+        description: body.description,
+        amount_tzs: body.amount_tzs,
+        due_date: body.due_date ?? null,
       })
       .select(
         "id, student_id, description, amount_tzs, due_date, status, created_at, school_students(admission_number, first_name, last_name)",

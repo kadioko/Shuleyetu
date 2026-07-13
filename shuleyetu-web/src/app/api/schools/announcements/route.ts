@@ -1,22 +1,49 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageAnnouncements, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, paginationSchema, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const announcementAudienceSchema = z.enum(["all", "parents", "staff", "students"]);
+const announcementStatusSchema = z.enum(["published", "draft"]);
+
+const getAnnouncementsQuerySchema = paginationSchema.extend({
+  audience: announcementAudienceSchema.optional(),
+});
+
+const createAnnouncementBodySchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  content: z.string().min(1, "Content is required").max(5000),
+  audience: announcementAudienceSchema.default("all"),
+  status: announcementStatusSchema.default("published"),
+  scheduled_at: z.string().datetime().nullable().optional(),
+});
+
+const deleteAnnouncementQuerySchema = z.object({
+  id: uuidSchema,
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     // All school users can view announcements (write permissions checked in POST/DELETE only)
 
-    const { searchParams } = new URL(request.url);
-    const audience = searchParams.get("audience");
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const validated = await validateRequest(request, {
+      query: getAnnouncementsQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+
+    const { page, limit, audience } = validated.query!;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
@@ -49,44 +76,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{
-      title?: string;
-      content?: string;
-      audience?: string;
-      status?: string;
-      scheduled_at?: string | null;
-    }>(request);
-
-    const title = body?.title?.trim();
-    const content = body?.content?.trim();
-    const audience = body?.audience?.trim();
-
-    if (!title || !content) {
-      return jsonError("Title and content are required", 400);
-    }
-
-    const validAudience = ["all", "parents", "staff", "students"].includes(
-      audience ?? "",
-    )
-      ? (audience as "all" | "parents" | "staff" | "students")
-      : "all";
-
-    const validStatus = ["published", "draft"].includes(body?.status ?? "")
-      ? body!.status
-      : "published";
+    const validated = await validateRequest(request, {
+      body: createAnnouncementBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     const { data, error } = await supabaseServerClient
       .from("school_announcements")
       .insert({
         school_id: auth.schoolId,
-        title,
-        content,
-        audience: validAudience,
-        status: validStatus,
-        scheduled_at: body?.scheduled_at ?? null,
+        title: body.title,
+        content: body.content,
+        audience: body.audience,
+        status: body.status,
+        scheduled_at: body.scheduled_at ?? null,
       })
       .select("id, title, content, audience, status, scheduled_at, created_at, updated_at")
       .single();
@@ -116,13 +126,18 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageAnnouncements(auth.role)) return forbiddenSchoolAction("Only admins and staff can delete announcements");
 
-    const { searchParams } = new URL(request.url);
-    const announcementId = searchParams.get("id");
-    if (!announcementId) return jsonError("Announcement id is required", 400);
+    const validated = await validateRequest(request, {
+      query: deleteAnnouncementQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: announcementId } = validated.query!;
 
     const { error } = await supabaseServerClient
       .from("school_announcements")

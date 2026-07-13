@@ -1,32 +1,40 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageFees, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const recordPaymentBodySchema = z.object({
+  fee_id: uuidSchema,
+  amount_tzs: z.coerce.number().positive("Amount must be greater than 0"),
+  payment_method: z.string().trim().min(1, "Payment method is required").default("cash"),
+  reference: z.string().max(100).nullable().optional(),
+});
+
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageFees(auth.role)) return forbiddenSchoolAction("Only admins and staff can record fee payments");
 
-    const body = await readJsonBody<{
-      fee_id?: string;
-      amount_tzs?: number;
-      payment_method?: string;
-      reference?: string | null;
-    }>(request);
+    const validated = await validateRequest(request, {
+      body: recordPaymentBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
-    const feeId = body?.fee_id?.trim();
-    const amount = body?.amount_tzs;
-    const method = body?.payment_method?.trim() ?? "cash";
-
-    if (!feeId || amount === undefined || amount <= 0) {
-      return jsonError("fee_id and a positive amount_tzs are required", 400);
-    }
+    const feeId = body.fee_id;
+    const amount = body.amount_tzs;
+    const method = body.payment_method;
 
     // Verify the fee belongs to this school
     const { data: fee, error: feeError } = await supabaseServerClient
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
         fee_id: feeId,
         amount_tzs: amount,
         payment_method: method,
-        reference: body?.reference ?? null,
+        reference: body.reference ?? null,
       })
       .select("id, fee_id, amount_tzs, payment_method, reference, created_at")
       .single();

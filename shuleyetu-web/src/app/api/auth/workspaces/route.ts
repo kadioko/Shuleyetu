@@ -3,6 +3,8 @@ import { supabaseServerClient } from "@/lib/supabaseServer";
 import { parseBearerToken } from "@/lib/httpAuth";
 import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
+import { validateRequest, paginationSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +21,14 @@ type SchoolWorkspaceRow = {
 };
 
 export async function GET(request: NextRequest) {
+  // Rate-limit: auth-tier (10 req / 15 min per IP)
+  const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.auth);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // Validate optional pagination query params (page/limit coerced from strings)
+  const validation = await validateRequest(request, { query: paginationSchema });
+  if (!validation.ok) return validation.response;
+
   try {
     const token = parseBearerToken(request.headers.get("authorization"));
     if (!token) return jsonError("Unauthorized", 401);

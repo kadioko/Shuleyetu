@@ -148,6 +148,58 @@ supabase migration repair <version> --status applied --yes
 5. Update `README.md`, `FEATURES.md`, `ROADMAP.md`, and `API.md` when
    user-facing features or APIs change.
 
+## 10x Growth Roadmap
+
+This roadmap is organized in dependency order: foundation first, revenue next,
+growth last. Each phase must pass build + tests before moving on.
+
+### Phase 1: Reliability & Scale (foundation)
+
+- [ ] Global error boundary + Sentry `global-error.js`
+- [ ] Zod validation on every API route
+- [ ] Rate limiting per route
+- [ ] Expand `/status` health dashboard
+- [ ] Supabase client reuse / connection pooling audit
+- [ ] Background job queue for emails/webhooks
+- [ ] E2E tests for order → payment → fulfillment
+- [ ] Load test the school portal
+
+### Phase 2: Product + Growth Audit
+
+- [ ] Heuristic UX audit (mobile-first)
+- [ ] Propose 10 high-impact features with effort/impact
+- [ ] Implement top 3 features end-to-end
+
+### Phase 3: Payments & Trust
+
+- [ ] ClickPesa retries + idempotency
+- [ ] Partial refunds + admin UI
+- [ ] PDF invoice auto-generation
+- [ ] Order dispute/escrow flow
+- [ ] Vendor KYC + verification badges
+- [ ] Transaction audit log + admin review UI
+
+### Phase 4: Vendor + Marketplace
+
+- [ ] Vendor analytics dashboard
+- [ ] Inventory CSV/Excel bulk import
+- [ ] Product variants + stock alerts
+- [ ] Discount/coupon codes
+- [ ] Vendor payout tracking
+- [ ] Public vendor store pages
+- [ ] Low-stock notifications
+
+### Phase 5: School ERP Module
+
+- [ ] Fee structure templates
+- [ ] SMS/WhatsApp fee reminders
+- [ ] Parent/guardian accounts
+- [ ] Report cards + transcripts
+- [ ] Staff payroll + attendance
+- [ ] Library and asset tracking
+- [ ] Parent mobile view
+- [ ] Full Swahili translation + RBAC hardening
+
 ## Known Tool Versions
 
 - Node.js: `v24.11.1`

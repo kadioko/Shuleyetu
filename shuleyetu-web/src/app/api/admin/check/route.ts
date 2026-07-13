@@ -3,11 +3,15 @@ import { supabaseServerClient } from "@/lib/supabaseServer";
 import { parseBearerToken } from "@/lib/httpAuth";
 import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const rateLimitError = await withRateLimit(request, rateLimitConfigs.admin);
+  if (rateLimitError) return rateLimitError;
+
   try {
     const token = parseBearerToken(request.headers.get("authorization"));
     if (!token) {

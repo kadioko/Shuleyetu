@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Rate Limiting', () => {
   test('should enforce rate limiting on payment endpoint', async ({ request }) => {
     const endpoint = '/api/clickpesa/pay';

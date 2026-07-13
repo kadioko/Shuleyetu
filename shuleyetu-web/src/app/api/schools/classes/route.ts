@@ -1,21 +1,51 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageClasses, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, paginationSchema, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const getClassesQuerySchema = paginationSchema;
+
+const createClassBodySchema = z.object({
+  name: z.string().min(1, "Class name is required").max(100),
+  grade: z.string().max(50).optional(),
+  stream: z.string().max(50).optional(),
+  room: z.string().max(50).optional(),
+  capacity: z.coerce.number().int().min(1).optional(),
+});
+
+const classIdQuerySchema = z.object({
+  id: uuidSchema,
+});
+
+const updateClassBodySchema = z.object({
+  name: z.string().min(1, "Class name cannot be empty").max(100).optional(),
+  grade: z.string().max(50).nullable().optional(),
+  stream: z.string().max(50).nullable().optional(),
+  room: z.string().max(50).nullable().optional(),
+  capacity: z.coerce.number().int().min(1).nullable().optional(),
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     // All school users can view classes (write permissions checked in POST/PATCH/DELETE only)
 
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const validated = await validateRequest(request, {
+      query: getClassesQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { page, limit } = validated.query!;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
@@ -43,31 +73,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{
-      name?: string;
-      grade?: string;
-      stream?: string;
-      room?: string;
-      capacity?: number;
-    }>(request);
-
-    const name = body?.name?.trim();
-    if (!name) {
-      return jsonError("Class name is required", 400);
-    }
+    const validated = await validateRequest(request, {
+      body: createClassBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     const { data, error } = await supabaseServerClient
       .from("school_classes")
       .insert({
         school_id: auth.schoolId,
-        name,
-        grade: body?.grade?.trim() ?? null,
-        stream: body?.stream?.trim() ?? null,
-        room: body?.room?.trim() ?? null,
-        capacity: body?.capacity ?? null,
+        name: body.name,
+        grade: body.grade?.trim() ?? null,
+        stream: body.stream?.trim() ?? null,
+        room: body.room?.trim() ?? null,
+        capacity: body.capacity ?? null,
       })
       .select("id, name, grade, stream, room, capacity, created_at")
       .single();
@@ -97,31 +123,30 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageClasses(auth.role)) return forbiddenSchoolAction("Only school admins can update classes");
 
-    const { searchParams } = new URL(request.url);
-    const classId = searchParams.get("id");
-    if (!classId) return jsonError("Class id is required", 400);
-
-    const body = await readJsonBody<{
-      name?: string;
-      grade?: string | null;
-      stream?: string | null;
-      room?: string | null;
-      capacity?: number | null;
-    }>(request);
+    const validated = await validateRequest(request, {
+      query: classIdQuerySchema,
+      body: updateClassBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: classId } = validated.query!;
+    const body = validated.body!;
 
     const updates: Record<string, unknown> = {};
-    if (body?.name !== undefined) updates.name = body.name?.trim();
-    if (body?.grade !== undefined) updates.grade = body.grade?.trim() ?? null;
-    if (body?.stream !== undefined) updates.stream = body.stream?.trim() ?? null;
-    if (body?.room !== undefined) updates.room = body.room?.trim() ?? null;
-    if (body?.capacity !== undefined) updates.capacity = body.capacity ?? null;
+    if (body.name !== undefined) updates.name = body.name.trim();
+    if (body.grade !== undefined) updates.grade = body.grade?.trim() ?? null;
+    if (body.stream !== undefined) updates.stream = body.stream?.trim() ?? null;
+    if (body.room !== undefined) updates.room = body.room?.trim() ?? null;
+    if (body.capacity !== undefined) updates.capacity = body.capacity ?? null;
 
-    if (!updates.name && updates.name !== undefined) {
-      return jsonError("Class name cannot be empty", 400);
+    if (Object.keys(updates).length === 0) {
+      return jsonError("No fields provided to update", 400);
     }
 
     const { data, error } = await supabaseServerClient
@@ -155,13 +180,18 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageClasses(auth.role)) return forbiddenSchoolAction("Only school admins can delete classes");
 
-    const { searchParams } = new URL(request.url);
-    const classId = searchParams.get("id");
-    if (!classId) return jsonError("Class id is required", 400);
+    const validated = await validateRequest(request, {
+      query: classIdQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: classId } = validated.query!;
 
     const { error } = await supabaseServerClient
       .from("school_classes")

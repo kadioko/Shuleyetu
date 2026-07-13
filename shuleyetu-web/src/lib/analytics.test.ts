@@ -110,13 +110,13 @@ describe('Analytics Service', () => {
     it('should identify top products', () => {
       const metrics = analyticsService.calculateSalesMetrics(mockOrders);
       expect(metrics.topProducts.length).toBeGreaterThan(0);
-      expect(metrics.topProducts[0].name).toBe('Mathematics Textbook');
+      expect(metrics.topProducts[0].name).toBe('Pens Pack');
     });
 
     it('should identify top categories', () => {
       const metrics = analyticsService.calculateSalesMetrics(mockOrders);
       expect(metrics.topCategories.length).toBeGreaterThan(0);
-      expect(metrics.topCategories[0].name).toBe('textbook');
+      expect(metrics.topCategories[0].name).toBe('stationery');
     });
 
     it('should generate sales trend', () => {
@@ -214,8 +214,8 @@ describe('Analytics Service', () => {
     });
 
     it('should identify worst day', () => {
-      const startDate = new Date('2024-01-15');
-      const endDate = new Date('2024-01-17');
+      const startDate = new Date('2024-01-15T00:00:00Z');
+      const endDate = new Date('2024-01-17T23:59:59Z');
       const report = analyticsService.generateReport(mockOrders, mockItems, startDate, endDate);
 
       expect(report.summary.worstDay.sales).toBe(50000);

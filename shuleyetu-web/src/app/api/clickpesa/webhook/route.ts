@@ -3,11 +3,15 @@ import crypto from "crypto";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { log, logError } from "@/lib/logger";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.webhook);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const rawBody = await request.text();
     const payload = (() => {
       if (!rawBody) return null;
@@ -17,6 +21,10 @@ export async function POST(request: NextRequest) {
         return null;
       }
     })();
+
+    if (typeof payload !== "object" || payload === null) {
+      return jsonError("Invalid webhook payload", 400);
+    }
 
     // Verify the webhook signature using HMAC-SHA256.
     // Always required when secret is configured (any environment).

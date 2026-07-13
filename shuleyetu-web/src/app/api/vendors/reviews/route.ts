@@ -1,13 +1,24 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, reviewBodySchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    // Validate input first (fail fast regardless of auth)
+    const validation = await validateRequest(request, { body: reviewBodySchema });
+    if (!validation.ok) return validation.response;
+
+    const { vendor_id: vendorId, rating, comment: rawComment } = validation.body;
+
     // Get the auth token from the request
     const authHeader = request.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -19,24 +30,7 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return jsonError("Invalid authentication", 401);
     }
-
-    const body = await readJsonBody<{
-      vendor_id?: string;
-      rating?: number;
-      comment?: string;
-    }>(request);
-
-    const vendorId = body?.vendor_id?.trim();
-    const rating = body?.rating;
-    const comment = body?.comment?.trim() ?? "";
-
-    if (!vendorId) return jsonError("vendor_id is required", 400);
-    if (!rating || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
-      return jsonError("Rating must be an integer between 1 and 5", 400);
-    }
-    if (comment.length > 1000) {
-      return jsonError("Comment must be 1000 characters or less", 400);
-    }
+    const trimmedComment = rawComment?.trim() ?? "";
 
     // Verify vendor exists
     const { data: vendor } = await supabaseServerClient
@@ -72,7 +66,7 @@ export async function POST(request: NextRequest) {
       // Update existing review and reset approval to pending
       const { error: updateError } = await supabaseServerClient
         .from("vendor_reviews")
-        .update({ rating, comment, reviewer_name: reviewerName, is_approved: false, updated_at: new Date().toISOString() })
+        .update({ rating, comment: trimmedComment, reviewer_name: reviewerName, is_approved: false, updated_at: new Date().toISOString() })
         .eq("id", existingReview.id);
 
       if (updateError) {
@@ -90,7 +84,7 @@ export async function POST(request: NextRequest) {
         reviewer_email: reviewerEmail,
         reviewer_name: reviewerName,
         rating,
-        comment,
+        comment: trimmedComment,
         is_approved: false,
       });
 

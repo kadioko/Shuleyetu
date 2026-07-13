@@ -1,9 +1,16 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { validatePublicOrderRequest } from "@/lib/publicOrderValidation";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
-import { withRateLimit, rateLimitConfigs } from "@/middleware/rateLimit";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
+import { validateRequest, uuidSchema } from "@/lib/validation";
+import { z } from "zod";
+
+const publicOrderBodySchema = z.object({
+  orderId: uuidSchema,
+  token: z.string().min(1, "token is required"),
+  includeItems: z.boolean().default(true),
+});
 
 export const runtime = "nodejs";
 
@@ -13,18 +20,10 @@ export async function POST(request: NextRequest) {
     const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
     if (rateLimitError) return rateLimitError;
 
-    const body = await readJsonBody<{
-      orderId?: string;
-      token?: string;
-      includeItems?: boolean;
-    }>(request);
+    const validation = await validateRequest(request, { body: publicOrderBodySchema });
+    if (!validation.ok) return validation.response;
 
-    const validated = validatePublicOrderRequest(body);
-    if (!validated.ok) {
-      return jsonError(validated.error, validated.status);
-    }
-
-    const { orderId, token, includeItems } = validated;
+    const { orderId, token, includeItems } = validation.body!;
 
     const { data: order, error: orderError } = await supabaseServerClient
       .from("orders")

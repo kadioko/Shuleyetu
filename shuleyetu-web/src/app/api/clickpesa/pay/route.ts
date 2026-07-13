@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { log, logError } from "@/lib/logger";
-import { withRateLimit, rateLimitConfigs } from "@/middleware/rateLimit";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
+import { validateRequest, uuidSchema } from "@/lib/validation";
+import { z } from "zod";
 
 const CLICKPESA_BASE_URL = process.env.CLICKPESA_BASE_URL ?? "https://api.clickpesa.com";
 const CLICKPESA_CLIENT_ID = process.env.CLICKPESA_CLIENT_ID;
@@ -46,18 +48,21 @@ async function generateClickpesaToken(): Promise<string> {
   return data.token;
 }
 
+const clickpesaPayBodySchema = z.object({
+  orderId: uuidSchema,
+  token: z.string().min(1, "token is required"),
+});
+
 export async function POST(request: NextRequest) {
   try {
     // Apply rate limiting for payment endpoint
     const rateLimitError = await withRateLimit(request, rateLimitConfigs.payment);
     if (rateLimitError) return rateLimitError;
 
-    const body = await readJsonBody<{ orderId?: string; token?: string }>(request);
+    const validation = await validateRequest(request, { body: clickpesaPayBodySchema });
+    if (!validation.ok) return validation.response;
 
-    const orderId = body?.orderId?.trim() ?? "";
-    const publicToken = body?.token?.trim() ?? "";
-
-    if (!orderId || !publicToken) return jsonError("orderId and token are required", 400);
+    const { orderId, token: publicToken } = validation.body!;
 
     const { data: order, error: orderError } = await supabaseServerClient
       .from("orders")

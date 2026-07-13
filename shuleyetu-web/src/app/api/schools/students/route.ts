@@ -1,23 +1,70 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageStudents, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, paginationSchema, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const studentGenderSchema = z.enum(["male", "female", "other"]);
+const studentStatusSchema = z.enum(["active", "inactive", "transferred"]);
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format").optional();
+
+const getStudentsQuerySchema = paginationSchema.extend({
+  classId: uuidSchema.optional(),
+  status: studentStatusSchema.default("active"),
+});
+
+const createStudentBodySchema = z.object({
+  admission_number: z.string().min(1, "Admission number is required").max(50),
+  first_name: z.string().min(1, "First name is required").max(100),
+  last_name: z.string().min(1, "Last name is required").max(100),
+  gender: studentGenderSchema.optional(),
+  date_of_birth: dateStringSchema,
+  class_id: uuidSchema.optional(),
+  parent_name: z.string().max(200).optional(),
+  parent_phone: z.string().max(50).optional(),
+  parent_email: z.string().email().max(254).optional(),
+  address: z.string().max(500).optional(),
+  enrollment_date: dateStringSchema,
+});
+
+const studentIdQuerySchema = z.object({
+  id: uuidSchema,
+});
+
+const updateStudentBodySchema = z.object({
+  status: studentStatusSchema.optional(),
+  first_name: z.string().min(1).max(100).optional(),
+  last_name: z.string().min(1).max(100).optional(),
+  gender: studentGenderSchema.optional(),
+  date_of_birth: dateStringSchema,
+  class_id: uuidSchema.optional(),
+  parent_name: z.string().max(200).optional(),
+  parent_phone: z.string().max(50).optional(),
+  parent_email: z.string().email().max(254).optional(),
+  address: z.string().max(500).optional(),
+  enrollment_date: dateStringSchema,
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageStudents(auth.role)) return forbiddenSchoolAction("Only admins and teachers can add students");
 
-    const { searchParams } = new URL(request.url);
-    const classId = searchParams.get("classId");
-    const status = searchParams.get("status") ?? "active";
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
+    const validated = await validateRequest(request, {
+      query: getStudentsQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { page, limit, classId, status } = validated.query!;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
@@ -56,36 +103,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{
-      admission_number?: string;
-      first_name?: string;
-      last_name?: string;
-      gender?: string;
-      date_of_birth?: string;
-      class_id?: string;
-      parent_name?: string;
-      parent_phone?: string;
-      parent_email?: string;
-      address?: string;
-      enrollment_date?: string;
-    }>(request);
-
-    const admissionNumber = body?.admission_number?.trim();
-    const firstName = body?.first_name?.trim();
-    const lastName = body?.last_name?.trim();
-
-    if (!admissionNumber || !firstName || !lastName) {
-      return jsonError(
-        "Admission number, first name and last name are required",
-        400,
-      );
-    }
+    const validated = await validateRequest(request, {
+      body: createStudentBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     // Validate class_id belongs to this school if provided
-    if (body?.class_id) {
+    if (body.class_id) {
       const { data: classCheck } = await supabaseServerClient
         .from("school_classes")
         .select("id")
@@ -101,19 +132,17 @@ export async function POST(request: NextRequest) {
       .from("school_students")
       .insert({
         school_id: auth.schoolId,
-        admission_number: admissionNumber,
-        first_name: firstName,
-        last_name: lastName,
-        gender: ["male", "female", "other"].includes(body?.gender ?? "")
-          ? (body?.gender as "male" | "female" | "other")
-          : null,
-        date_of_birth: body?.date_of_birth ?? null,
-        class_id: body?.class_id ?? null,
-        parent_name: body?.parent_name?.trim() ?? null,
-        parent_phone: body?.parent_phone?.trim() ?? null,
-        parent_email: body?.parent_email?.trim() ?? null,
-        address: body?.address?.trim() ?? null,
-        enrollment_date: body?.enrollment_date ?? null,
+        admission_number: body.admission_number.trim(),
+        first_name: body.first_name.trim(),
+        last_name: body.last_name.trim(),
+        gender: body.gender ?? null,
+        date_of_birth: body.date_of_birth ?? null,
+        class_id: body.class_id ?? null,
+        parent_name: body.parent_name?.trim() ?? null,
+        parent_phone: body.parent_phone?.trim() ?? null,
+        parent_email: body.parent_email?.trim() ?? null,
+        address: body.address?.trim() ?? null,
+        enrollment_date: body.enrollment_date ?? null,
       })
       .select(
         "id, admission_number, first_name, last_name, gender, date_of_birth, class_id, parent_name, parent_phone, parent_email, address, status, enrollment_date, created_at, school_classes(name, grade, stream)",
@@ -149,45 +178,29 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageStudents(auth.role)) return forbiddenSchoolAction("Only admins and teachers can update students");
 
-    const { searchParams } = new URL(request.url);
-    const studentId = searchParams.get("id");
-    if (!studentId) return jsonError("Student id is required", 400);
-
-    const body = await readJsonBody<{
-      status?: string;
-      first_name?: string;
-      last_name?: string;
-      gender?: string;
-      date_of_birth?: string;
-      class_id?: string;
-      parent_name?: string;
-      parent_phone?: string;
-      parent_email?: string;
-      address?: string;
-      enrollment_date?: string;
-    }>(request);
-
-    const validStatuses = ["active", "inactive", "transferred"];
-    if (body?.status !== undefined && !validStatuses.includes(body.status)) {
-      return jsonError(`Status must be one of: ${validStatuses.join(", ")}`, 400);
-    }
+    const validated = await validateRequest(request, {
+      query: studentIdQuerySchema,
+      body: updateStudentBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: studentId } = validated.query!;
+    const body = validated.body!;
 
     // Build updates object from only provided fields
     const updates: Record<string, unknown> = {};
-    if (body?.status !== undefined) updates.status = body.status;
-    if (body?.first_name !== undefined) updates.first_name = body.first_name.trim();
-    if (body?.last_name !== undefined) updates.last_name = body.last_name.trim();
-    if (body?.gender !== undefined) {
-      updates.gender = ["male", "female", "other"].includes(body.gender)
-        ? body.gender
-        : null;
-    }
-    if (body?.date_of_birth !== undefined) updates.date_of_birth = body.date_of_birth || null;
-    if (body?.class_id !== undefined) {
+    if (body.status !== undefined) updates.status = body.status;
+    if (body.first_name !== undefined) updates.first_name = body.first_name.trim();
+    if (body.last_name !== undefined) updates.last_name = body.last_name.trim();
+    if (body.gender !== undefined) updates.gender = body.gender ?? null;
+    if (body.date_of_birth !== undefined) updates.date_of_birth = body.date_of_birth || null;
+    if (body.class_id !== undefined) {
       if (body.class_id) {
         // Validate class belongs to this school
         const { data: classCheck } = await supabaseServerClient
@@ -202,11 +215,11 @@ export async function PATCH(request: NextRequest) {
       }
       updates.class_id = body.class_id || null;
     }
-    if (body?.parent_name !== undefined) updates.parent_name = body.parent_name.trim() || null;
-    if (body?.parent_phone !== undefined) updates.parent_phone = body.parent_phone.trim() || null;
-    if (body?.parent_email !== undefined) updates.parent_email = body.parent_email.trim() || null;
-    if (body?.address !== undefined) updates.address = body.address.trim() || null;
-    if (body?.enrollment_date !== undefined) updates.enrollment_date = body.enrollment_date || null;
+    if (body.parent_name !== undefined) updates.parent_name = body.parent_name.trim() || null;
+    if (body.parent_phone !== undefined) updates.parent_phone = body.parent_phone.trim() || null;
+    if (body.parent_email !== undefined) updates.parent_email = body.parent_email.trim() || null;
+    if (body.address !== undefined) updates.address = body.address.trim() || null;
+    if (body.enrollment_date !== undefined) updates.enrollment_date = body.enrollment_date || null;
 
     if (Object.keys(updates).length === 0) {
       return jsonError("No fields to update", 400);
@@ -245,13 +258,18 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageStudents(auth.role)) return forbiddenSchoolAction("Only admins and teachers can delete students");
 
-    const { searchParams } = new URL(request.url);
-    const studentId = searchParams.get("id");
-    if (!studentId) return jsonError("Student id is required", 400);
+    const validated = await validateRequest(request, {
+      query: studentIdQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { id: studentId } = validated.query!;
 
     const { error } = await supabaseServerClient
       .from("school_students")

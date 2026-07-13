@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { log, logError } from "@/lib/logger";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
+import { validateRequest, uuidSchema } from "@/lib/validation";
+import { z } from "zod";
 
 const CLICKPESA_BASE_URL = process.env.CLICKPESA_BASE_URL ?? "https://api.clickpesa.com";
 const CLICKPESA_CLIENT_ID = process.env.CLICKPESA_CLIENT_ID;
@@ -45,14 +48,23 @@ async function generateClickpesaToken(): Promise<string> {
   return data.token;
 }
 
+const clickpesaStatusBodySchema = z.object({
+  orderId: uuidSchema,
+  token: z.string().min(1, "token is required"),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await readJsonBody<{ orderId?: string; token?: string }>(request);
+    const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitResponse) return rateLimitResponse;
 
-    const orderId = body?.orderId?.trim() ?? "";
-    const publicToken = body?.token?.trim() ?? "";
+    const validation = await validateRequest(request, { body: clickpesaStatusBodySchema });
+    if (!validation.ok) return validation.response;
 
-    if (!orderId || !publicToken) return jsonError("orderId and token are required", 400);
+    const body = validation.body;
+    if (!body) return jsonError("Invalid request body", 400);
+
+    const { orderId, token: publicToken } = body;
 
     const { data: order, error: orderError } = await supabaseServerClient
       .from("orders")

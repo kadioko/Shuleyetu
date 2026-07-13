@@ -1,21 +1,36 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { requireSchoolUser } from "@/lib/schoolAuth";
 import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format");
+
+const getReportsQuerySchema = z.object({
+  date: dateStringSchema.optional(),
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
+    const validated = await validateRequest(request, {
+      query: getReportsQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { date = new Date().toISOString().slice(0, 10) } = validated.query!;
+
     const schoolId = auth.schoolId;
-    const { searchParams } = new URL(request.url);
-    const date =
-      searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
 
     const [
       { data: classes },

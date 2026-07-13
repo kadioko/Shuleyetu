@@ -1,34 +1,72 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { canManageAttendance, forbiddenSchoolAction, requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const attendanceStatusSchema = z.enum(["present", "absent", "late", "excused"]);
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format");
+
+const getAttendanceQuerySchema = z.union([
+  z.object({
+    studentId: uuidSchema,
+    dateFrom: dateStringSchema.optional(),
+    dateTo: dateStringSchema.optional(),
+  }),
+  z.object({
+    classId: uuidSchema,
+    date: dateStringSchema.optional(),
+  }),
+]);
+
+const postAttendanceBodySchema = z.object({
+  student_id: uuidSchema,
+  class_id: uuidSchema,
+  attendance_date: dateStringSchema,
+  status: attendanceStatusSchema,
+  notes: z.string().max(500).optional(),
+});
+
+const putAttendanceBodySchema = z.object({
+  class_id: uuidSchema,
+  attendance_date: dateStringSchema,
+  status: attendanceStatusSchema,
+  student_ids: z.array(uuidSchema).min(1, "At least one student is required"),
+});
+
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageAttendance(auth.role)) return forbiddenSchoolAction("Only admins and teachers can mark attendance");
 
-    const { searchParams } = new URL(request.url);
-    const classId = searchParams.get("classId");
-    const studentId = searchParams.get("studentId");
+    const validated = await validateRequest(request, {
+      query: getAttendanceQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const query = validated.query!;
 
     // Student history mode
-    if (studentId) {
+    if ("studentId" in query) {
       const now = new Date();
       const defaultFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const dateFrom = searchParams.get("dateFrom") ?? defaultFrom;
-      const dateTo = searchParams.get("dateTo") ?? now.toISOString().slice(0, 10);
+      const dateFrom = query.dateFrom ?? defaultFrom;
+      const dateTo = query.dateTo ?? now.toISOString().slice(0, 10);
 
       const { data, error } = await supabaseServerClient
         .from("school_attendance")
         .select("id, attendance_date, status, notes, school_classes(name)")
         .eq("school_id", auth.schoolId)
-        .eq("student_id", studentId)
+        .eq("student_id", query.studentId)
         .gte("attendance_date", dateFrom)
         .lte("attendance_date", dateTo)
         .order("attendance_date", { ascending: false });
@@ -52,11 +90,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Class attendance mode (existing behavior)
-    const date = searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
-
-    if (!classId) {
-      return jsonError("classId query parameter is required", 400);
-    }
+    const classId = query.classId;
+    const date = query.date ?? new Date().toISOString().slice(0, 10);
 
     const { data: students, error: studentsError } = await supabaseServerClient
       .from("school_students")
@@ -111,43 +146,28 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{
-      student_id?: string;
-      class_id?: string;
-      attendance_date?: string;
-      status?: string;
-      notes?: string;
-    }>(request);
-
-    const studentId = body?.student_id?.trim();
-    const classId = body?.class_id?.trim();
-    const date = body?.attendance_date?.trim();
-    const status = body?.status?.trim();
-
-    if (!studentId || !classId || !date || !status) {
-      return jsonError(
-        "student_id, class_id, attendance_date and status are required",
-        400,
-      );
-    }
-
-    if (!["present", "absent", "late", "excused"].includes(status)) {
-      return jsonError("Invalid attendance status", 400);
-    }
+    const validated = await validateRequest(request, {
+      body: postAttendanceBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
     const { data, error } = await supabaseServerClient
       .from("school_attendance")
       .upsert(
         {
           school_id: auth.schoolId,
-          student_id: studentId,
-          class_id: classId,
-          attendance_date: date,
-          status: status as "present" | "absent" | "late" | "excused",
-          notes: body?.notes?.trim() ?? null,
+          student_id: body.student_id,
+          class_id: body.class_id,
+          attendance_date: body.attendance_date,
+          status: body.status,
+          notes: body.notes?.trim() ?? null,
         },
         {
           onConflict: "student_id, attendance_date",
@@ -182,36 +202,25 @@ export async function POST(request: NextRequest) {
 // Bulk attendance: mark all students in a class with the same status
 export async function PUT(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolUser(request);
     if (!auth.ok) return auth.response;
     if (!canManageAttendance(auth.role)) return forbiddenSchoolAction("Only admins and teachers can mark attendance");
 
-    const body = await readJsonBody<{
-      class_id?: string;
-      attendance_date?: string;
-      status?: string;
-      student_ids?: string[];
-    }>(request);
+    const validated = await validateRequest(request, {
+      body: putAttendanceBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
-    const classId = body?.class_id?.trim();
-    const date = body?.attendance_date?.trim();
-    const status = body?.status?.trim();
-    const studentIds = body?.student_ids;
-
-    if (!classId || !date || !status || !Array.isArray(studentIds) || studentIds.length === 0) {
-      return jsonError("class_id, attendance_date, status, and student_ids are required", 400);
-    }
-
-    if (!["present", "absent", "late", "excused"].includes(status)) {
-      return jsonError("Invalid attendance status", 400);
-    }
-
-    const records = studentIds.map((studentId) => ({
+    const records = body.student_ids.map((studentId) => ({
       school_id: auth.schoolId,
       student_id: studentId,
-      class_id: classId,
-      attendance_date: date,
-      status: status as "present" | "absent" | "late" | "excused",
+      class_id: body.class_id,
+      attendance_date: body.attendance_date,
+      status: body.status,
       notes: null,
     }));
 
@@ -229,10 +238,10 @@ export async function PUT(request: NextRequest) {
       actorUserId: auth.user.id,
       action: "bulk_marked",
       entityType: "attendance",
-      metadata: { class_id: classId, status, count: studentIds.length, date },
+      metadata: { class_id: body.class_id, status: body.status, count: body.student_ids.length, date: body.attendance_date },
     });
 
-    return jsonOk({ ok: true, count: studentIds.length });
+    return jsonOk({ ok: true, count: body.student_ids.length });
   } catch (error) {
     logError("Unexpected error in school attendance PUT", error);
     return jsonError("Internal server error", 500);

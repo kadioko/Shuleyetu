@@ -2,52 +2,25 @@ import { NextRequest } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabaseServer';
 import { jsonError, jsonOk } from '@/lib/apiUtils';
 import { logError } from '@/lib/logger';
+import { validateRequest, contactBodySchema } from '@/lib/validation';
+import { withRateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_SUBJECTS = [
-  'General Inquiry',
-  'Vendor Partnership',
-  'Order Support',
-  'Technical Issue',
-  'Feedback',
-  'Other',
-];
-
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => null);
+    const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitResponse) return rateLimitResponse;
 
-    if (!body) return jsonError('Invalid request body', 400);
+    const validation = await validateRequest(request, { body: contactBodySchema });
+    if (!validation.ok) return validation.response;
 
-    const { name, email, subject, message } = body as {
-      name?: string;
-      email?: string;
-      subject?: string;
-      message?: string;
-    };
-
-    const trimmedName = name?.trim() ?? '';
-    const trimmedEmail = email?.trim().toLowerCase() ?? '';
-    const trimmedSubject = subject?.trim() ?? '';
-    const trimmedMessage = message?.trim() ?? '';
-
-    if (!trimmedName || !trimmedEmail || !trimmedSubject || !trimmedMessage) {
-      return jsonError('All fields are required', 400);
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      return jsonError('Invalid email address', 400);
-    }
-
-    if (!ALLOWED_SUBJECTS.includes(trimmedSubject)) {
-      return jsonError('Invalid subject', 400);
-    }
-
-    if (trimmedMessage.length > 2000) {
-      return jsonError('Message is too long (max 2000 characters)', 400);
-    }
+    const { name, email, subject, message } = validation.body!;
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedSubject = subject.trim();
+    const trimmedMessage = message.trim();
 
     // Persist to contact_messages table (insert is idempotent — any error surfaces to user)
     const { error: dbError } = await supabaseServerClient

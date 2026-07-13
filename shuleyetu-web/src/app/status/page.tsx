@@ -2,6 +2,20 @@
 
 import { useEffect, useState } from 'react';
 
+interface HealthCheck {
+  status: 'ok' | 'error' | 'unknown';
+  responseTime?: number;
+  message?: string;
+}
+
+interface HealthDetails {
+  database: HealthCheck;
+  auth: HealthCheck;
+  clickpesa: HealthCheck;
+  redis: HealthCheck;
+  jobs: HealthCheck;
+}
+
 interface HealthStatus {
   status: string;
   timestamp: string;
@@ -9,14 +23,19 @@ interface HealthStatus {
   responseTime: string;
   version: string;
   environment: string;
-  checks: {
-    database: string;
-    api: string;
-  };
+  checks: Record<string, string>;
+  details: HealthDetails;
   error?: string;
 }
 
 const REFRESH_INTERVAL = 30;
+const CHECK_LABELS: Record<string, string> = {
+  database: 'Database',
+  auth: 'Authentication',
+  clickpesa: 'ClickPesa',
+  redis: 'Redis / Rate Limiting',
+  jobs: 'Background Jobs',
+};
 
 export default function StatusPage() {
   const [status, setStatus] = useState<HealthStatus | null>(null);
@@ -38,7 +57,14 @@ export default function StatusPage() {
         responseTime: '0ms',
         version: '1.0.0',
         environment: 'unknown',
-        checks: { database: 'error', api: 'error' },
+        checks: {},
+        details: {
+          database: { status: 'error', message: 'Failed to fetch health status' },
+          auth: { status: 'error' },
+          clickpesa: { status: 'error' },
+          redis: { status: 'error' },
+          jobs: { status: 'error' },
+        },
         error: error instanceof Error ? error.message : 'Failed to fetch health status',
       });
       setLastChecked(new Date());
@@ -62,24 +88,50 @@ export default function StatusPage() {
       clearInterval(refreshInterval);
       clearInterval(tickInterval);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isHealthy = status?.status === 'healthy';
-  const statusColor = isHealthy ? 'text-emerald-400' : 'text-red-400';
-  const statusBgColor = isHealthy ? 'bg-emerald-500/10' : 'bg-red-500/10';
-  const statusBorderColor = isHealthy ? 'border-emerald-500/30' : 'border-red-500/30';
+  const statusColor = isHealthy ? 'text-emerald-400' : status?.status === 'degraded' ? 'text-amber-400' : 'text-red-400';
+  const statusBgColor = isHealthy ? 'bg-emerald-500/10' : status?.status === 'degraded' ? 'bg-amber-500/10' : 'bg-red-500/10';
+  const statusBorderColor = isHealthy ? 'border-emerald-500/30' : status?.status === 'degraded' ? 'border-amber-500/30' : 'border-red-500/30';
+
+  const renderCheck = (key: string, value: string, detail?: HealthCheck) => {
+    const label = CHECK_LABELS[key] ?? key;
+    const isOk = value === 'ok';
+    const isUnknown = value === 'unknown';
+    const color = isOk ? 'text-emerald-400' : isUnknown ? 'text-slate-400' : 'text-red-400';
+    const bg = isOk ? 'bg-emerald-500/10' : isUnknown ? 'bg-slate-500/10' : 'bg-red-500/10';
+    const dot = isOk ? 'bg-emerald-400' : isUnknown ? 'bg-slate-400' : 'bg-red-400';
+    const text = isOk ? 'Operational' : isUnknown ? 'Not configured' : 'Error';
+
+    return (
+      <div key={key} className="rounded-lg bg-slate-800/50 px-3 py-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-slate-300">{label}</span>
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${bg} ${color}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+            {text}
+          </span>
+        </div>
+        {detail?.responseTime ? (
+          <p className="mt-1 text-xs text-slate-500">{detail.responseTime}ms</p>
+        ) : null}
+        {detail?.message ? (
+          <p className="mt-1 text-xs text-slate-500">{detail.message}</p>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-12">
       <div className="mx-auto max-w-2xl">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-slate-100">Shuleyetu Status</h1>
           <p className="mt-2 text-slate-400">Real-time service health monitoring</p>
         </div>
 
-        {/* Status Card */}
         {loading ? (
           <div className="flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900/40 p-8">
             <div className="text-center">
@@ -91,18 +143,16 @@ export default function StatusPage() {
           </div>
         ) : status ? (
           <div className={`rounded-xl border ${statusBorderColor} ${statusBgColor} p-6`}>
-            {/* Status Header */}
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-400">Service Status</p>
                 <p className={`text-2xl font-bold ${statusColor}`}>
-                  {isHealthy ? '✓ Operational' : '✗ Degraded'}
+                  {isHealthy ? '✓ Operational' : status.status === 'degraded' ? '⚠ Degraded' : '✗ Unavailable'}
                 </p>
               </div>
-              <div className={`h-4 w-4 rounded-full ${isHealthy ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              <div className={`h-4 w-4 rounded-full ${isOkDot(status.status)}`} />
             </div>
 
-            {/* Status Details */}
             <div className="space-y-3 border-t border-slate-800 pt-6">
               <div className="flex justify-between">
                 <span className="text-slate-400">Status</span>
@@ -128,59 +178,25 @@ export default function StatusPage() {
               </div>
             </div>
 
-            {/* Service Checks */}
             <div className="mt-6 space-y-2 border-t border-slate-800 pt-6">
               <p className="text-sm font-medium text-slate-400">Service Checks</p>
               <div className="space-y-2">
-                <div className="flex items-center justify-between rounded-lg bg-slate-800/50 px-3 py-2">
-                  <span className="text-sm text-slate-300">Database</span>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                      status.checks.database === 'ok'
-                        ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-red-500/10 text-red-400'
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        status.checks.database === 'ok' ? 'bg-emerald-400' : 'bg-red-400'
-                      }`}
-                    />
-                    {status.checks.database === 'ok' ? 'Operational' : 'Error'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-slate-800/50 px-3 py-2">
-                  <span className="text-sm text-slate-300">API</span>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                      status.checks.api === 'ok'
-                        ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-red-500/10 text-red-400'
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        status.checks.api === 'ok' ? 'bg-emerald-400' : 'bg-red-400'
-                      }`}
-                    />
-                    {status.checks.api === 'ok' ? 'Operational' : 'Error'}
-                  </span>
-                </div>
+                {status.details
+                  ? Object.entries(status.checks).map(([key, value]) =>
+                      renderCheck(key, value, status.details?.[key as keyof HealthDetails])
+                    )
+                  : null}
               </div>
             </div>
 
-            {/* Error Message */}
             {status.error && (
               <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
                 <p className="text-sm text-red-300">{status.error}</p>
               </div>
             )}
 
-            {/* Last Updated + Countdown */}
             <div className="mt-6 border-t border-slate-800 pt-6 text-center">
-              <p className="text-xs text-slate-400">
-                Last updated: {lastChecked?.toLocaleTimeString()}
-              </p>
+              <p className="text-xs text-slate-400">Last updated: {lastChecked?.toLocaleTimeString()}</p>
               <div className="mt-2 flex items-center justify-center gap-2">
                 <div className="relative h-5 w-28 overflow-hidden rounded-full bg-slate-800">
                   <div
@@ -188,15 +204,12 @@ export default function StatusPage() {
                     style={{ width: `${((REFRESH_INTERVAL - countdown) / REFRESH_INTERVAL) * 100}%` }}
                   />
                 </div>
-                <p className="text-xs tabular-nums text-slate-500">
-                  Next check in {countdown}s
-                </p>
+                <p className="text-xs tabular-nums text-slate-500">Next check in {countdown}s</p>
               </div>
             </div>
           </div>
         ) : null}
 
-        {/* Refresh Button */}
         <div className="mt-6 text-center">
           <button
             onClick={checkHealth}
@@ -205,12 +218,13 @@ export default function StatusPage() {
             Refresh Status
           </button>
         </div>
-
-        {/* Footer */}
-        <div className="mt-12 text-center text-xs text-slate-400">
-          <p>For support, contact: support@shuleyetu.com</p>
-        </div>
       </div>
     </div>
   );
+}
+
+function isOkDot(status: string): string {
+  if (status === 'healthy') return 'bg-emerald-400';
+  if (status === 'degraded') return 'bg-amber-400';
+  return 'bg-red-400';
 }

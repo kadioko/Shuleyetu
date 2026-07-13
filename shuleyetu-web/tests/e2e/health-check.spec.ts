@@ -8,7 +8,10 @@ test.describe('Health Check Endpoint', () => {
     const data = await response.json();
     expect(data.status).toBe('healthy');
     expect(data.checks.database).toBe('ok');
-    expect(data.checks.api).toBe('ok');
+    expect(data.checks.auth).toBeDefined();
+    expect(data.checks.clickpesa).toBeDefined();
+    expect(data.checks.redis).toBeDefined();
+    expect(data.checks.jobs).toBeDefined();
     expect(data.version).toBeDefined();
     expect(data.environment).toBeDefined();
   });

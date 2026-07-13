@@ -1,14 +1,19 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { requireSchoolUser, writeSchoolAuditLog } from "@/lib/schoolAuth";
-import { jsonError, jsonOk, readJsonBody } from "@/lib/apiUtils";
+import { jsonError, jsonOk } from "@/lib/apiUtils";
 import { logError } from "@/lib/logger";
+import { validateRequest, emailSchema, uuidSchema } from "@/lib/validation";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const validRoles = ["admin", "teacher", "staff"] as const;
 type SchoolUserRole = (typeof validRoles)[number];
+
+const schoolUserRoleSchema = z.enum(["admin", "teacher", "staff"]);
 
 function normalizeRole(role: string | undefined): SchoolUserRole {
   return validRoles.includes(role as SchoolUserRole)
@@ -30,6 +35,9 @@ async function requireSchoolAdmin(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolAdmin(request);
     if (!auth.ok) return auth.response;
 
@@ -73,16 +81,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const inviteUserBodySchema = z.object({
+  email: emailSchema,
+  role: schoolUserRoleSchema.default("staff"),
+});
+
+const updateUserRoleBodySchema = z.object({
+  userId: uuidSchema,
+  role: schoolUserRoleSchema,
+});
+
+const removeUserQuerySchema = z.object({
+  userId: uuidSchema,
+});
+
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolAdmin(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{ email?: string; role?: string }>(request);
-    const email = body?.email?.trim().toLowerCase();
-    if (!email) return jsonError("Email is required", 400);
+    const validated = await validateRequest(request, {
+      body: inviteUserBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
-    const role = normalizeRole(body?.role);
+    const email = body.email.trim().toLowerCase();
+    const role = body.role;
     const { data: userId, error: userLookupError } = await supabaseServerClient.rpc(
       "get_user_id_by_email",
       { p_email: email },
@@ -168,13 +196,19 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolAdmin(request);
     if (!auth.ok) return auth.response;
 
-    const body = await readJsonBody<{ userId?: string; role?: string }>(request);
-    if (!body?.userId) return jsonError("User ID is required", 400);
+    const validated = await validateRequest(request, {
+      body: updateUserRoleBodySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const body = validated.body!;
 
-    const role = normalizeRole(body.role);
+    const role = body.role;
     const { error } = await supabaseServerClient
       .from("school_users")
       .update({ role })
@@ -207,12 +241,18 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const rateLimitError = await withRateLimit(request, rateLimitConfigs.general);
+    if (rateLimitError) return rateLimitError;
+
     const auth = await requireSchoolAdmin(request);
     if (!auth.ok) return auth.response;
 
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-    if (!userId) return jsonError("User ID is required", 400);
+    const validated = await validateRequest(request, {
+      query: removeUserQuerySchema,
+    });
+    if (!validated.ok) return validated.response;
+    const { userId } = validated.query!;
+
     if (userId === auth.user.id) {
       return jsonError("You cannot remove your own school access.", 400);
     }
