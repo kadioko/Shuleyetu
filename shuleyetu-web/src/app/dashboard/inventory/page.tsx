@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -361,12 +362,13 @@ export default function DashboardInventoryPage() {
             {filteredItems.map((item) => (
               <article key={item.id} className="surface-panel group flex flex-col rounded-3xl p-5 transition-all duration-300 hover:border-sky-500/30 hover:shadow-[0_24px_60px_rgba(14,165,233,0.08)] hover:-translate-y-0.5">
                 {item.image_url ? (
-                  <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
-                    <img
+                  <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
+                    <Image
                       src={item.image_url}
                       alt={item.name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
                 ) : null}

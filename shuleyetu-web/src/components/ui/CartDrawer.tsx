@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/lib/cartContext';
 
@@ -60,8 +61,8 @@ export function CartDrawer() {
               {items.map((item) => (
                 <div key={item.itemId} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
                   {item.image_url ? (
-                    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-800">
-                      <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" />
+                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-800">
+                      <Image src={item.image_url} alt={item.name} fill sizes="64px" className="object-cover" />
                     </div>
                   ) : (
                     <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-400">

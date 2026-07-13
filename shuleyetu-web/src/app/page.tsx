@@ -425,6 +425,46 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="py-20 bg-slate-900/50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-50 mb-3">Trusted by Schools & Parents</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              See what our community says about shopping with Shuleyetu
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                quote: "Shuleyetu saved us hours of running from shop to shop. We ordered everything online and it was delivered to the school.",
+                author: "Grace M.",
+                role: "Parent, Dar es Salaam",
+              },
+              {
+                quote: "As a vendor, I have reached more customers through the platform than I ever could with my physical shop alone.",
+                author: "Joseph K.",
+                role: "School Supplies Vendor",
+              },
+              {
+                quote: "The school portal helps us track fees and attendance in one place. Our admin workload has dropped significantly.",
+                author: "Sr. Agnes L.",
+                role: "School Administrator, Arusha",
+              },
+            ].map((t, i) => (
+              <div key={i} className="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-6 backdrop-blur-sm">
+                <div className="mb-4 text-sky-400 text-2xl">&ldquo;</div>
+                <p className="text-slate-300 text-sm leading-relaxed mb-4">{t.quote}</p>
+                <div className="border-t border-slate-700/50 pt-4">
+                  <p className="font-medium text-slate-200 text-sm">{t.author}</p>
+                  <p className="text-slate-500 text-xs">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-16 text-center">

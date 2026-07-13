@@ -1,16 +1,9 @@
-import type { Metadata } from 'next';
+'use client';
+// Metadata is handled via layout defaults for this client component.
+
 import Link from 'next/link';
 import { NewsletterForm } from '@/components/NewsletterForm';
-
-export const metadata: Metadata = {
-  title: 'School Supply Tips & Guides',
-  description: 'Helpful guides, tips and news for Tanzanian families navigating back-to-school season. Written by the Shuleyetu team.',
-  openGraph: {
-    title: 'School Supply Tips & Guides | Shuleyetu',
-    description: 'Helpful guides, tips and news for Tanzanian families navigating back-to-school season.',
-    type: 'website',
-  },
-};
+import { useLanguage } from '@/components/LanguageProvider';
 
 const posts = [
   {
@@ -83,6 +76,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function BlogPage() {
+  const { locale, setLocale, t } = useLanguage();
   const featured = posts.find((p) => p.featured);
   const rest = posts.filter((p) => !p.featured);
 
@@ -93,21 +87,34 @@ export default function BlogPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
         <div className="absolute top-20 right-10 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 py-20 md:px-6 md:py-28">
+          {/* Language Toggle */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setLocale(locale === 'en' ? 'sw' : 'en')}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-300 backdrop-blur-sm transition-all hover:border-sky-500/50 hover:text-sky-400"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              {locale === 'en' ? t('switchToSwahili') : t('switchToEnglish')}
+            </button>
+          </div>
+
           <div className="max-w-2xl space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              Resources & Blog
+              {t('blogResourcesBadge')}
             </div>
             <h1 className="font-display text-5xl font-extrabold tracking-tight text-slate-50 md:text-6xl lg:text-7xl">
-              Tips, guides &
+              {t('blogHeroTitle')}
               <span className="block mt-2 bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 bg-clip-text text-transparent">
-                success stories
+                {t('blogHeroTitleHighlight')}
               </span>
             </h1>
             <p className="text-xl text-slate-300 leading-relaxed">
-              Practical advice for parents, vendors, and schools navigating school supply season in Tanzania.
+              {t('blogHeroDesc')}
             </p>
           </div>
         </div>
@@ -117,7 +124,7 @@ export default function BlogPage() {
         {/* Featured Post */}
         {featured && (
           <div className="mb-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-sky-400 mb-4">Featured Article</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-sky-400 mb-4">{t('blogFeaturedLabel')}</p>
             <Link
               href={`/blog/${featured.slug}`}
               className="group block rounded-3xl border border-slate-800 bg-gradient-to-br from-sky-950/40 to-slate-900/60 p-8 md:p-12 transition-all duration-300 hover:border-sky-500/50 hover:shadow-2xl hover:shadow-sky-500/10 hover:-translate-y-1"
@@ -149,7 +156,7 @@ export default function BlogPage() {
 
         {/* All Posts Grid */}
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">All Articles</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">{t('blogAllArticlesLabel')}</p>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {rest.map((post) => (
               <Link
@@ -167,7 +174,7 @@ export default function BlogPage() {
                 <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-800 pt-4 mt-auto">
                   <span>{post.date}</span>
                   <span className="flex items-center gap-1 text-sky-400 font-medium group-hover:gap-2 transition-all">
-                    Read
+                    {t('blogRead')}
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
@@ -180,8 +187,8 @@ export default function BlogPage() {
 
         {/* Newsletter CTA */}
         <div className="mt-20 rounded-3xl border border-slate-800 bg-gradient-to-br from-sky-950/40 to-slate-900/60 p-10 text-center md:p-14">
-          <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-3">Never miss an article</h2>
-          <p className="text-slate-400 mb-8 max-w-md mx-auto">Get the latest tips and guides delivered straight to your inbox.</p>
+          <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-3">{t('blogNewsletterTitle')}</h2>
+          <p className="text-slate-400 mb-8 max-w-md mx-auto">{t('blogNewsletterDesc')}</p>
           <NewsletterForm
             source="blog"
             className="max-w-md mx-auto"

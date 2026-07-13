@@ -1,8 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewCard } from "@/components/ui/ReviewCard";
 import { AddToCartButton } from "@/components/ui/AddToCartButton";
+import ReviewForm from "@/components/ui/ReviewForm";
 import { supabaseServerClient as supabaseClient } from "@/lib/supabaseServer";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export const dynamic = 'force-dynamic';
 
@@ -163,12 +166,7 @@ export default async function VendorDetailPage({ params }: PageProps) {
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
-          {/* Breadcrumb */}
-          <nav className="mb-6 flex items-center gap-2 text-sm text-slate-400">
-            <Link href="/vendors" className="hover:text-sky-400 transition-colors">Vendors</Link>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            <span className="text-slate-200">{vendor.name}</span>
-          </nav>
+          <Breadcrumbs items={[{ label: 'Vendors', href: '/vendors' }, { label: vendor.name }]} />
 
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-5">
@@ -273,12 +271,13 @@ export default async function VendorDetailPage({ params }: PageProps) {
                   className="group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-all duration-300 hover:border-sky-500/40 hover:bg-slate-900/60 hover:shadow-xl hover:shadow-sky-500/5 hover:-translate-y-0.5"
                 >
                   {item.image_url ? (
-                    <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
-                      <img
+                    <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-800">
+                      <Image
                         src={item.image_url}
                         alt={item.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                   ) : null}
@@ -364,6 +363,8 @@ export default async function VendorDetailPage({ params }: PageProps) {
               ))}
             </div>
           )}
+
+          <ReviewForm vendorId={vendorId} />
         </section>
 
         {/* CTA Section */}

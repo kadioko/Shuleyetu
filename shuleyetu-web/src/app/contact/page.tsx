@@ -5,6 +5,7 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/Toast';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -12,6 +13,7 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { addToast } = useToast();
+  const { locale, setLocale, t } = useLanguage();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -52,7 +54,7 @@ export default function ContactPage() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       ),
-      label: 'Email Us',
+      label: t('contactEmailUs'),
       value: 'hello@shuleyetu.com',
       href: 'mailto:hello@shuleyetu.com',
       color: 'sky',
@@ -63,7 +65,7 @@ export default function ContactPage() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
         </svg>
       ),
-      label: 'Call Us',
+      label: t('contactCallUs'),
       value: '+255 762 000 000',
       href: 'tel:+255762000000',
       color: 'emerald',
@@ -75,10 +77,37 @@ export default function ContactPage() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
-      label: 'Visit Us',
+      label: t('contactVisitUs'),
       value: 'Dar es Salaam, Tanzania',
       href: 'https://maps.google.com',
       color: 'violet',
+    },
+  ];
+
+  const quickLinks = [
+    {
+      title: t('contactVendorRegTitle'),
+      desc: t('contactVendorRegDesc'),
+      href: '/auth/vendor-login?next=/vendor/onboarding',
+      cta: t('contactVendorRegCta'),
+    },
+    {
+      title: t('contactSchoolPartTitle'),
+      desc: t('contactSchoolPartDesc'),
+      href: '/why-shuleyetu',
+      cta: t('contactSchoolPartCta'),
+    },
+    {
+      title: t('contactOrderSupportTitle'),
+      desc: t('contactOrderSupportDesc'),
+      href: '/orders/track',
+      cta: t('contactOrderSupportCta'),
+    },
+    {
+      title: t('contactTechTitle'),
+      desc: t('contactTechDesc'),
+      href: 'mailto:support@shuleyetu.com',
+      cta: t('contactTechCta'),
     },
   ];
 
@@ -89,21 +118,34 @@ export default function ContactPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-900/20 via-transparent to-transparent" />
         <div className="absolute top-20 right-10 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 py-20 md:px-6 md:py-28">
+          {/* Language Toggle */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setLocale(locale === 'en' ? 'sw' : 'en')}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-300 backdrop-blur-sm transition-all hover:border-sky-500/50 hover:text-sky-400"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              {locale === 'en' ? t('switchToSwahili') : t('switchToEnglish')}
+            </button>
+          </div>
+
           <div className="max-w-2xl space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              Get in Touch
+              {t('contactGetInTouch')}
             </div>
             <h1 className="font-display text-5xl font-extrabold tracking-tight text-slate-50 md:text-6xl lg:text-7xl">
-              We&apos;d love to
+              {t('contactHeroTitle')}
               <span className="block mt-2 bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 bg-clip-text text-transparent">
-                hear from you
+                {t('contactHeroTitleHighlight')}
               </span>
             </h1>
             <p className="text-xl text-slate-300 leading-relaxed max-w-xl">
-              Have a question, feedback, or want to partner with us? Our team is here to help.
+              {t('contactHeroDesc')}
             </p>
           </div>
         </div>
@@ -137,8 +179,8 @@ export default function ContactPage() {
         <div className="grid gap-12 md:grid-cols-2">
           {/* Form */}
           <div>
-            <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-2">Send us a message</h2>
-            <p className="text-slate-400 mb-8">We typically respond within 24 hours.</p>
+            <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-2">{t('contactFormTitle')}</h2>
+            <p className="text-slate-400 mb-8">{t('contactFormDesc')}</p>
 
             {submitted ? (
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-10 text-center">
@@ -147,13 +189,13 @@ export default function ContactPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-emerald-300 mb-2">Message sent!</h3>
-                <p className="text-slate-400">Thanks for reaching out. We&apos;ll get back to you within 24 hours.</p>
+                <h3 className="text-xl font-bold text-emerald-300 mb-2">{t('contactSuccessTitle')}</h3>
+                <p className="text-slate-400">{t('contactSuccessDesc')}</p>
                 <button
                   onClick={() => { setSubmitted(false); setForm({ name: '', email: '', subject: '', message: '' }); }}
                   className="mt-6 text-sm text-sky-400 hover:text-sky-300 transition-colors"
                 >
-                  Send another message
+                  {t('contactSendAnother')}
                 </button>
               </div>
             ) : (
@@ -165,18 +207,18 @@ export default function ContactPage() {
                 )}
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-slate-300">Full Name</label>
+                    <label className="block text-sm font-medium text-slate-300">{t('contactFullName')}</label>
                     <input
                       type="text"
                       required
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="Your name"
+                      placeholder={t('contactNamePlaceholder')}
                       className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-slate-50 placeholder-slate-500 transition-all focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-slate-300">Email Address</label>
+                    <label className="block text-sm font-medium text-slate-300">{t('contactEmailAddress')}</label>
                     <input
                       type="email"
                       required
@@ -188,30 +230,30 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-slate-300">Subject</label>
+                  <label className="block text-sm font-medium text-slate-300">{t('contactSubject')}</label>
                   <select
                     value={form.subject}
                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
                     required
                     className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-slate-50 transition-all focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                   >
-                    <option value="">Select a subject</option>
-                    <option value="General Inquiry">General Inquiry</option>
-                    <option value="Vendor Partnership">Vendor Partnership</option>
-                    <option value="Order Support">Order Support</option>
-                    <option value="Technical Issue">Technical Issue</option>
-                    <option value="Feedback">Feedback</option>
-                    <option value="Other">Other</option>
+                    <option value="">{t('contactSelectSubject')}</option>
+                    <option value="General Inquiry">{t('contactSubjectGeneral')}</option>
+                    <option value="Vendor Partnership">{t('contactSubjectVendor')}</option>
+                    <option value="Order Support">{t('contactSubjectOrder')}</option>
+                    <option value="Technical Issue">{t('contactSubjectTech')}</option>
+                    <option value="Feedback">{t('contactSubjectFeedback')}</option>
+                    <option value="Other">{t('contactSubjectOther')}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-slate-300">Message</label>
+                  <label className="block text-sm font-medium text-slate-300">{t('contactMessage')}</label>
                   <textarea
                     required
                     rows={5}
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    placeholder="Tell us how we can help..."
+                    placeholder={t('contactMessagePlaceholder')}
                     className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-slate-50 placeholder-slate-500 transition-all focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 resize-none"
                   />
                 </div>
@@ -226,11 +268,11 @@ export default function ContactPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      Sending...
+                      {t('contactSending')}
                     </>
                   ) : (
                     <>
-                      Send Message
+                      {t('contactSendMessage')}
                       <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
@@ -244,15 +286,10 @@ export default function ContactPage() {
           {/* Quick Links & Info */}
           <div className="space-y-6">
             <div>
-              <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-2">Quick answers</h2>
-              <p className="text-slate-400 mb-6">Common topics we can help with.</p>
+              <h2 className="font-display text-2xl font-bold text-slate-50 md:text-3xl mb-2">{t('contactQuickTitle')}</h2>
+              <p className="text-slate-400 mb-6">{t('contactQuickDesc')}</p>
             </div>
-            {[
-              { title: 'Vendor Registration', desc: 'Want to list your shop on Shuleyetu? Contact us to get started.', href: '/auth/vendor-login?next=/vendor/onboarding', cta: 'Sign up as vendor' },
-              { title: 'School Partnerships', desc: 'Schools can partner with us to streamline supply lists for parents.', href: '/why-shuleyetu', cta: 'Learn more' },
-              { title: 'Order Support', desc: 'Having trouble with an order? Track it or reach out directly.', href: '/orders/track', cta: 'Track order' },
-              { title: 'Technical Issues', desc: 'Experiencing a bug or technical problem? Let us know.', href: 'mailto:support@shuleyetu.com', cta: 'Email support' },
-            ].map((item) => (
+            {quickLinks.map((item) => (
               <div key={item.title} className="rounded-xl border border-slate-800 bg-slate-900/40 p-5 transition-all hover:border-sky-500/30">
                 <h3 className="font-semibold text-slate-100 mb-1">{item.title}</h3>
                 <p className="text-sm text-slate-400 mb-3">{item.desc}</p>
