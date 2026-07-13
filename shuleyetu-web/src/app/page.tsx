@@ -59,7 +59,7 @@ export default function HomePage() {
                 </svg>
               </Link>
               <Link
-                href="/schools/portal"
+                href="/auth/school-login"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-8 py-4 text-base font-bold text-slate-950 shadow-2xl shadow-amber-500/20 transition-all duration-300 hover:scale-105 hover:shadow-amber-400/30 hover:from-amber-300 hover:to-amber-400"
               >
                 <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -194,7 +194,7 @@ export default function HomePage() {
               </Link>
 
               <Link
-                href="/schools/portal"
+                href="/auth/school-login"
                 className="group rounded-3xl border border-amber-400/30 bg-amber-400/10 p-6 shadow-lg shadow-amber-500/5 transition-all hover:-translate-y-1 hover:border-amber-300/50 hover:bg-amber-400/15"
               >
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20">
@@ -356,7 +356,7 @@ export default function HomePage() {
               </li>
             </ul>
             <Link
-              href="/schools/portal"
+              href="/auth/school-login"
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-200 transition-colors hover:text-amber-100"
             >
               Open school portal

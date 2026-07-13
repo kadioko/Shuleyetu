@@ -208,19 +208,54 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
           buttonText: 'text-white',
         };
 
-  const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const performSignIn = async (signInEmail: string, signInPassword: string) => {
     setError(null);
     setMessage(null);
     setLoading(true);
 
     try {
-      if (!email.trim() || !password.trim()) {
-        setError('Please enter email and password.');
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: signInEmail.trim(),
+        password: signInPassword,
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      const { data: summary, error: workspaceError } = await getWorkspaceSummary();
+      if (workspaceError || !summary) {
+        setMessage(`Logged in successfully. Redirecting to ${config.label.toLowerCase()}...`);
+        setTimeout(() => {
+          window.location.href = nextPath;
+        }, 700);
         return;
       }
 
-      if (isSignUp) {
+      const destination = chooseWorkspacePath(summary, nextPath);
+      setMessage('Logged in successfully. Redirecting to your workspace...');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 700);
+    } catch (err) {
+      console.error('Auth error', err);
+      setError('Unexpected error during authentication.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSignUp) {
+      setError(null);
+      setMessage(null);
+      setLoading(true);
+      try {
+        if (!email.trim() || !password.trim()) {
+          setError('Please enter email and password.');
+          return;
+        }
         const { error } = await supabaseClient.auth.signUp({
           email: email.trim(),
           password,
@@ -230,34 +265,44 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
           return;
         }
         setMessage('Check your email to confirm your account, then log in.');
-      } else {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (error) {
-          setError(error.message);
-          return;
-        }
-        const { data: summary, error: workspaceError } = await getWorkspaceSummary();
-        if (workspaceError || !summary) {
-          setMessage(`Logged in successfully. Redirecting to ${config.label.toLowerCase()}...`);
-          setTimeout(() => {
-            window.location.href = nextPath;
-          }, 700);
-          return;
-        }
-
-        const destination = chooseWorkspacePath(summary, nextPath);
-        setMessage('Logged in successfully. Redirecting to your workspace...');
-        setTimeout(() => {
-          window.location.href = destination;
-        }, 700);
+      } catch (err) {
+        console.error('Auth error', err);
+        setError('Unexpected error during authentication.');
+      } finally {
+        setLoading(false);
       }
+      return;
+    }
+
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter email and password.');
+      return;
+    }
+
+    await performSignIn(email, password);
+  };
+
+  const handleDemoSignIn = async () => {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const res = await fetch('/api/demo/setup', { method: 'POST' });
+      const json = (await res.json().catch(() => ({}))) as { email?: string; password?: string; error?: string };
+
+      if (!res.ok) {
+        setError(json.error || 'Could not prepare demo account. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const demoEmail = json.email ?? 'demo@shuleyetu.test';
+      const demoPassword = json.password ?? 'demo123';
+      await performSignIn(demoEmail, demoPassword);
     } catch (err) {
-      console.error('Auth error', err);
-      setError('Unexpected error during authentication.');
-    } finally {
+      console.error('Demo sign-in error', err);
+      setError('Unexpected error starting demo. Please try again.');
       setLoading(false);
     }
   };
@@ -395,6 +440,20 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
                   </>
                 )}
               </button>
+
+              {!isSignUp && config.type === 'school' && (
+                <button
+                  type="button"
+                  onClick={handleDemoSignIn}
+                  disabled={loading}
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition-all hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Try demo school portal
+                </button>
+              )}
             </form>
 
             <div className="mt-6 space-y-3 text-center">
