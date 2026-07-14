@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewCard } from "@/components/ui/ReviewCard";
 import { AddToCartButton } from "@/components/ui/AddToCartButton";
+import { TrustBadges, Badge } from "@/components/ui/TrustBadges";
 import ReviewForm from "@/components/ui/ReviewForm";
 import { supabaseServerClient as supabaseClient } from "@/lib/supabaseServer";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
@@ -78,10 +79,12 @@ const getCategoryColor = (category: string) => {
 export default async function VendorDetailPage({ params }: PageProps) {
   const vendorId = params.vendorId;
 
-  // Fetch vendor and inventory
+  // Fetch vendor, inventory, KYC documents, and school partnerships
   const [
     { data: vendor, error: vendorError },
     { data: items, error: itemsError },
+    { data: documents, error: documentsError },
+    { data: schoolLinks, error: schoolLinksError },
   ] = await Promise.all([
     supabaseClient
       .from("vendors")
@@ -93,6 +96,17 @@ export default async function VendorDetailPage({ params }: PageProps) {
       .select("id, name, category, price_tzs, stock_quantity, image_url")
       .eq("vendor_id", vendorId)
       .order("name", { ascending: true }),
+    supabaseClient
+      .from("vendor_documents")
+      .select("document_type, status")
+      .eq("vendor_id", vendorId)
+      .eq("status", "approved"),
+    supabaseClient
+      .from("school_vendor_links")
+      .select("id")
+      .eq("vendor_id", vendorId)
+      .eq("is_recommended", true)
+      .limit(1),
   ]);
 
   // Fetch reviews separately to handle case where table doesn't exist yet
@@ -122,6 +136,14 @@ export default async function VendorDetailPage({ params }: PageProps) {
 
   if (reviewsError) {
     console.error("Error loading reviews", reviewsError);
+  }
+
+  if (documentsError) {
+    console.error("Error loading vendor documents", documentsError);
+  }
+
+  if (schoolLinksError) {
+    console.error("Error loading school vendor links", schoolLinksError);
   }
 
   if (!vendor) {
@@ -159,6 +181,16 @@ export default async function VendorDetailPage({ params }: PageProps) {
   const reviewCount = reviewList.length;
   const itemCount = inventory.length;
   const categories = [...new Set(inventory.map(item => item.category))];
+
+  const approvedDocTypes = new Set((documents ?? []).map((d) => d.document_type));
+  const isVerified = approvedDocTypes.has("tin") || approvedDocTypes.has("business_license");
+  const isTopRated = avgRating >= 4.5 && reviewCount >= 5;
+  const isSchoolPartner = (schoolLinks ?? []).length > 0;
+
+  const trustBadges: Badge[] = [];
+  if (isVerified) trustBadges.push({ type: "verified", label: "Verified" });
+  if (isTopRated) trustBadges.push({ type: "top_rated", label: "Top Rated" });
+  if (isSchoolPartner) trustBadges.push({ type: "school_partner", label: "School Partner" });
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -198,6 +230,9 @@ export default async function VendorDetailPage({ params }: PageProps) {
                       <span>({reviewCount} review{reviewCount === 1 ? '' : 's'})</span>
                     </div>
                   )}
+                </div>
+                <div className="mt-3">
+                  <TrustBadges badges={trustBadges} />
                 </div>
               </div>
             </div>

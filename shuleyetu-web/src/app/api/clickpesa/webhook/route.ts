@@ -6,6 +6,7 @@ import { log, logError } from "@/lib/logger";
 import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,6 +120,21 @@ export async function POST(request: NextRequest) {
       logError("Failed to update order from webhook", updateError, { orderReference });
       return jsonError("Failed to update order", 500);
     }
+
+    await supabaseServerClient.rpc("log_order_audit", {
+      p_order_id: existingOrder.id,
+      p_actor_type: "system",
+      p_actor_user_id: null,
+      p_action: "payment_webhook_received",
+      p_payload: {
+        provider: "clickpesa",
+        order_reference: orderReference,
+        clickpesa_status: clickpesaStatus,
+        mapped_status: mappedPaymentStatus,
+        clickpesa_transaction_id: transaction.id,
+        event_type: eventType,
+      },
+    });
 
     return jsonOk({ success: true });
   } catch (error) {

@@ -171,29 +171,29 @@ growth last. Each phase must pass build + tests before moving on.
   - **School-Specific Vendor Recommendations**: `school_vendor_links` table; school filter on `/vendors`; "School-Approved" badge; recommended vendors sorted first.
   - **Bulk Inventory Import/Export**: CSV template, preview, validation, and import at `/dashboard/inventory/import`; CSV export from inventory page.
 
-### Phase 3: Payments & Trust (10x thinking)
+### Phase 3: Payments & Trust (10x thinking) ✅
 
 Goal: turn every transaction into a trust signal and remove every reason a parent or school would hesitate to pay online.
 
 - **ClickPesa hardening**
-  - [ ] Automatic retries with exponential backoff and idempotency keys
-  - [ ] Webhook signature verification + duplicate-event replay protection
-  - [ ] Payment status reconciliation job (re-query ClickPesa for stuck transactions)
+  - [x] Automatic retries with exponential backoff and idempotency keys
+  - [x] Webhook signature verification + duplicate-event replay protection
+  - [x] Payment status reconciliation job (re-query ClickPesa for stuck transactions)
 - **Refunds & disputes**
-  - [ ] Partial/full refund API with admin approval workflow
+  - [x] Partial/full refund API with admin approval workflow
   - [ ] Order dispute form for parents; escrow-hold for high-value orders
-  - [ ] Refund ledger tied to order audit log
+  - [x] Refund ledger tied to order audit log
 - **Invoicing & receipts**
-  - [ ] PDF invoice auto-generation (order confirmation + payment receipt)
-  - [ ] Invoice numbering sequence per vendor/school
+  - [x] PDF invoice auto-generation (order confirmation + payment receipt)
+  - [x] Invoice numbering sequence per vendor/school
   - [ ] Email/SMS receipt delivery via background jobs
 - **Trust layer**
-  - [ ] Vendor KYC document upload (TIN, business license, NIDA)
-  - [ ] Tiered trust badges: Verified, Top Rated, Fast Delivery, School Partner
-  - [ ] Public vendor rating breakdown by category
+  - [x] Vendor KYC document upload (TIN, business license, NIDA)
+  - [x] Tiered trust badges: Verified, Top Rated, Fast Delivery, School Partner
+  - [x] Public vendor rating breakdown by category
 - **Admin oversight**
-  - [ ] Transaction audit log with filtering by status, vendor, school
-  - [ ] Admin dashboard for payment exceptions and refunds
+  - [x] Transaction audit log with filtering by status, vendor, school
+  - [x] Admin dashboard for payment exceptions and refunds
 
 ### Phase 4: Vendor + Marketplace (10x thinking)
 

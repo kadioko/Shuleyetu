@@ -1,52 +1,21 @@
 import { NextRequest } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { jsonError, jsonOk } from "@/lib/apiUtils";
-import { log, logError } from "@/lib/logger";
+import { logError } from "@/lib/logger";
 import { withRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
 import { validateRequest, uuidSchema } from "@/lib/validation";
+import {
+  generateClickpesaToken,
+  fetchWithRetry,
+  buildIdempotencyKey,
+  mapClickpesaStatus,
+} from "@/lib/payments/clickpesa";
 import { z } from "zod";
 
 const CLICKPESA_BASE_URL = process.env.CLICKPESA_BASE_URL ?? "https://api.clickpesa.com";
-const CLICKPESA_CLIENT_ID = process.env.CLICKPESA_CLIENT_ID;
-const CLICKPESA_API_KEY = process.env.CLICKPESA_API_KEY;
 
 export const runtime = "nodejs";
-
-function mapClickpesaToPaymentStatus(status: string): "pending" | "paid" | "failed" {
-  const normalized = status.toUpperCase();
-  if (normalized === "SUCCESS" || normalized === "SETTLED") return "paid";
-  if (normalized === "FAILED") return "failed";
-  return "pending";
-}
-
-async function generateClickpesaToken(): Promise<string> {
-  if (!CLICKPESA_CLIENT_ID || !CLICKPESA_API_KEY) {
-    throw new Error("ClickPesa credentials are not configured");
-  }
-
-  const response = await fetch(
-    `${CLICKPESA_BASE_URL}/third-parties/generate-token`,
-    {
-      method: "POST",
-      headers: {
-        "client-id": CLICKPESA_CLIENT_ID,
-        "api-key": CLICKPESA_API_KEY,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to generate ClickPesa token (${response.status})`);
-  }
-
-  const data = (await response.json()) as { success?: boolean; token?: string };
-
-  if (!data.token) {
-    throw new Error("No token returned by ClickPesa");
-  }
-
-  return data.token;
-}
+export const dynamic = "force-dynamic";
 
 const clickpesaPayBodySchema = z.object({
   orderId: uuidSchema,
@@ -117,6 +86,7 @@ export async function POST(request: NextRequest) {
     const amountNumber = storedAmount;
 
     const clickpesaToken = await generateClickpesaToken();
+    const idempotencyKey = buildIdempotencyKey(orderId, orderReference);
 
     const payload = {
       amount: amountNumber.toFixed(2),
@@ -125,33 +95,21 @@ export async function POST(request: NextRequest) {
       phoneNumber: cleanedPhone,
     };
 
-    const response = await fetch(
+    const { response, data } = await fetchWithRetry<Record<string, unknown>>(
       `${CLICKPESA_BASE_URL}/third-parties/payments/initiate-ussd-push-request`,
       {
         method: "POST",
         headers: {
           Authorization: clickpesaToken,
           "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify(payload),
       },
+      { attempts: 3, backoffMs: 700 }
     );
 
-    let data: Record<string, unknown> = {};
-    try {
-      data = (await response.json()) as Record<string, unknown>;
-    } catch {
-      // Body is not JSON — leave data as empty object; the !response.ok branch below surfaces the error
-    }
-
     if (!response.ok) {
-      log("error", "ClickPesa initiate error", {
-        orderId,
-        orderReference,
-        status: response.status,
-        body: data,
-      });
-
       const providerMessage =
         (typeof data.message === "string" ? data.message :
          typeof data.error === "string" ? data.error :
@@ -160,6 +118,20 @@ export async function POST(request: NextRequest) {
       const userMessage =
         providerMessage ||
         "ClickPesa payment initiation failed. Please verify the phone number and try again.";
+
+      // Log failed attempt for admin visibility
+      await supabaseServerClient.rpc("log_order_audit", {
+        p_order_id: order.id,
+        p_actor_type: "system",
+        p_actor_user_id: null,
+        p_action: "payment_initiate_failed",
+        p_payload: {
+          provider: "clickpesa",
+          status: response.status,
+          body: data,
+          idempotency_key: idempotencyKey,
+        },
+      });
 
       return jsonError(
         userMessage,
@@ -174,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     const clickpesaStatus = String(data["status"] ?? "");
-    const mappedPaymentStatus = mapClickpesaToPaymentStatus(clickpesaStatus);
+    const mappedPaymentStatus = mapClickpesaStatus(clickpesaStatus);
 
     const { error: updateError } = await supabaseServerClient
       .from("orders")
@@ -190,6 +162,20 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       logError("Failed to update order with ClickPesa info", updateError, { orderId });
     }
+
+    await supabaseServerClient.rpc("log_order_audit", {
+      p_order_id: order.id,
+      p_actor_type: "system",
+      p_actor_user_id: null,
+      p_action: mappedPaymentStatus === "paid" ? "payment_completed" : "payment_initiated",
+      p_payload: {
+        provider: "clickpesa",
+        order_reference: orderReference,
+        clickpesa_status: clickpesaStatus,
+        clickpesa_transaction_id: data["id"] ?? null,
+        idempotency_key: idempotencyKey,
+      },
+    });
 
     return jsonOk({
       success: true,

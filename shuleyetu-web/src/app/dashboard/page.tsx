@@ -485,6 +485,20 @@ export default function DashboardPage() {
           <p className="mt-2 text-lg font-semibold text-slate-200">Add New Item</p>
           <p className="mt-1 text-xs text-slate-400">Add products to your inventory</p>
         </Link>
+
+        <Link
+          href="/dashboard/kyc"
+          className="surface-panel group rounded-3xl p-5 transition-all hover:border-sky-500/30"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Trust</p>
+            <svg className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="mt-2 text-lg font-semibold text-slate-200">KYC Documents</p>
+          <p className="mt-1 text-xs text-slate-400">Upload TIN, license, NIDA for verification</p>
+        </Link>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">

@@ -488,12 +488,20 @@ export default function AdminPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-12">
       <header className="space-y-2">
-        <Link
-          href="/"
-          className="text-xs font-medium text-sky-400 hover:text-sky-300"
-        >
-          ← Back to home
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-xs font-medium text-sky-400 hover:text-sky-300"
+          >
+            ← Back to home
+          </Link>
+          <Link
+            href="/admin/payments"
+            className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
+          >
+            Payments & Trust
+          </Link>
+        </div>
         <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Admin</h1>
         <p className="text-sm text-slate-300">
           Link a vendor user (Supabase auth email) to a vendor.
