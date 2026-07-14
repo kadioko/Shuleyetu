@@ -179,6 +179,25 @@ export default function DashboardInventoryPage() {
     (i) => i.stock_quantity > 0 && i.stock_quantity <= LOW_STOCK_THRESHOLD,
   );
 
+  const handleExportCsv = (data: InventoryItem[]) => {
+    const headers = ['name', 'category', 'price_tzs', 'stock_quantity', 'image_url'];
+    const rows = data.map((item) => [
+      item.name,
+      item.category,
+      String(item.price_tzs),
+      String(item.stock_quantity),
+      item.image_url ?? '',
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${vendorName.replace(/\s+/g, '_').toLowerCase()}_inventory.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="flex min-h-screen flex-col">
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -199,6 +218,17 @@ export default function DashboardInventoryPage() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 Add Item
               </Link>
+              <Link href="/dashboard/inventory/import" className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900/50 px-5 py-2.5 text-sm font-bold text-slate-200 transition-all hover:border-sky-500/50 hover:text-white">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>
+                Import CSV
+              </Link>
+              <button
+                onClick={() => handleExportCsv(items)}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-900/50 px-5 py-2.5 text-sm font-bold text-slate-200 transition-all hover:border-emerald-500/50 hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Export CSV
+              </button>
             </div>
           </div>
           {items.length > 0 && (

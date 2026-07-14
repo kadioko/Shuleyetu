@@ -205,6 +205,26 @@ export const translations = {
     checklistExport: 'Export .txt',
     checklistBrowseVendors: 'Browse Vendors',
     checklistReset: 'Reset',
+    checklistAddToCart: 'Add to cart',
+    checklistMatches: 'Available from vendors',
+    checklistNoMatches: 'No matching products yet. Browse vendors for this item.',
+    checklistAutoFill: 'Auto-fill cart from matches',
+    checklistAutoFillDesc: 'Add all matched items from one vendor to your cart',
+    checklistVendorSwitched: 'Cart switched to {vendor} because items must come from a single vendor.',
+    checklistFromVendor: 'from {vendor}',
+    checklistPrice: '{price} TZS',
+
+    // Vendors page
+    vendorsTitle: 'Find Vendors',
+    vendorsSubtitle: '{count} school supply vendors across Tanzania',
+    vendorsSearchPlaceholder: 'Search by name, location...',
+    vendorsRegionLabel: 'Region',
+    vendorsAllRegions: 'All regions',
+    vendorsSchoolLabel: 'School',
+    vendorsAllSchools: 'All schools',
+    vendorsRecommendedFor: 'Showing vendors for {school}',
+    vendorsRecommendedSubtitle: 'School-recommended vendors appear first. Nearby vendors are shown next.',
+    vendorsSchoolApproved: 'School-Approved',
 
     // Blog page
     blogResourcesBadge: 'Resources & Blog',
@@ -421,6 +441,26 @@ export const translations = {
     checklistExport: 'Hamisha .txt',
     checklistBrowseVendors: 'Tazama Wauzaji',
     checklistReset: 'Anza Upya',
+    checklistAddToCart: 'Ongeza kwenye mkokoteni',
+    checklistMatches: 'Inapatikana kutoka kwa wauzaji',
+    checklistNoMatches: 'Hakuna bidhaa zinazolingana. Tazama wauzaji kwa ajili ya hiki.',
+    checklistAutoFill: 'Jaza mkokoteni kiotomatiki',
+    checklistAutoFillDesc: 'Ongeza bidhaa zote zilizolingana kutoka kwa muuzaji mmoja kwenye mkokoteni wako',
+    checklistVendorSwitched: 'Mkokoteni umebadilishwa kwa {vendor} kwa sababu vitu lazima vitoke kwa muuzaji mmoja.',
+    checklistFromVendor: 'kutoka kwa {vendor}',
+    checklistPrice: 'TZS {price}',
+
+    // Vendors page
+    vendorsTitle: 'Pata Wauzaji',
+    vendorsSubtitle: 'Wauzaji {count} wa vifaa vya shule Tanzania',
+    vendorsSearchPlaceholder: 'Tafuta kwa jina, eneo...',
+    vendorsRegionLabel: 'Eneo',
+    vendorsAllRegions: 'Mikoa yote',
+    vendorsSchoolLabel: 'Shule',
+    vendorsAllSchools: 'Shule zote',
+    vendorsRecommendedFor: 'Inaonyesha wauzaji wa {school}',
+    vendorsRecommendedSubtitle: 'Wauzaji waliopendekezwa na shule wanaonekana kwanza. Wauzaji wa karibu wanaonyeshwa baadaye.',
+    vendorsSchoolApproved: 'Kuidhinishwa na Shule',
 
     // Blog page
     blogResourcesBadge: 'Rasilimali na Blogu',

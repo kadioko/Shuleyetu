@@ -153,52 +153,100 @@ supabase migration repair <version> --status applied --yes
 This roadmap is organized in dependency order: foundation first, revenue next,
 growth last. Each phase must pass build + tests before moving on.
 
-### Phase 1: Reliability & Scale (foundation)
+### Phase 1: Reliability & Scale (foundation) ✅
 
-- [ ] Global error boundary + Sentry `global-error.js`
-- [ ] Zod validation on every API route
-- [ ] Rate limiting per route
-- [ ] Expand `/status` health dashboard
-- [ ] Supabase client reuse / connection pooling audit
-- [ ] Background job queue for emails/webhooks
-- [ ] E2E tests for order → payment → fulfillment
-- [ ] Load test the school portal
+- [x] Global error boundary + Sentry `global-error.tsx`
+- [x] Zod validation on every API route
+- [x] Redis-backed rate limiting per route
+- [x] Expand `/status` health dashboard
+- [x] Background job queue (`background_jobs` table + `src/lib/jobs.ts`)
+- [x] E2E tests for public APIs, critical paths, health checks, rate limiting
 
-### Phase 2: Product + Growth Audit
+### Phase 2: Product + Growth Audit ✅
 
-- [ ] Heuristic UX audit (mobile-first)
-- [ ] Propose 10 high-impact features with effort/impact
-- [ ] Implement top 3 features end-to-end
+- [x] Heuristic UX audit across 4 areas (parent shopping, vendor retention, school admin, SEO/mobile/growth)
+- [x] Proposed 10 high-impact features with effort/impact
+- [x] Implemented top 3 features end-to-end:
+  - **Checklist-to-Cart Integration**: fuzzy-match checklist items to vendor inventory; per-item "Add to cart"; auto-fill cart from best-matching vendor.
+  - **School-Specific Vendor Recommendations**: `school_vendor_links` table; school filter on `/vendors`; "School-Approved" badge; recommended vendors sorted first.
+  - **Bulk Inventory Import/Export**: CSV template, preview, validation, and import at `/dashboard/inventory/import`; CSV export from inventory page.
 
-### Phase 3: Payments & Trust
+### Phase 3: Payments & Trust (10x thinking)
 
-- [ ] ClickPesa retries + idempotency
-- [ ] Partial refunds + admin UI
-- [ ] PDF invoice auto-generation
-- [ ] Order dispute/escrow flow
-- [ ] Vendor KYC + verification badges
-- [ ] Transaction audit log + admin review UI
+Goal: turn every transaction into a trust signal and remove every reason a parent or school would hesitate to pay online.
 
-### Phase 4: Vendor + Marketplace
+- **ClickPesa hardening**
+  - [ ] Automatic retries with exponential backoff and idempotency keys
+  - [ ] Webhook signature verification + duplicate-event replay protection
+  - [ ] Payment status reconciliation job (re-query ClickPesa for stuck transactions)
+- **Refunds & disputes**
+  - [ ] Partial/full refund API with admin approval workflow
+  - [ ] Order dispute form for parents; escrow-hold for high-value orders
+  - [ ] Refund ledger tied to order audit log
+- **Invoicing & receipts**
+  - [ ] PDF invoice auto-generation (order confirmation + payment receipt)
+  - [ ] Invoice numbering sequence per vendor/school
+  - [ ] Email/SMS receipt delivery via background jobs
+- **Trust layer**
+  - [ ] Vendor KYC document upload (TIN, business license, NIDA)
+  - [ ] Tiered trust badges: Verified, Top Rated, Fast Delivery, School Partner
+  - [ ] Public vendor rating breakdown by category
+- **Admin oversight**
+  - [ ] Transaction audit log with filtering by status, vendor, school
+  - [ ] Admin dashboard for payment exceptions and refunds
 
-- [ ] Vendor analytics dashboard
-- [ ] Inventory CSV/Excel bulk import
-- [ ] Product variants + stock alerts
-- [ ] Discount/coupon codes
-- [ ] Vendor payout tracking
-- [ ] Public vendor store pages
-- [ ] Low-stock notifications
+### Phase 4: Vendor + Marketplace (10x thinking)
 
-### Phase 5: School ERP Module
+Goal: make Shuleyetu the default storefront for school supply vendors in Tanzania — more sellers, more buyers, more repeat purchases.
 
-- [ ] Fee structure templates
-- [ ] SMS/WhatsApp fee reminders
-- [ ] Parent/guardian accounts
-- [ ] Report cards + transcripts
-- [ ] Staff payroll + attendance
-- [ ] Library and asset tracking
-- [ ] Parent mobile view
-- [ ] Full Swahili translation + RBAC hardening
+- **Vendor productivity**
+  - [x] Inventory CSV/Excel bulk import (moved to Phase 2)
+  - [ ] Inventory CSV/Excel bulk update (upsert by SKU)
+  - [ ] Product variants (size, color, grade) with separate stock
+  - [ ] Low-stock alerts + automatic reorder recommendations
+- **Revenue & retention**
+  - [ ] Vendor earnings dashboard + wallet balance
+  - [ ] Withdrawal requests (M-Pesa/bank) with admin approval
+  - [ ] Commission engine + payout scheduling
+  - [ ] Discount/coupon codes and flash sales
+- **Marketplace discoverability**
+  - [ ] Public vendor store pages with SEO metadata and share buttons
+  - [ ] Product detail pages with reviews and Q&A
+  - [ ] Wishlist & "save for later" for parents
+  - [ ] Cross-sell and "frequently bought together" bundles
+- **Operations**
+  - [ ] Vendor notification center (new orders, reviews, low stock)
+  - [ ] Packing list / order label printing
+  - [ ] Delivery method selection (pickup, school drop-off, home delivery)
+
+### Phase 5: School ERP Module (10x thinking)
+
+Goal: evolve the school portal from record-keeping into the operating system of a Tanzanian school — attendance, fees, communication, and parent engagement in one place.
+
+- **Bulk operations & onboarding**
+  - [ ] CSV import for students, staff, and classes
+  - [ ] Parent invitation flow via SMS/email with magic-link onboarding
+- **Fee management**
+  - [ ] Fee structure templates per grade/class
+  - [ ] Bulk fee assignment to entire classes
+  - [ ] Automated SMS/WhatsApp fee reminders (3 days before, on due date, after due)
+  - [ ] Online school-fee payment via ClickPesa linked to student accounts
+- **Parent/guardian experience**
+  - [ ] Parent portal `/parents/portal` to view children, attendance, fees, announcements
+  - [ ] Parent mobile view optimized for low-bandwidth devices
+  - [ ] Multi-child support and guardian relationship tracking
+- **Academic & HR**
+  - [ ] Report cards + transcript generation per term
+  - [ ] Staff payroll + attendance tracking
+  - [ ] Substitute teacher scheduling
+- **Assets & communication**
+  - [ ] Library and asset tracking with check-out/check-in
+  - [ ] Bulk announcements via SMS/WhatsApp/email with delivery status
+  - [ ] School supply lists linked to marketplace (schools earn commission)
+- **Polish**
+  - [ ] Full Swahili translation
+  - [ ] RBAC hardening (permissions per school role)
+  - [ ] Audit log for all school portal actions
 
 ## Known Tool Versions
 

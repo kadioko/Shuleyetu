@@ -1,8 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/components/LanguageProvider';
+import { supabaseClient } from '@/lib/supabaseClient';
+import { useCart } from '@/lib/cartContext';
+import { matchChecklistItemToInventory, InventoryMatch } from '@/lib/checklistMatching';
 
 type Level = 'primary' | 'secondary' | 'highschool';
 
@@ -85,6 +88,10 @@ export default function ChecklistPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [customItems, setCustomItems] = useState<string[]>([]);
   const [newItem, setNewItem] = useState('');
+  const [inventory, setInventory] = useState<InventoryMatch[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [cartMessage, setCartMessage] = useState<string | null>(null);
+  const { addItem, vendorName, items: cartItems } = useCart();
 
   const isSw = locale === 'sw';
 
@@ -98,6 +105,64 @@ export default function ChecklistPage() {
   const checkedCount = checked.size;
   const totalCount = items.length + customItems.length;
   const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setInventoryLoading(true);
+      const { data, error } = await supabaseClient
+        .from('inventory')
+        .select('id, name, description, category, price_tzs, stock_quantity, vendor_id, vendors(name)')
+        .eq('is_active', true)
+        .gt('stock_quantity', 0);
+
+      if (!cancelled) {
+        if (error) {
+          console.error('Error loading inventory for checklist', error);
+        } else {
+          const rows = (data ?? []) as unknown as {
+            id: string;
+            name: string;
+            description: string | null;
+            category: string;
+            price_tzs: number;
+            stock_quantity: number;
+            vendor_id: string;
+            vendors: { name: string } | { name: string }[] | null;
+          }[];
+          setInventory(
+            rows.map((row) => ({
+              id: row.id,
+              name: row.name,
+              description: row.description ?? null,
+              category: row.category,
+              price_tzs: row.price_tzs,
+              stock_quantity: row.stock_quantity,
+              vendor_id: row.vendor_id,
+              vendor_name: Array.isArray(row.vendors)
+                ? row.vendors[0]?.name ?? ''
+                : row.vendors?.name ?? '',
+              score: 0,
+            })),
+          );
+        }
+        setInventoryLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const matchesByItem = useMemo(() => {
+    const map = new Map<string, InventoryMatch[]>();
+    if (!level) return map;
+    for (const item of CHECKLISTS[level]) {
+      map.set(item.id, matchChecklistItemToInventory(item.label, item.category, inventory));
+    }
+    return map;
+  }, [inventory, level]);
 
   const toggle = useCallback((id: string) => {
     setChecked((prev) => {
@@ -146,6 +211,74 @@ export default function ChecklistPage() {
 
   const removeCustomItem = (index: number) => {
     setCustomItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddMatch = (match: InventoryMatch, checklistQuantity: number) => {
+    const quantity = Math.min(checklistQuantity, match.stock_quantity);
+    addItem({
+      itemId: match.id,
+      vendorId: match.vendor_id,
+      vendorName: match.vendor_name,
+      name: match.name,
+      price_tzs: match.price_tzs,
+      image_url: null,
+      quantity,
+    });
+    setCartMessage(
+      t('checklistVendorSwitched').replace('{vendor}', match.vendor_name),
+    );
+    setTimeout(() => setCartMessage(null), 4000);
+  };
+
+  const handleAutoFill = () => {
+    if (!level) return;
+    // Pick the vendor with the most matched items among checked items
+    const vendorMatches = new Map<string, { vendorName: string; matches: { match: InventoryMatch; quantity: number }[] }>();
+
+    for (const item of CHECKLISTS[level]) {
+      if (!checked.has(item.id)) continue;
+      const matches = matchesByItem.get(item.id) ?? [];
+      if (matches.length === 0) continue;
+      const best = matches[0];
+      const entry = vendorMatches.get(best.vendor_id) ?? { vendorName: best.vendor_name, matches: [] };
+      entry.matches.push({ match: best, quantity: item.quantity });
+      vendorMatches.set(best.vendor_id, entry);
+    }
+
+    if (vendorMatches.size === 0) {
+      setCartMessage(t('checklistNoMatches'));
+      return;
+    }
+
+    // Choose vendor with most matched items, then lowest total price as tie-breaker
+    const sortedVendors = Array.from(vendorMatches.entries()).sort((a, b) => {
+      const countDiff = b[1].matches.length - a[1].matches.length;
+      if (countDiff !== 0) return countDiff;
+      const totalA = a[1].matches.reduce((sum, m) => sum + m.match.price_tzs * m.quantity, 0);
+      const totalB = b[1].matches.reduce((sum, m) => sum + m.match.price_tzs * m.quantity, 0);
+      return totalA - totalB;
+    });
+
+    const [vendorId, { vendorName, matches }] = sortedVendors[0];
+    let switched = false;
+    for (const { match, quantity } of matches) {
+      if (cartItems.length > 0 && cartItems[0].vendorId !== vendorId) {
+        switched = true;
+      }
+      addItem({
+        itemId: match.id,
+        vendorId: match.vendor_id,
+        vendorName: match.vendor_name,
+        name: match.name,
+        price_tzs: match.price_tzs,
+        image_url: null,
+        quantity: Math.min(quantity, match.stock_quantity),
+      });
+    }
+    setCartMessage(
+      switched ? t('checklistVendorSwitched').replace('{vendor}', vendorName) : t('checklistAutoFillDesc'),
+    );
+    setTimeout(() => setCartMessage(null), 4000);
   };
 
   const grouped = items.reduce<Record<string, ChecklistItem[]>>((acc, item) => {
@@ -236,28 +369,62 @@ export default function ChecklistPage() {
                     {t('checklistFindVendors')} →
                   </Link>
                 </div>
-                <div className="space-y-2">
-                  {catItems.map((item) => (
-                    <label
-                      key={item.id}
-                      className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-all ${
-                        checked.has(item.id)
-                          ? 'border-emerald-500/30 bg-emerald-500/5'
-                          : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked.has(item.id)}
-                        onChange={() => toggle(item.id)}
-                        className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-sky-500 focus:ring-sky-500/20"
-                      />
-                      <span className={`flex-1 text-sm ${checked.has(item.id) ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
-                        {isSw ? item.labelSw : item.label}
-                      </span>
-                      <span className="text-xs text-slate-500">×{item.quantity}</span>
-                    </label>
-                  ))}
+                <div className="space-y-3">
+                  {catItems.map((item) => {
+                    const itemMatches = matchesByItem.get(item.id) ?? [];
+                    const label = isSw ? item.labelSw : item.label;
+                    return (
+                      <div key={item.id} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                        <label
+                          className={`flex cursor-pointer items-center gap-3 transition-all ${
+                            checked.has(item.id) ? 'text-slate-500' : 'text-slate-200'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked.has(item.id)}
+                            onChange={() => toggle(item.id)}
+                            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-sky-500 focus:ring-sky-500/20"
+                          />
+                          <span className={`flex-1 text-sm ${checked.has(item.id) ? 'line-through' : ''}`}>
+                            {label}
+                          </span>
+                          <span className="text-xs text-slate-500">×{item.quantity}</span>
+                        </label>
+
+                        {itemMatches.length > 0 && (
+                          <div className="mt-3 space-y-2 pl-7">
+                            <p className="text-xs font-medium text-slate-400">{t('checklistMatches')}</p>
+                            {itemMatches.map((match) => (
+                              <div
+                                key={match.id}
+                                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm text-slate-200">{match.name}</p>
+                                  <p className="text-xs text-slate-500">
+                                    {t('checklistFromVendor').replace('{vendor}', match.vendor_name)} · {t('checklistPrice').replace('{price}', match.price_tzs.toLocaleString('en-TZ'))}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => handleAddMatch(match, item.quantity)}
+                                  className="flex-shrink-0 rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-300 hover:bg-sky-500/20"
+                                >
+                                  {t('checklistAddToCart')}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {itemMatches.length === 0 && !inventoryLoading && (
+                          <p className="mt-2 pl-7 text-xs text-slate-500">
+                            {t('checklistNoMatches')}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -297,6 +464,38 @@ export default function ChecklistPage() {
               </div>
             </div>
           </section>
+
+          {/* Auto-fill cart */}
+          {checkedCount > 0 && (
+            <section className="surface-panel rounded-3xl p-5 print:hidden">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-200">{t('checklistAutoFill')}</h3>
+                  <p className="text-xs text-slate-400">{t('checklistAutoFillDesc')}</p>
+                </div>
+                <button
+                  onClick={handleAutoFill}
+                  disabled={inventoryLoading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  {inventoryLoading ? t('loading') : t('checklistAutoFill')}
+                </button>
+              </div>
+              {cartMessage && (
+                <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                  {cartMessage}
+                </div>
+              )}
+              {vendorName && cartItems.length > 0 && (
+                <p className="mt-2 text-xs text-slate-400">
+                  Current cart: <span className="font-semibold text-slate-200">{cartItems.length} items</span> from <span className="font-semibold text-slate-200">{vendorName}</span>
+                </p>
+              )}
+            </section>
+          )}
 
           {/* Actions */}
           <section className="flex flex-wrap gap-3 print:hidden">

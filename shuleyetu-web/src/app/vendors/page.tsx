@@ -5,6 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { VendorCardSkeleton } from '@/components/ui/SkeletonLoader';
+import { useLanguage } from '@/components/LanguageProvider';
 
 type Vendor = {
   id: string;
@@ -16,9 +17,20 @@ type Vendor = {
   approval_status: string | null;
   avg_rating: number;
   review_count: number;
+  is_recommended?: boolean;
 };
 
+type SchoolOption = {
+  id: string;
+  name: string;
+  region: string | null;
+  district: string | null;
+};
+
+const SCHOOL_STORAGE_KEY = 'shuleyetu_selected_school';
+
 function VendorsInner() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +40,25 @@ function VendorsInner() {
   const [categoryFilter, setCategoryFilter] = useState(
     () => searchParams?.get('category') ?? '',
   );
+  const [schools, setSchools] = useState<SchoolOption[]>([]);
+  const [schoolFilter, setSchoolFilter] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem(SCHOOL_STORAGE_KEY) ?? '';
+  });
+  const [recommendedIds, setRecommendedIds] = useState<Set<string>>(new Set());
+
+  // Load schools once
+  useEffect(() => {
+    const loadSchools = async () => {
+      const { data } = await supabaseClient
+        .from('schools')
+        .select('id, name, region, district')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+      setSchools((data ?? []) as SchoolOption[]);
+    };
+    void loadSchools();
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -62,10 +93,26 @@ function VendorsInner() {
           return;
         }
 
-        // Step 2: Fetch vendors (optionally filtered by IDs)
+        // Step 2: Fetch recommended vendor IDs when a school is selected
+        let recIds = new Set<string>();
+        let selectedSchool: SchoolOption | null = null;
+        if (schoolFilter) {
+          selectedSchool = schools.find((s) => s.id === schoolFilter) ?? null;
+          const { data: linkData } = await supabaseClient
+            .from('school_vendor_links')
+            .select('vendor_id')
+            .eq('school_id', schoolFilter)
+            .eq('is_recommended', true);
+          recIds = new Set((linkData ?? []).map((row) => row.vendor_id as string));
+        }
+        setRecommendedIds(recIds);
+
+        // Step 3: Fetch vendors (optionally filtered by IDs or region)
         let query = supabaseClient
           .from('vendors')
           .select('id, name, description, region, district, ward, approval_status')
+          .eq('approval_status', 'approved')
+          .eq('is_active', true)
           .order('created_at', { ascending: false });
 
         if (vendorIdFilter !== null) {
@@ -81,9 +128,9 @@ function VendorsInner() {
           return;
         }
 
-        const rawVendors = (data ?? []) as Omit<Vendor, 'avg_rating' | 'review_count'>[];
+        const rawVendors = (data ?? []) as Omit<Vendor, 'avg_rating' | 'review_count' | 'is_recommended'>[];
 
-        // Step 3: Fetch all approved reviews in one query and compute stats client-side
+        // Step 4: Fetch all approved reviews in one query and compute stats client-side
         // This avoids the N+1 RPC pattern (2 DB calls per vendor).
         const vendorIds = rawVendors.map((v) => v.id);
         let reviewStats: { vendor_id: string; rating: number }[] | null = null;
@@ -108,14 +155,28 @@ function VendorsInner() {
           ratingMap.set(r.vendor_id, entry);
         });
 
-        const enriched: Vendor[] = rawVendors.map((v) => {
+        let enriched: Vendor[] = rawVendors.map((v) => {
           const stats = ratingMap.get(v.id);
           return {
             ...v,
+            is_recommended: recIds.has(v.id),
             avg_rating: stats ? stats.sum / stats.count : 0,
             review_count: stats?.count ?? 0,
           };
         });
+
+        // Step 5: Sort: recommended first, then by same region as selected school, then created_at
+        if (selectedSchool) {
+          enriched = enriched.sort((a, b) => {
+            const aRec = recIds.has(a.id) ? 1 : 0;
+            const bRec = recIds.has(b.id) ? 1 : 0;
+            if (aRec !== bRec) return bRec - aRec;
+            const aNear = a.region === selectedSchool?.region ? 1 : 0;
+            const bNear = b.region === selectedSchool?.region ? 1 : 0;
+            if (aNear !== bNear) return bNear - aNear;
+            return 0;
+          });
+        }
 
         setVendors(enriched);
       } catch (err) {
@@ -127,8 +188,7 @@ function VendorsInner() {
     };
 
     void load();
-    // Re-run whenever categoryFilter changes
-  }, [categoryFilter]);
+  }, [categoryFilter, schoolFilter, schools]);
 
   const regions = useMemo(() => {
     const set = new Set<string>();
@@ -166,9 +226,25 @@ function VendorsInner() {
     setSearch('');
     setRegionFilter('');
     setCategoryFilter('');
+    setSchoolFilter('');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(SCHOOL_STORAGE_KEY);
+    }
   };
 
-  const hasFilters = search.trim() !== '' || regionFilter !== '' || categoryFilter !== '';
+  const hasFilters = search.trim() !== '' || regionFilter !== '' || categoryFilter !== '' || schoolFilter !== '';
+
+  const handleSchoolChange = (value: string) => {
+    setSchoolFilter(value);
+    if (typeof window !== 'undefined') {
+      if (value) localStorage.setItem(SCHOOL_STORAGE_KEY, value);
+      else localStorage.removeItem(SCHOOL_STORAGE_KEY);
+    }
+  };
+
+  const selectedSchoolName = useMemo(() => {
+    return schools.find((s) => s.id === schoolFilter)?.name ?? '';
+  }, [schools, schoolFilter]);
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -178,14 +254,14 @@ function VendorsInner() {
         <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">Find Vendors</h1>
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-50 md:text-4xl">{t('vendorsTitle')}</h1>
               <p className="mt-2 text-base text-slate-400">
-                {loading ? 'Loading vendors…' : <><span className="font-semibold text-slate-200">{vendors.length}</span> school supply vendors across Tanzania</>}
+                {loading ? 'Loading vendors…' : <>{t('vendorsSubtitle').replace('{count}', String(vendors.length))}</>}
               </p>
             </div>
             <Link href="/orders/new" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all hover:scale-105">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              Create Order
+              {t('createOrder')}
             </Link>
           </div>
 
@@ -224,6 +300,27 @@ function VendorsInner() {
             <button
               onClick={() => setCategoryFilter('')}
               className="flex-shrink-0 rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        </section>
+      )}
+
+      {schoolFilter && selectedSchoolName && (
+        <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-200">
+                {t('vendorsRecommendedFor').replace('{school}', selectedSchoolName)}
+              </p>
+              <p className="mt-0.5 text-xs text-amber-300/70">
+                {t('vendorsRecommendedSubtitle')}
+              </p>
+            </div>
+            <button
+              onClick={() => handleSchoolChange('')}
+              className="flex-shrink-0 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 transition-colors"
             >
               Clear
             </button>
@@ -274,6 +371,24 @@ function VendorsInner() {
               {regions.map((region) => (
                 <option key={region} value={region}>
                   {region}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full space-y-1.5 md:w-56">
+            <label className="block text-xs font-medium text-slate-400">
+              {t('vendorsSchoolLabel')}
+            </label>
+            <select
+              value={schoolFilter}
+              onChange={(event) => handleSchoolChange(event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-3 text-sm text-slate-50 outline-none transition-colors focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+            >
+              <option value="">{t('vendorsAllSchools')}</option>
+              {schools.map((school) => (
+                <option key={school.id} value={school.id}>
+                  {school.name}
                 </option>
               ))}
             </select>
@@ -398,6 +513,14 @@ function VendorsInner() {
                           <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                         </svg>
                         Verified
+                      </span>
+                    )}
+                    {vendor.is_recommended && (
+                      <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400 ring-1 ring-amber-500/30">
+                        <svg className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        {t('vendorsSchoolApproved')}
                       </span>
                     )}
                   </div>
