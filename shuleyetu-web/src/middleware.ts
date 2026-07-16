@@ -47,9 +47,6 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
-    if (pathname.startsWith("/schools/portal")) {
-      return NextResponse.redirect(new URL("/auth/school-login", request.url));
-    }
     if (pathname.startsWith("/workspaces")) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
@@ -62,7 +59,6 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/admin/:path*",
-    "/schools/portal/:path*",
     "/workspaces/:path*",
   ],
 };

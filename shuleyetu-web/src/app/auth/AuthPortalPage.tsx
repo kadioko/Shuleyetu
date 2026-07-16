@@ -289,7 +289,12 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
 
     try {
       const res = await fetch('/api/demo/setup', { method: 'POST' });
-      const json = (await res.json().catch(() => ({}))) as { email?: string; password?: string; error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        email?: string;
+        password?: string;
+        schoolId?: string;
+        error?: string;
+      };
 
       if (!res.ok) {
         setError(json.error || 'Could not prepare demo account. Please try again.');
@@ -299,7 +304,20 @@ export function AuthPortalPage({ type }: { type: PortalType }) {
 
       const demoEmail = json.email ?? 'demo@shuleyetu.test';
       const demoPassword = json.password ?? 'demo123';
-      await performSignIn(demoEmail, demoPassword);
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
+      });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+      if (json.schoolId && typeof window !== 'undefined') {
+        window.localStorage.setItem('shuleyetu.schoolId', json.schoolId);
+      }
+      setMessage('Demo school ready. Opening the portal...');
+      window.location.href = '/schools/portal';
     } catch (err) {
       console.error('Demo sign-in error', err);
       setError('Unexpected error starting demo. Please try again.');
