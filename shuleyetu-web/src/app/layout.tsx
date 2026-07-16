@@ -95,6 +95,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://rqlolaoqstvnffkaqmpt.supabase.co" />
+        <link rel="dns-prefetch" href="https://rqlolaoqstvnffkaqmpt.supabase.co" />
+      </head>
       <body className="min-h-screen bg-slate-950 text-slate-50 antialiased selection:bg-sky-500/20 selection:text-sky-100">
         <CartProvider>
         <LanguageProvider>

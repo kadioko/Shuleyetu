@@ -57,8 +57,9 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
         window.localStorage.setItem("shuleyetu.schoolId", selectedSchoolId);
       }
       const {
-        data: { user },
-      } = await supabaseClient.auth.getUser();
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) {
         router.push("/auth/school-login?next=/schools/portal");
         return;

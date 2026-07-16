@@ -50,16 +50,9 @@ export default function DashboardInventoryPage() {
       setError(null);
 
       const {
-        data: { user },
-        error: userError,
-      } = await supabaseClient.auth.getUser();
-
-      if (userError) {
-        console.error('Error getting user', userError);
-        setError('Failed to load user.');
-        setLoading(false);
-        return;
-      }
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      const user = session?.user ?? null;
 
       if (!user) {
         router.push("/auth/vendor-login?next=/dashboard/inventory");
