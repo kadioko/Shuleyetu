@@ -10,6 +10,14 @@ export type WorkspaceSummary = {
   isAdmin: boolean;
 };
 
+let workspaceCache:
+  | {
+      accessToken: string;
+      data: WorkspaceSummary;
+      expiresAt: number;
+    }
+  | null = null;
+
 export async function getWorkspaceSummary(): Promise<{
   data: WorkspaceSummary | null;
   error: string | null;
@@ -19,7 +27,16 @@ export async function getWorkspaceSummary(): Promise<{
   } = await supabaseClient.auth.getSession();
 
   if (!session?.access_token) {
+    workspaceCache = null;
     return { data: null, error: "Not authenticated" };
+  }
+
+  if (
+    workspaceCache &&
+    workspaceCache.accessToken === session.access_token &&
+    workspaceCache.expiresAt > Date.now()
+  ) {
+    return { data: workspaceCache.data, error: null };
   }
 
   const res = await fetch("/api/auth/workspaces", {
@@ -39,7 +56,13 @@ export async function getWorkspaceSummary(): Promise<{
     };
   }
 
-  return { data: json as WorkspaceSummary, error: null };
+  const data = json as WorkspaceSummary;
+  workspaceCache = {
+    accessToken: session.access_token,
+    data,
+    expiresAt: Date.now() + 30_000,
+  };
+  return { data, error: null };
 }
 
 export function chooseWorkspacePath(

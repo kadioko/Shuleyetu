@@ -102,25 +102,49 @@ export default function VendorOnboardingPage() {
         return;
       }
 
-      // Create vendor
-      const { data: vendor, error: vendorError } = await supabaseClient
+      const vendorPayload = {
+        name: formData.name,
+        description: formData.description,
+        region: formData.region,
+        district: formData.district,
+        ward: formData.ward,
+        street_address: formData.streetAddress,
+        phone_number: formData.phoneNumber,
+        email: formData.email || null,
+      };
+
+      // Create vendor. If the approval workflow migration has not landed yet,
+      // preserve the old behavior instead of blocking signup.
+      let { data: vendor, error: vendorError } = await supabaseClient
         .from('vendors')
         .insert([
           {
-            name: formData.name,
-            description: formData.description,
-            region: formData.region,
-            district: formData.district,
-            ward: formData.ward,
-            street_address: formData.streetAddress,
-            phone_number: formData.phoneNumber,
-            email: formData.email || null,
+            ...vendorPayload,
             approval_status: 'pending',
             is_active: false,
           },
         ])
         .select()
         .single();
+
+      if (
+        vendorError &&
+        (vendorError.message?.toLowerCase().includes('approval_status') ||
+          vendorError.code === '42703')
+      ) {
+        const fallback = await supabaseClient
+          .from('vendors')
+          .insert([
+            {
+              ...vendorPayload,
+              is_active: true,
+            },
+          ])
+          .select()
+          .single();
+        vendor = fallback.data;
+        vendorError = fallback.error;
+      }
 
       if (vendorError) throw vendorError;
 

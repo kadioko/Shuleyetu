@@ -66,11 +66,27 @@ export default function DashboardInventoryPage() {
         return;
       }
 
-      const { data: mapping, error: mapError } = await supabaseClient
-          .from('vendor_users')
+      const primaryMapping = await supabaseClient
+        .from('vendor_users')
         .select('vendor_id, vendors(name, approval_status)')
         .eq('user_id', user.id)
         .maybeSingle();
+      let mapping: unknown = primaryMapping.data;
+      let mapError = primaryMapping.error;
+
+      if (
+        mapError &&
+        (mapError.message?.toLowerCase().includes('approval_status') ||
+          mapError.code === '42703')
+      ) {
+        const fallback = await supabaseClient
+          .from('vendor_users')
+          .select('vendor_id, vendors(name)')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        mapping = fallback.data;
+        mapError = fallback.error;
+      }
 
       if (mapError) {
         console.error('Error loading vendor mapping', mapError);
@@ -97,7 +113,8 @@ export default function DashboardInventoryPage() {
         return;
       }
 
-      const vendorId = mapping.vendor_id;
+      const vendorMapping = mapping as VendorMapping;
+      const vendorId = vendorMapping.vendor_id;
 
       const { data: inventory, error: invError } = await supabaseClient
         .from('inventory')

@@ -16,10 +16,27 @@ export async function GET(request: NextRequest) {
     const auth = await requireAdmin(request);
     if (!auth.ok) return auth.response;
 
-    const { data, error } = await supabaseServerClient
+    const primary = await supabaseServerClient
       .from("vendors")
       .select("id, name, email, phone_number, region, district, ward, approval_status, is_active, created_at")
       .order("created_at", { ascending: false });
+    let data: Record<string, unknown>[] | null = primary.data;
+    let error = primary.error;
+
+    if (
+      error &&
+      (error.message?.toLowerCase().includes("approval_status") ||
+        error.code === "42703")
+    ) {
+      const fallback = await supabaseServerClient
+        .from("vendors")
+        .select("id, name, email, phone_number, region, district, ward, is_active, created_at")
+        .order("created_at", { ascending: false });
+      data = fallback.data
+        ? fallback.data.map((vendor) => ({ ...vendor, approval_status: null }))
+        : fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       logError("Error loading vendors", error, { adminUserId: auth.user.id });

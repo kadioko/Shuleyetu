@@ -42,11 +42,27 @@ export async function requireVendorUser(
     };
   }
 
-  const { data: mapping, error: mappingError } = await supabaseServerClient
+  const primaryMapping = await supabaseServerClient
     .from("vendor_users")
     .select("vendor_id, vendors(id, name, approval_status)")
     .eq("user_id", user.id)
     .maybeSingle();
+  let mapping: any = primaryMapping.data;
+  let mappingError = primaryMapping.error;
+
+  if (
+    mappingError &&
+    (mappingError.message?.toLowerCase().includes("approval_status") ||
+      mappingError.code === "42703")
+  ) {
+    const fallback = await supabaseServerClient
+      .from("vendor_users")
+      .select("vendor_id, vendors(id, name)")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    mapping = fallback.data;
+    mappingError = fallback.error;
+  }
 
   if (mappingError) {
     console.error("Error checking vendor user", mappingError);

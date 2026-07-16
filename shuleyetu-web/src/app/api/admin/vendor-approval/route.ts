@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const { vendorId, status } = body;
 
-    const { data, error } = await supabaseServerClient
+    let { data, error } = await supabaseServerClient
       .from("vendors")
       .update({
         approval_status: status,
@@ -40,6 +40,23 @@ export async function POST(request: NextRequest) {
       .eq("id", vendorId)
       .select("id, name, approval_status, is_active")
       .single();
+
+    if (
+      error &&
+      (error.message?.toLowerCase().includes("approval_status") ||
+        error.code === "42703")
+    ) {
+      const fallback = await supabaseServerClient
+        .from("vendors")
+        .update({ is_active: status === "approved" })
+        .eq("id", vendorId)
+        .select("id, name, is_active")
+        .single();
+      data = fallback.data
+        ? { ...fallback.data, approval_status: status }
+        : fallback.data;
+      error = fallback.error;
+    }
 
     if (error || !data) {
       logError("Error updating vendor approval", error, {

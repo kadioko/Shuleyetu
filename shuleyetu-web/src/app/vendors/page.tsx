@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { VendorCardSkeleton } from '@/components/ui/SkeletonLoader';
@@ -14,7 +14,7 @@ type Vendor = {
   region: string | null;
   district: string | null;
   ward: string | null;
-  approval_status: string | null;
+  approval_status?: string | null;
   avg_rating: number;
   review_count: number;
   is_recommended?: boolean;
@@ -41,6 +41,7 @@ function VendorsInner() {
     () => searchParams?.get('category') ?? '',
   );
   const [schools, setSchools] = useState<SchoolOption[]>([]);
+  const schoolsRef = useRef<SchoolOption[]>([]);
   const [schoolFilter, setSchoolFilter] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     return localStorage.getItem(SCHOOL_STORAGE_KEY) ?? '';
@@ -50,12 +51,18 @@ function VendorsInner() {
   // Load schools once
   useEffect(() => {
     const loadSchools = async () => {
-      const { data } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('schools')
         .select('id, name, region, district')
         .eq('is_active', true)
         .order('name', { ascending: true });
-      setSchools((data ?? []) as SchoolOption[]);
+      if (error) {
+        console.error('Error loading schools for vendor filter', error);
+        return;
+      }
+      const nextSchools = (data ?? []) as SchoolOption[];
+      schoolsRef.current = nextSchools;
+      setSchools(nextSchools);
     };
     void loadSchools();
   }, []);
@@ -97,7 +104,7 @@ function VendorsInner() {
         let recIds = new Set<string>();
         let selectedSchool: SchoolOption | null = null;
         if (schoolFilter) {
-          selectedSchool = schools.find((s) => s.id === schoolFilter) ?? null;
+          selectedSchool = schoolsRef.current.find((s) => s.id === schoolFilter) ?? null;
           const { data: linkData } = await supabaseClient
             .from('school_vendor_links')
             .select('vendor_id')
@@ -107,19 +114,41 @@ function VendorsInner() {
         }
         setRecommendedIds(recIds);
 
-        // Step 3: Fetch vendors (optionally filtered by IDs or region)
-        let query = supabaseClient
-          .from('vendors')
-          .select('id, name, description, region, district, ward, approval_status')
-          .eq('approval_status', 'approved')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+        // Step 3: Fetch vendors. The approval_status column is available after
+        // the access-workflow migration; fall back gracefully if production has
+        // not applied it yet so vendors do not disappear.
+        const buildVendorQuery = (includeApprovalStatus: boolean) => {
+          let query = supabaseClient
+            .from('vendors')
+            .select(
+              includeApprovalStatus
+                ? 'id, name, description, region, district, ward, approval_status'
+                : 'id, name, description, region, district, ward',
+            )
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
 
-        if (vendorIdFilter !== null) {
-          query = query.in('id', vendorIdFilter);
+          if (includeApprovalStatus) {
+            query = query.eq('approval_status', 'approved');
+          }
+          if (vendorIdFilter !== null) {
+            query = query.in('id', vendorIdFilter);
+          }
+          return query;
+        };
+
+        let { data, error: vendorError } = await buildVendorQuery(true);
+        const approvalColumnMissing =
+          vendorError &&
+          (vendorError.message?.toLowerCase().includes('approval_status') ||
+            vendorError.code === '42703');
+
+        if (approvalColumnMissing) {
+          console.warn('approval_status not available yet; loading active vendors without approval filter');
+          const fallback = await buildVendorQuery(false);
+          data = fallback.data;
+          vendorError = fallback.error;
         }
-
-        const { data, error: vendorError } = await query;
 
         if (vendorError) {
           console.error('Error loading vendors', vendorError);
@@ -128,7 +157,10 @@ function VendorsInner() {
           return;
         }
 
-        const rawVendors = (data ?? []) as Omit<Vendor, 'avg_rating' | 'review_count' | 'is_recommended'>[];
+        const rawVendors = (data ?? []) as unknown as Omit<
+          Vendor,
+          'avg_rating' | 'review_count' | 'is_recommended'
+        >[];
 
         // Step 4: Fetch all approved reviews in one query and compute stats client-side
         // This avoids the N+1 RPC pattern (2 DB calls per vendor).
@@ -188,7 +220,7 @@ function VendorsInner() {
     };
 
     void load();
-  }, [categoryFilter, schoolFilter, schools]);
+  }, [categoryFilter, schoolFilter]);
 
   const regions = useMemo(() => {
     const set = new Set<string>();
