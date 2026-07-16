@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { normalizeSupabaseUrl } from "@/lib/supabaseEnv";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -8,7 +9,7 @@ export async function middleware(request: NextRequest) {
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL),
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
@@ -32,7 +33,10 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser().catch((error) => {
+    console.error("Middleware auth check failed", error);
+    return { data: { user: null } };
+  });
 
   const { pathname } = request.nextUrl;
 

@@ -1,12 +1,5 @@
-const CACHE_NAME = 'shuleyetu-v1';
+const CACHE_NAME = 'shuleyetu-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/vendors',
-  '/orders',
-  '/orders/new',
-  '/orders/track',
-  '/auth/login',
-  '/dashboard',
   '/manifest.json',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg',
@@ -34,7 +27,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: cache-first for static, network-first for API
+// Fetch: keep pages fresh, cache only static assets.
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -44,11 +37,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('/') || new Response('Offline', { status: 503 }))
+    );
+    return;
+  }
+
+  if (!url.origin.includes(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
-        // Refresh cache in background
         fetch(request).then((response) => {
           if (response.ok) {
             caches.open(CACHE_NAME).then((cache) => cache.put(request, response));

@@ -1,11 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalizeSupabaseUrl } from "@/lib/supabaseEnv";
 
 let _client: SupabaseClient | null = null;
-
-function normalizeSupabaseUrl(url: string | undefined): string {
-  if (!url) return '';
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
 
 export const supabaseClient = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
