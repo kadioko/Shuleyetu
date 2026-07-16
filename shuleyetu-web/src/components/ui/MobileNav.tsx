@@ -23,6 +23,8 @@ export function MobileNav() {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -33,19 +35,7 @@ export function MobileNav() {
       }
     };
     void checkSession();
-
-    let subscription: { unsubscribe: () => void } | null = null;
-    try {
-      const { data: { subscription: sub } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-        setIsLoggedIn(Boolean(session));
-      });
-      subscription = sub;
-    } catch (error) {
-      console.error('MobileNav: failed to subscribe to auth state', error);
-    }
-
-    return () => subscription?.unsubscribe();
-  }, []);
+  }, [isOpen]);
 
   // Close on Escape key
   useEffect(() => {

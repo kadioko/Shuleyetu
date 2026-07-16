@@ -107,6 +107,8 @@ export default function ChecklistPage() {
   const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
   useEffect(() => {
+    if (!level || inventory.length > 0) return;
+
     let cancelled = false;
     const load = async () => {
       setInventoryLoading(true);
@@ -153,7 +155,7 @@ export default function ChecklistPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [inventory.length, level]);
 
   const matchesByItem = useMemo(() => {
     const map = new Map<string, InventoryMatch[]>();
@@ -534,58 +536,6 @@ export default function ChecklistPage() {
         </>
       )}
       
-      {/* Print-specific CSS */}
-      <style>{`
-        @media print {
-          body > *:not(main), nav, footer, header {
-            display: none !important;
-          }
-          main {
-            padding: 0 !important;
-            max-width: none !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-only {
-            display: block !important;
-          }
-          * {
-            color: black !important;
-            background: white !important;
-            border-color: #ddd !important;
-          }
-          .surface-panel {
-            background: white !important;
-            border: 1px solid #ddd !important;
-            page-break-inside: avoid;
-          }
-          .text-slate-50, .text-slate-100, .text-slate-200, .text-slate-300 {
-            color: black !important;
-          }
-          .text-slate-400, .text-slate-500 {
-            color: #666 !important;
-          }
-          .border-slate-800, .border-slate-700 {
-            border-color: #ddd !important;
-          }
-          .bg-slate-950, .bg-slate-900, .bg-sky-500\/10 {
-            background: white !important;
-          }
-          .hover\\:border-slate-700:hover {
-            border-color: #ddd !important;
-          }
-          .hover\\:bg-emerald-500\/5:hover {
-            background: #f9f9f9 !important;
-          }
-          .border-emerald-500\/30 {
-            border-color: #4ade80 !important;
-          }
-          .bg-emerald-500\/5 {
-            background: #f0fdf4 !important;
-          }
-        }
-      `}</style>
     </main>
   );
 }

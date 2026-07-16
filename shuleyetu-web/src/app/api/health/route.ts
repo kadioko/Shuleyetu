@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServer";
 import { applyRateLimit, rateLimitConfigs } from "@/lib/rateLimit";
+import { normalizeSupabaseUrl } from "@/lib/supabaseEnv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -117,10 +118,12 @@ export async function GET(request: NextRequest) {
 
   const startTime = Date.now();
 
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = normalizeSupabaseUrl(
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
+  );
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceRoleKey || !/^https?:\/\//i.test(supabaseUrl)) {
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
     return NextResponse.json(
       {
         status: "unhealthy",

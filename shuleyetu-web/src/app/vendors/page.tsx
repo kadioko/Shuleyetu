@@ -528,6 +528,7 @@ function VendorsInner() {
             <Link
               key={vendor.id}
               href={`/vendors/${vendor.id}`}
+              prefetch={false}
               className="surface-panel group flex flex-col rounded-3xl p-5 transition-all hover:border-sky-500/30 hover:shadow-lg hover:shadow-sky-500/5"
             >
               <div className="flex items-start gap-3">
