@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { withRateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { normalizeSupabaseUrl } from '@/lib/supabaseEnv';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,7 @@ const DEMO_EMAIL = 'demo@shuleyetu.test';
 const DEMO_PASSWORD = 'demo123';
 
 function getServiceRoleClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     throw new Error('Missing Supabase URL or service role key');
@@ -97,7 +98,16 @@ export async function POST(request: NextRequest) {
     const demoUser = existingUsers?.users.find((u) => u.email === DEMO_EMAIL);
     let userId: string | null = demoUser?.id ?? null;
 
-    if (!userId) {
+    if (userId) {
+      const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+        password: DEMO_PASSWORD,
+        email_confirm: true,
+      });
+      if (updateError) {
+        logError('Failed to update demo user', updateError);
+        return NextResponse.json({ error: 'Failed to prepare demo user' }, { status: 500 });
+      }
+    } else {
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: DEMO_EMAIL,
         password: DEMO_PASSWORD,
